@@ -50,9 +50,9 @@ function drawBoard(parent, n, x = boardX(n), y = boardY) {
 }
 
 /* ---------- 绘制皇后 ---------- */
-function drawQueen(parent, row, col, n) {
+function drawQueen(parent, row, col, n, by = boardY) {
   const x = boardX(n) + col * CELL_SIZE + CELL_SIZE / 2;
-  const y = boardY + row * CELL_SIZE + CELL_SIZE / 2;
+  const y = by + row * CELL_SIZE + CELL_SIZE / 2;
   const q = T(parent, '♛', { x, y, size: 48, fill: QUEEN, anchor: 'middle', o: 0 });
   q.setAttribute('dominant-baseline', 'central');
   return q;
@@ -118,11 +118,10 @@ const BEATS = [
   tw(board, { o: 1 }, 0.3, 0.3);
   
   // 快速闪过几个无效配置
-  
   const invalid = [[0,0,0,0], [0,1,0,1], [0,1,2,3]];
   invalid.forEach((config, i) => {
     config.forEach((col, row) => {
-      const q = drawQueen(p, row, col, 4);
+      const q = drawQueen(p, row, col, 4, 360);  // 使用与棋盘相同的 y 坐标
       tw(q, { o: 1 }, 3.0 + i * 1.2, 0.2);
       tw(q, { o: 0 }, 3.0 + i * 1.2 + 0.8, 0.3);
     });

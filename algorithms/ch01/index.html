@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>汉诺塔：递归的第一课</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 1, title: '汉诺塔：递归的第一课', language: 'zh', minutes: 8 };
+
+/* ---------- colours ---------- */
+const PEG = '#8a8f98', BASE = '#5a5f68', BOARD = COL.board;
+const DISK = { 4: '#43e97b', 3: '#4facfe', 2: '#f093fb', 1: '#667eea' };
+const WIDE = { 4: 200, 3: 165, 2: 130, 1: 95 };
+const GROUND = 640;
+const PX = [340, 800, 1260];        // the three pegs' x centres
+
+/* ---------- the tower: pegs hold disks, bottom-first ---------- */
+const tower = { pegs: [[4, 3, 2, 1], [], []] };
+const dslot = (peg, i) => GROUND - 22 - i * 46;   // the y of a disk sitting in slot i
+const diskW = n => WIDE[n];
+const diskX = (peg, n) => PX[peg];  // center x of the peg
+
+// A disk: an ellipse-less flat bar with a rounded rim, drawn as a path so it can be scaled.
+function diskShape(n) {
+  const w = diskW(n), h = 34, r = 8;
+  return `M${-w / 2 + r} ${-h / 2} H${w / 2 - r} a${r} ${r} 0 0 1 ${r} ${r} v${h - 2 * r} a${r} ${r} 0 0 1 ${-r} ${r} H${-w / 2 + r} a${r} ${r} 0 0 1 ${-r} ${-r} v${-h + 2 * r} a${r} ${r} 0 0 1 ${r} ${-r} Z`;
+}
+
+// The whole rig: three pegs standing on a ground line, plus the disks.
+function buildRig(p, { n = 4, showDisks = true } = {}) {
+  const g = G(p);
+  // ground
+  const gr = mk('rect', { x: 180, y: GROUND, width: 1240, height: 4, fill: COL.dim, opacity: .35 }, g);
+  // pegs
+  [0, 1, 2].forEach(i => {
+    mk('rect', { x: PX[i] - 5, y: GROUND - 260, width: 10, height: 260, fill: PEG, rx: 5 }, g);
+    mk('rect', { x: PX[i] - 46, y: GROUND, width: 92, height: 12, fill: BASE, rx: 6 }, g);
+  });
+  return g;
+}
+
+// One disk element, kept in a map so we can move it later.
+let diskEls = {};
+function makeDisks(p, n = 4) {
+  diskEls = {};
+  for (let d = 1; d <= n; d++) {
+    const g = G(p, { o: 0, x: 0, y: 0 });  // will be positioned by layoutDisks
+    const pathEl = path(g, diskShape(d), { fill: DISK[d], stroke: mix(DISK[d], '#000', .25), 'stroke-width': 2 });
+    // a highlight stripe so the disks read as solid objects
+    path(g, `M${-diskW(d) / 2 + 14} ${-8} H${diskW(d) / 2 - 14}`, { stroke: mix(DISK[d], '#fff', .45), 'stroke-width': 3, 'stroke-linecap': 'round', opacity: .5 });
+    diskEls[d] = g;
+  }
+  return diskEls;
+}
+
+// Put every disk where the model says it is, without animation.
+function layoutDisks(n = 4) {
+  tower.pegs.forEach((stack, peg) => stack.forEach((d, i) => {
+    const g = diskEls[d]; if (!g) return;
+    put(g, { x: diskX(peg, d), y: dslot(peg, i) });
+  }));
+}
+
+// Slide one disk from a peg to a peg.
+function slideDisk(diskNum, toPeg, t0, dur = .7) {
+  // 找到这个盘子当前在哪个柱子上
+  const fromPeg = tower.pegs.findIndex(stack => stack.includes(diskNum));
+  if (fromPeg === -1) return;  // 盘子不存在
+  
+  // 从原柱子上移除
+  tower.pegs[fromPeg].splice(tower.pegs[fromPeg].indexOf(diskNum), 1);
+  
+  // 添加到目标柱子
+  const newIndex = tower.pegs[toPeg].length;
+  tower.pegs[toPeg].push(diskNum);
+  
+  // 动画
+  const g = diskEls[diskNum]; if (!g) return;
+  const s = st(g);
+  const x0 = s.x, y0 = s.y;
+  const x1 = diskX(toPeg, diskNum), y1 = dslot(toPeg, newIndex);
+  
+  // lift, carry, set down
+  tw(g, { y: y0 - 90 }, t0, dur * .35, out);
+  tw(g, { x: x1 }, t0 + dur * .35, dur * .4, io);
+  tw(g, { y: y1 }, t0 + dur * .75, dur * .25, back);
+}
+
+/* ---------- beats ---------- */
+const BEATS = [
+
+['intro', '问题呈现', () => {
+  const p = panel(0);
+  buildRig(p, { n: 4 });
+  const g = G(p);
+  const title = T(g, '汉诺塔', { x: 800, y: 150, size: 64, weight: 700, anchor: 'middle' });
+  tw(title, { o: 1, y: 140 }, .1, .8, out);
+  const sub = T(g, '把一叠盘子从左边移到右边', { x: 800, y: 210, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(sub, { o: 1 }, .6, .6);
+
+  makeDisks(p, 4);
+  layoutDisks(4);
+  Object.values(diskEls).forEach((g, i) => tw(g, { o: 1 }, .4 + i * .12, .5, out));
+
+  // the rule
+  const rule = T(g, '一次只能搬一个，大盘不能压在小盘上面', { x: 800, y: 730, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(rule, { o: 1 }, 6, .6);
+}],
+
+['naive', '暴力尝试的困境', () => {
+  const p = panel(0);
+  buildRig(p);
+  makeDisks(p, 4);
+  layoutDisks(4);
+  Object.values(diskEls).forEach((g, i) => tw(g, { o: 1 }, .1 + i * .1, .4, out));
+
+  // a few plausible-looking moves that go nowhere
+  slideDisk(1, 2, 1.0);
+  slideDisk(2, 1, 2.0);
+  slideDisk(1, 1, 3.0);
+  slideDisk(3, 2, 4.2);
+
+  const warn = T(p, '等等，下一步该搬哪个？', { x: 800, y: 300, size: 38, fill: '#f5576c', weight: 600, anchor: 'middle', o: 0 });
+  tw(warn, { o: 1, s: 1.05 }, 5.5, .5, out);
+  const hint = T(p, '每一步的选择太多，很快就会漏掉解法', { x: 800, y: 350, size: 24, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(hint, { o: 1 }, 5.5 + .4, .5);
+}],
+
+['focus', '递归的核心思路', () => {
+  const p = panel(0);
+  buildRig(p);
+  makeDisks(p, 4);
+  layoutDisks(4);
+  Object.values(diskEls).forEach((g, i) => tw(g, { o: 1 }, .1 + i * .1, .4, out));
+
+  const head = T(p, '只盯着最大的那个盘子', { x: 800, y: 150, size: 46, weight: 600, anchor: 'middle', o: 0 });
+  tw(head, { o: 1 }, .1, .6, out);
+
+  // the big disk glows, the little ones dim
+  tw(diskEls[4], { s: 1.12 }, 2.5, .6, out);
+  [1, 2, 3].forEach(d => tw(diskEls[d], { o: .25 }, 2.5, .5));
+
+  // a bracket around the three small disks
+  const bx = PX[0], by = dslot(0, 3) - 30;
+  const br = path(p, `M${bx - 130} ${by + 40} v-40 q0 -18 18 -18 h224 q18 0 18 18 v40`, { stroke: '#f5a623', 'stroke-width': 3, fill: 'none', opacity: .9 }, { d: 0 });
+  tw(br, { d: 1 }, 2.5 + .3, .6, out);
+  const lbl = T(p, 'n-1 个小盘：挡路的', { x: bx - 128, y: by - 20, size: 24, fill: '#f5a623', o: 0 });
+  tw(lbl, { o: 1 }, 2.5 + .6, .5);
+
+  const msg = T(p, '要移动最大的盘，只有办法：先把上面挡路的全部搬走', { x: 800, y: 730, size: 28, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(msg, { o: 1 }, 6, .6);
+}],
+
+['step1', '第一步：移小盘到备用柱', () => {
+  const p = panel(0);
+  buildRig(p);
+  makeDisks(p, 4);
+  layoutDisks(4);
+  Object.values(diskEls).forEach((g, i) => tw(g, { o: 1 }, .1 + i * .1, .4, out));
+
+  const head = T(p, '第一步：把 n-1 个小盘移到备用柱', { x: 800, y: 150, size: 40, weight: 600, anchor: 'middle', o: 0 });
+  tw(head, { o: 1 }, .1, .6, out);
+
+  // the three small disks glide over as a block — the recursion is a black box
+  const smalls = [1, 2, 3];
+  const yTop = dslot(0, 3);
+  smalls.forEach(d => tw(diskEls[d], { x: diskX(1, d), y: yTop + (3 - d) * 0 }, 3 + (3 - d) * .08, .8, io));
+  // stack them properly on peg 1
+  smalls.forEach((d, i) => tw(diskEls[d], { x: diskX(1, d), y: dslot(1, 2 - i) }, 3 + .5 + i * .12, .5, back));
+  tower.pegs[0] = [4];
+  tower.pegs[1] = [3, 2, 1];
+
+  const note = T(p, '怎么移？交给递归仙女——她用同样的办法处理更小的问题', { x: 800, y: 730, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(note, { o: 1 }, 5, .6);
+
+  const call = T(p, 'Hanoi(n-1, 左, 中, 右)', { x: 800, y: 250, size: 30, fill: '#f5a623', anchor: 'middle', o: 0 });
+  tw(call, { o: 1 }, 4.5, .5);
+}],
+
+['step2', '第二步：移最大盘', () => {
+  const p = panel(0);
+  buildRig(p);
+  makeDisks(p, 4);
+  tower.pegs = [[4], [3, 2, 1], []];
+  layoutDisks(4);
+  Object.values(diskEls).forEach((g, i) => tw(g, { o: 1 }, .1 + i * .1, .4, out));
+
+  const head = T(p, '第二步：移最大盘', { x: 800, y: 150, size: 40, weight: 600, anchor: 'middle', o: 0 });
+  tw(head, { o: 1 }, .1, .6, out);
+
+  tw(diskEls[4], { s: 1.12 }, 2, .5, out);
+  slideDisk(0, 2, 2 + .3, 1.0);
+  tw(diskEls[4], { s: 1 }, 2 + 1.3, .4);
+
+  const note = T(p, '路通了，一步到位', { x: 800, y: 730, size: 28, fill: '#43e97b', anchor: 'middle', o: 0 });
+  tw(note, { o: 1 }, 5, .5);
+}],
+
+['step3', '第三步：移小盘到目标柱', () => {
+  const p = panel(0);
+  buildRig(p);
+  makeDisks(p, 4);
+  tower.pegs = [[], [3, 2, 1], [4]];
+  layoutDisks(4);
+  Object.values(diskEls).forEach((g, i) => tw(g, { o: 1 }, .1 + i * .1, .4, out));
+
+  const head = T(p, '第三步：把 n-1 个小盘移到目标柱', { x: 800, y: 150, size: 40, weight: 600, anchor: 'middle', o: 0 });
+  tw(head, { o: 1 }, .1, .6, out);
+
+  // they land on top of the big disk
+  [[1, 2], [2, 1], [3, 0]].forEach(([d, i]) => {
+    tw(diskEls[d], { x: diskX(2, d), y: dslot(2, 3 - d) }, 3 + i * .18, .6, back);
+  });
+  tower.pegs[1] = [];
+  tower.pegs[2] = [4, 3, 2, 1];
+
+  const done = T(p, '完成！', { x: 800, y: 300, size: 52, fill: '#43e97b', weight: 700, anchor: 'middle', o: 0 });
+  tw(done, { o: 1, s: 1.1 }, 5, .6, out);
+  const call = T(p, 'Hanoi(n-1, 中, 右, 左)', { x: 800, y: 250, size: 30, fill: '#f5a623', anchor: 'middle', o: 0 });
+  tw(call, { o: 1 }, 4.5, .5);
+}],
+
+['unroll', '展开一层递归', () => {
+  const p = panel(0);
+  const head = T(p, '那三个小盘具体怎么移？', { x: 800, y: 120, size: 40, weight: 600, anchor: 'middle', o: 0 });
+  tw(head, { o: 1 }, .1, .6, out);
+  const sub = T(p, '同样的三步，只是规模更小', { x: 800, y: 180, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(sub, { o: 1 }, .5, .5);
+
+  const rows = [
+    ['Hanoi(3)', 'Hanoi(2)  +  移动  +  Hanoi(2)'],
+    ['Hanoi(2)', 'Hanoi(1)  +  移动  +  Hanoi(1)'],
+    ['Hanoi(1)', '移动一次，就结束了'],
+  ];
+  rows.forEach(([a, b], i) => {
+    const y = 300 + i * 110;
+    const c1 = T(p, a, { x: 500, y, size: 30, fill: '#4facfe', weight: 600, anchor: 'middle', o: 0 });
+    const c2 = T(p, b, { x: 1000, y, size: 28, fill: COL.chalk, anchor: 'middle', o: 0 });
+    const box = mk('rect', { x: 330, y: y - 32, width: 340, height: 54, rx: 12, fill: 'none', stroke: '#4facfe', 'stroke-width': 2, opacity: 0 }, p);
+    tw(c1, { o: 1 }, .8 + i * .5, .4);
+    tw(c2, { o: 1 }, 1.0 + i * .5, .4);
+    tw(box, { opacity: .8 }, 1.0 + i * .5, .4);
+  });
+  const tail = T(p, '每展开一层，问题规模减一 —— 这就是递归', { x: 800, y: 730, size: 26, fill: '#f5a623', anchor: 'middle', o: 0 });
+  tw(tail, { o: 1 }, 7, .6);
+}],
+
+['base', '递归的边界', () => {
+  const p = panel(0);
+  buildRig(p);
+  makeDisks(p, 1);
+  tower.pegs = [[1], [], []];
+  layoutDisks(1);
+  tw(diskEls[1], { o: 1 }, .2, .5, out);
+
+  const head = T(p, '递归的边界：n = 1', { x: 800, y: 150, size: 44, weight: 600, anchor: 'middle', o: 0 });
+  tw(head, { o: 1 }, .1, .6, out);
+
+  slideDisk(0, 2, 2, .9);
+  const note = T(p, '只剩一个盘子，不需要递归 —— 直接搬', { x: 800, y: 730, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(note, { o: 1 }, 5, .5);
+}],
+
+['zero', '空盘的禅意', () => {
+  const p = panel(0);
+  buildRig(p);
+  const head = T(p, 'n = 0：什么都不做', { x: 800, y: 220, size: 46, weight: 600, anchor: 'middle', o: 0 });
+  tw(head, { o: 1 }, .1, .7, out);
+
+  const zen = T(p, 'There is no spoon', { x: 800, y: 330, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(zen, { o: .7 }, 3, .8);
+  const zen2 = T(p, '不需要移动的盘子，已经在它该在的地方', { x: 800, y: 390, size: 24, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(zen2, { o: .8 }, 3 + .5, .6);
+}],
+
+['code', '伪代码', () => {
+  const p = panel(0);
+  const head = T(p, '伪代码', { x: 800, y: 140, size: 44, weight: 600, anchor: 'middle', o: 0 });
+  tw(head, { o: 1 }, .1, .6, out);
+
+  const lines = [
+    [{txt: 'function ', col: '#569cd6'}, {txt: 'Hanoi', col: '#dcdcaa'}, {txt: '(n, src, dst, tmp) {', col: '#d4d4d4'}],
+    [{txt: '  if ', col: '#c586c0'}, {txt: '(n > 0) {', col: '#d4d4d4'}],
+    [{txt: '    ', col: '#d4d4d4'}, {txt: 'Hanoi', col: '#dcdcaa'}, {txt: '(n-1, src, tmp, dst)', col: '#d4d4d4'}],
+    [{txt: '    // 递归：小盘移到备用柱', col: '#6a9955'}],
+    [{txt: '    // 移动最大盘 n', col: '#6a9955'}],
+    [{txt: '    ', col: '#d4d4d4'}, {txt: 'Hanoi', col: '#dcdcaa'}, {txt: '(n-1, tmp, dst, src)', col: '#d4d4d4'}],
+    [{txt: '  }', col: '#d4d4d4'}],
+  ];
+  const x0 = 420, y0 = 240, lh = 58;
+  const box = mk('rect', { x: x0 - 60, y: y0 - 46, width: 900, height: lines.length * lh + 44, rx: 14, fill: mix(COL.board, '#000', .35), opacity: 0 }, p);
+  tw(box, { opacity: .95 }, .3, .5);
+  
+  // highlight rectangles (create first so they appear behind text)
+  const hl = [2, 4, 5];
+  hl.forEach(i => {
+    const r = mk('rect', { x: x0 - 50, y: y0 + i * lh - 32, width: 840, height: 44, rx: 8, fill: '#f5a623' }, p);
+    put(r, { o: 0 });  // initial opacity
+    tw(r, { o: .20 }, 2.4 + hl.indexOf(i) * .3, .4);
+  });
+  
+  // code lines (appear on top of highlights)
+  lines.forEach((parts, i) => {
+    let xOffset = 0;
+    const lineGroup = G(p, { x: x0, y: y0 + i * lh, o: 0 });
+    parts.forEach(({txt, col}) => {
+      const t = T(lineGroup, txt, { x: xOffset, y: 0, size: 26, fill: col, font: 'ui-monospace, Menlo, monospace' });
+      xOffset += t.getComputedTextLength();
+    });
+    tw(lineGroup, { o: 1 }, .5 + i * .22, .35);
+  });
+}],
+
+['complexity', '复杂度爆炸', () => {
+  const p = panel(0);
+  const head = T(p, '复杂度：T(n) = 2ⁿ − 1', { x: 800, y: 130, size: 46, weight: 600, anchor: 'middle', o: 0 });
+  tw(head, { o: 1 }, .1, .6, out);
+
+  // the recursion tree, level by level
+  const levels = [
+    [['H(4)'], 800, 200],
+    [['H(3)', 'H(3)'], 620, 980, 320],
+    [['H(2)', 'H(2)', 'H(2)', 'H(2)'], 400, 560, 720, 880, 1200],
+    [['H(1)', 'H(1)', 'H(1)', 'H(1)', 'H(1)', 'H(1)', 'H(1)', 'H(1)'], 280, 440, 600, 760, 920, 1080, 1240, 1400],
+  ];
+  levels.forEach(([labels, ...xs], li) => {
+    labels.forEach((lab, j) => {
+      const x = xs[j], y = 200 + li * 105;
+      const g = G(p, { o: 0 });
+      const w = 96, h = 48;
+      mk('rect', { x: x - w / 2, y: y - h / 2, width: w, height: h, rx: 24, fill: mix('#4facfe', COL.board, .25), stroke: '#4facfe', 'stroke-width': 2 }, g);
+      T(g, lab, { x, y: y + 8, size: 24, fill: COL.chalk, anchor: 'middle', weight: 600 });
+      tw(g, { o: 1 }, .4 + li * .5 + j * .07, .4, out);
+      // the edge down from the parent
+      if (li > 0) {
+        const px = levels[li - 1][1 + (j >> 1)];
+        const py = 200 + (li - 1) * 105;
+        const e = path(p, `M${px} ${py + 24} C${px} ${py + 65}, ${x} ${y - 65}, ${x} ${y - 24}`, { stroke: COL.dim, 'stroke-width': 2, fill: 'none', opacity: 0 }, { d: 0 });
+        tw(e, { d: 1, opacity: .6 }, .4 + li * .5 + j * .07, .4);
+      }
+    });
+  });
+
+  const leaves = T(p, '8 个叶子 · 15 次移动', { x: 800, y: 660, size: 26, fill: '#f5a623', anchor: 'middle', o: 0 });
+  tw(leaves, { o: 1 }, 2.8, .5);
+  const big = T(p, 'T(64) = 18,446,744,073,709,551,615 步', { x: 800, y: 730, size: 30, fill: '#f5576c', weight: 600, anchor: 'middle', o: 0 });
+  tw(big, { o: 1, s: 1.05 }, 6, .6, out);
+  const note = T(p, '每递归一次就翻一倍 —— 宇宙都不够用', { x: 800, y: 780, size: 22, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(note, { o: 1 }, 6 + .5, .5);
+}],
+
+['replay', '完整演示', () => {
+  const p = panel(0);
+  buildRig(p);
+  makeDisks(p, 4);
+  tower.pegs = [[4, 3, 2, 1], [], []];
+  layoutDisks(4);
+  Object.values(diskEls).forEach((g, i) => tw(g, { o: 1 }, .1 + i * .1, .3, out));
+
+  const head = T(p, '完整演示：4 个盘子，15 步', { x: 800, y: 120, size: 40, weight: 600, anchor: 'middle', o: 0 });
+  tw(head, { o: 1 }, .1, .5, out);
+  const counter = T(p, '第 0 / 15 步', { x: 800, y: 730, size: 28, fill: '#f5a623', anchor: 'middle', o: 0 });
+  tw(counter, { o: 1 }, .2, .4);
+
+  // the canonical 15 moves for 4 disks, src=0 dst=2 spare=1
+  const moves = [
+    [0, 2], [0, 1], [2, 1], [0, 2], [1, 0], [1, 2], [0, 2],
+    [0, 1], [2, 1], [2, 0], [1, 0], [2, 1], [0, 2], [0, 1], [2, 1],
+  ];
+  let t = 1.0;
+  let prevCounter = counter;
+  moves.forEach((mv, i) => {
+    // 找到 fromPeg 顶部的盘子
+    const [fromPeg, toPeg] = mv;
+    const topDisk = tower.pegs[fromPeg][tower.pegs[fromPeg].length - 1];
+    if (topDisk) slideDisk(topDisk, toPeg, t, .55);
+    
+    // 隐藏之前的计数器，显示新的
+    tw(prevCounter, { o: 0 }, t + .2, .2);
+    const cc = T(p, `第 ${i + 1} / 15 步`, { x: 800, y: 730, size: 28, fill: '#f5a623', anchor: 'middle', o: 0 });
+    tw(cc, { o: 1 }, t + .2, .25);
+    prevCounter = cc;
+    
+    t += .75;
+  });
+  const fin = T(p, '15 步，全部就位', { x: 800, y: 300, size: 46, fill: '#43e97b', weight: 700, anchor: 'middle', o: 0 });
+  tw(fin, { o: 1, s: 1.1 }, t + .3, .6, out);
+}],
+
+['q1', '练习 1', () => { panel(0); }, { ask: done => quiz(SCREEN, [{
+  id: 'h-count',
+  prompt: ['移动 5 个盘子需要多少步？'],
+  build: choice(
+    [['31 步', '2⁵ − 1 = 31'], ['15 步', '那是 4 个盘子的步数'], ['25 步', '不是 2ⁿ − 1 的形式'], ['63 步', '那是 6 个盘子的步数']],
+    0,
+    '每递归一次步数翻倍再减一：T(n) = 2T(n−1) + 1，解得 T(n) = 2ⁿ − 1。n = 5 时是 32 − 1 = 31 步。'),
+}], done) }],
+
+['q2', '练习 2', () => { panel(0); }, { ask: done => quiz(SCREEN, [{
+  id: 'h-core',
+  prompt: ['汉诺塔递归的核心思路是？'],
+  build: choice(
+    [['只关注最大盘，把更小的问题交给递归', '这正是"归约"：n 盘问题归约为两个 (n−1) 盘问题'],
+     ['记住每一步的完整顺序', '记住顺序不需要递归；递归的本质正是把顺序问题交出去'],
+     ['用循环遍历所有可能的移动', '暴力枚举是 3ⁿ 的复杂度，递归是 2ⁿ'],
+     ['从最小的盘子开始移动', '最小的盘子最后才动，甚至最后才第一次能被移动']],
+    0,
+    '递归归约：先把 n−1 个小盘移开，再移最大盘，最后把小盘移上来。中间那步是唯一必须自己想的一步。'),
+}], done) }],
+
+['q3', '练习 3', () => { panel(0); }, { ask: done => quiz(SCREEN, [{
+  id: 'h-zero',
+  prompt: ['n = 0 时应该做什么？'],
+  build: choice(
+    [['什么都不做', '空盘已经在目标位置，递归到此为止'],
+     ['移动一个空盘子', '不存在空盘子可移动'],
+     ['报错', '0 个盘子是合法的输入'],
+     ['把所有盘子都移动一遍', '那会移动一个根本不存在的塔']],
+    0,
+    'T(0) = 0 是递归的边界情形。它也是"归约必须能停下来"的保证：递归最终一定会走到 n = 0。'),
+}], done) }],
+
+['finish', '完成', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
+
+boot();
+</script>
+</body>
+</html>

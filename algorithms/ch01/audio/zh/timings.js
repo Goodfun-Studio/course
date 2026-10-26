@@ -1,0 +1,230 @@
+window.TIMINGS = {
+ "intro": {
+  "dur": 9.336,
+  "marks": {},
+  "cues": [
+   [
+    0.1,
+    "\u6c49\u8bfa\u5854\uff1a\u628a\u4e00\u53e0\u76d8\u5b50\u4ece\u5de6\u8fb9\u79fb\u5230\u53f3\u8fb9\u3002"
+   ],
+   [
+    4.088,
+    "\u89c4\u5219\u5f88\u7b80\u5355\u2014\u2014\u4e00\u6b21\u53ea\u80fd\u642c\u4e00\u4e2a\uff0c\u5927\u76d8\u4e0d\u80fd\u538b\u5728\u5c0f\u76d8\u4e0a\u9762\u3002"
+   ]
+  ]
+ },
+ "naive": {
+  "dur": 9.48,
+  "marks": {},
+  "cues": [
+   [
+    0.1,
+    "\u4f60\u53ef\u80fd\u4f1a\u60f3\uff1a\u5148\u642c\u6700\u4e0a\u9762\u90a3\u4e2a\uff0c\u7136\u540e\u2026\u2026\u7b49\u7b49\uff0c\u4e0b\u4e00\u6b65\u642c\u54ea\u4e2a\uff1f"
+   ],
+   [
+    5.812,
+    "\u8bd5\u51e0\u6b65\u5c31\u4f1a\u53d1\u73b0\uff0c\u8def\u5f84\u5f88\u5feb\u5c31\u4e71\u4e86\u3002"
+   ]
+  ]
+ },
+ "focus": {
+  "dur": 10.152,
+  "marks": {},
+  "cues": [
+   [
+    0.1,
+    "\u9012\u5f52\u7684\u79d8\u5bc6\uff1a\u5ffd\u7565\u7ec6\u8282\uff0c\u53ea\u76ef\u7740\u6700\u5927\u7684\u90a3\u4e2a\u76d8\u5b50\u3002"
+   ],
+   [
+    4.963,
+    "\u8981\u79fb\u52a8\u5b83\uff0c\u53ea\u6709\u4e00\u4e2a\u529e\u6cd5\u2014\u2014\u5148\u628a\u4e0a\u9762\u6321\u8def\u7684\u5168\u90e8\u642c\u8d70\u3002"
+   ]
+  ]
+ },
+ "step1": {
+  "dur": 10.08,
+  "marks": {},
+  "cues": [
+   [
+    0.1,
+    "\u7b2c\u4e00\u6b65\uff1a\u628a\u8fd9 n \u51cf\u4e00\u4e2a\u5c0f\u76d8\u79fb\u5230\u5907\u7528\u67f1\u3002"
+   ],
+   [
+    3.825,
+    "\u600e\u4e48\u79fb\uff1f"
+   ],
+   [
+    5.037,
+    "\u4ea4\u7ed9\u9012\u5f52\u4ed9\u5973\u2014\u2014\u5979\u4f1a\u7528\u540c\u6837\u7684\u529e\u6cd5\u5904\u7406\u66f4\u5c0f\u7684\u95ee\u9898\u3002"
+   ]
+  ]
+ },
+ "step2": {
+  "dur": 4.92,
+  "marks": {},
+  "cues": [
+   [
+    0.1,
+    "\u73b0\u5728\u8def\u7ec8\u4e8e\u901a\u4e86\u3002"
+   ],
+   [
+    1.913,
+    "\u79fb\u6700\u5927\u76d8\uff0c\u4e00\u6b65\u5230\u4f4d\u3002"
+   ]
+  ]
+ },
+ "step3": {
+  "dur": 8.016,
+  "marks": {},
+  "cues": [
+   [
+    0.1,
+    "\u6700\u540e\u4e00\u6b65\uff1a\u628a\u90a3 n \u51cf\u4e00\u4e2a\u5c0f\u76d8\u4ece\u5907\u7528\u67f1\u79fb\u5230\u76ee\u6807\u67f1\uff0c\u53e0\u5728\u5927\u76d8\u4e0a\u9762\u3002"
+   ],
+   [
+    5.875,
+    "\u53c8\u662f\u540c\u6837\u7684\u9012\u5f52\u3002"
+   ]
+  ]
+ },
+ "unroll": {
+  "dur": 8.304,
+  "marks": {},
+  "cues": [
+   [
+    0.1,
+    "\u4f60\u53ef\u80fd\u4f1a\u597d\u5947\uff1a\u90a3\u4e09\u4e2a\u5c0f\u76d8\u5177\u4f53\u600e\u4e48\u79fb\uff1f"
+   ],
+   [
+    4.237,
+    "\u7b54\u6848\u662f\u2014\u2014\u540c\u6837\u7684\u4e09\u6b65\uff0c\u53ea\u662f\u89c4\u6a21\u66f4\u5c0f\u3002"
+   ]
+  ]
+ },
+ "base": {
+  "dur": 6.84,
+  "marks": {},
+  "cues": [
+   [
+    0.1,
+    "\u5f53\u53ea\u5269\u4e00\u4e2a\u76d8\u5b50\uff0c\u5c31\u4e0d\u9700\u8981\u9012\u5f52\u4e86\u2014\u2014\u76f4\u63a5\u642c\u5c31\u884c\u3002"
+   ],
+   [
+    4.612,
+    "\u8fd9\u662f\u9012\u5f52\u7684\u7ec8\u70b9\u3002"
+   ]
+  ]
+ },
+ "zero": {
+  "dur": 9.912,
+  "marks": {},
+  "cues": [
+   [
+    0.1,
+    "\u90a3 n \u7b49\u4e8e\u96f6\u5462\uff1f"
+   ],
+   [
+    1.925,
+    "\u96f6\u4e2a\u76d8\u5b50\u8981\u600e\u4e48\u79fb\uff1f"
+   ],
+   [
+    3.812,
+    "\u7b54\u6848\u662f\uff1a\u4ec0\u4e48\u90fd\u4e0d\u505a\u3002"
+   ],
+   [
+    6.112,
+    "\u4e0d\u9700\u8981\u79fb\u52a8\u7684\u76d8\u5b50\uff0c\u5df2\u7ecf\u5728\u5b83\u8be5\u5728\u7684\u5730\u65b9\u3002"
+   ]
+  ]
+ },
+ "code": {
+  "dur": 9.24,
+  "marks": {},
+  "cues": [
+   [
+    0.1,
+    "\u7528\u4ee3\u7801\u8868\u8fbe\uff0c\u5c31\u662f\u8fd9\u6837\uff1a\u5982\u679c n \u5927\u4e8e\u96f6\uff0c\u5148\u9012\u5f52\u79fb n \u51cf\u4e00\u4e2a\u5230\u5907\u7528\u67f1\uff0c\u79fb\u6700\u5927\u76d8\uff0c\u518d\u9012\u5f52\u79fb\u56de\u6765\u3002"
+   ]
+  ]
+ },
+ "complexity": {
+  "dur": 11.928,
+  "marks": {},
+  "cues": [
+   [
+    0.1,
+    "\u6bcf\u6b21\u9012\u5f52\u5206\u88c2\u6210\u4e24\u4e2a\u5b50\u95ee\u9898\u3002"
+   ],
+   [
+    3.175,
+    "\u79fb n \u4e2a\u76d8\u5b50\u9700\u8981\u4e8c\u7684 n \u6b21\u65b9\u51cf\u4e00\u6b65\u3002"
+   ],
+   [
+    6.4,
+    "\u79fb 64 \u4e2a\u76d8\u5b50\uff1f"
+   ],
+   [
+    8.3,
+    "\u90a3\u9700\u8981\u4e00\u5343\u516b\u767e\u4e07\u4e07\u4ebf\u6b65\u2014\u2014\u5b87\u5b99\u90fd\u4e0d\u591f\u7528\u3002"
+   ]
+  ]
+ },
+ "replay": {
+  "dur": 7.44,
+  "marks": {},
+  "cues": [
+   [
+    0.1,
+    "\u73b0\u5728\u770b\u5b8c\u6574\u8fc7\u7a0b\u3002"
+   ],
+   [
+    2.087,
+    "\u56db\u4e2a\u76d8\u5b50\uff0c\u5341\u4e94\u6b65\uff0c\u6bcf\u4e00\u6b65\u90fd\u9075\u5faa\u540c\u6837\u7684\u9012\u5f52\u903b\u8f91\u3002"
+   ]
+  ]
+ },
+ "q1": {
+  "dur": 3.144,
+  "marks": {},
+  "cues": [
+   [
+    0.1,
+    "\u79fb\u52a8\u4e94\u4e2a\u76d8\u5b50\u9700\u8981\u591a\u5c11\u6b65\uff1f"
+   ]
+  ]
+ },
+ "q2": {
+  "dur": 3.0,
+  "marks": {},
+  "cues": [
+   [
+    0.1,
+    "\u6c49\u8bfa\u5854\u9012\u5f52\u7684\u6838\u5fc3\u662f\u4ec0\u4e48\uff1f"
+   ]
+  ]
+ },
+ "q3": {
+  "dur": 2.736,
+  "marks": {},
+  "cues": [
+   [
+    0.1,
+    "n \u7b49\u4e8e\u96f6\u65f6\u5e94\u8be5\u505a\u4ec0\u4e48\uff1f"
+   ]
+  ]
+ },
+ "finish": {
+  "dur": 4.536,
+  "marks": {},
+  "cues": [
+   [
+    0.1,
+    "\u606d\u559c\u5b8c\u6210\uff01"
+   ],
+   [
+    1.55,
+    "\u4f60\u5df2\u7ecf\u638c\u63e1\u4e86\u9012\u5f52\u7684\u6838\u5fc3\u601d\u60f3\u3002"
+   ]
+  ]
+ }
+};

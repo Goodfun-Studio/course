@@ -103,11 +103,7 @@ const BEATS = [
 ['naive', '暴力枚举的困境', () => {
   const p = panel(0);
   
-  // 先创建棋盘（背景）
-  const board = drawBoard(p, 4);
-  tw(board, { o: 1 }, 0.3, 0.3);
-  
-  // 再创建文字（前景）
+  // 标题和统计信息
   const title = T(p, '暴力枚举？', { x: 800, y: 140, size: 42, weight: 600, anchor: 'middle', o: 0 });
   tw(title, { o: 1 }, 0.1, 0.5);
   
@@ -116,6 +112,10 @@ const BEATS = [
   
   const calc8 = T(p, '8×8: 16,777,216 种', { x: 800, y: 270, size: 32, fill: '#e74c3c', anchor: 'middle', o: 0 });
   tw(calc8, { o: 1 }, 2.0, 0.4);
+  
+  // 棋盘放在下方（避免与文字重叠）
+  const board = drawBoard(p, 4, boardX(4), 360);
+  tw(board, { o: 1 }, 0.3, 0.3);
   
   // 快速闪过几个无效配置
   

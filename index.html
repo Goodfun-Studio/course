@@ -22,9 +22,12 @@
   .eyebrow{font-size:13px;letter-spacing:4px;color:var(--cinnabar)}
   h1{font-size:clamp(28px,5vw,40px);font-weight:800;letter-spacing:1px;margin:14px 0 12px}
   .lede{font-size:16.5px;color:var(--ink-soft);font-weight:300;max-width:640px}
-  .empty{margin:30px 0 90px;border:1px dashed var(--line);border-radius:6px;padding:34px 30px;background:rgba(255,255,255,.4)}
-  .empty h2{font-size:19px;font-weight:600;letter-spacing:1px;margin-bottom:10px}
-  .empty p{font-size:15.5px;color:var(--ink-faint);font-weight:300;margin:0}
+  .list{margin:30px 0 90px;display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line)}
+  .item{background:var(--paper);padding:26px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px;transition:background .3s}
+  .item:hover{background:rgba(255,255,255,.6)}
+  .item h2{font-size:21px;font-weight:600;letter-spacing:1px;margin-bottom:6px}
+  .item p{font-size:15px;color:var(--ink-faint);font-weight:300;margin:0}
+  .go{color:var(--cinnabar);font-size:15px;white-space:nowrap}
   footer{border-top:1px solid var(--line);padding:30px 0 60px;font-size:13px;color:var(--ink-faint);text-align:center}
 </style>
 </head>
@@ -36,9 +39,14 @@
 </header>
 
 <main class="wrap">
-  <div class="empty">
-    <h2>第一门课正在准备中</h2>
-    <p>课程做好后，会在这里逐门列出。</p>
+  <div class="list">
+    <a class="item" href="quant-ml/">
+      <div>
+        <h2>量化交易机器学习 · 交互动画课</h2>
+        <p>从把数据洗干净、把尺度对齐讲起：残差化与归一化，含配音、字幕与随堂小测。（第四章）</p>
+      </div>
+      <span class="go">开始学习 →</span>
+    </a>
   </div>
 </main>
 

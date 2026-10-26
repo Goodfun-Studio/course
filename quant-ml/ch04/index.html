@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第四章 数据预处理和特征工程</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 4, title: '数据预处理和特征工程', minutes: 5, language: 'zh' };
+
+/* ---------- colours (style.json look.meaning) ---------- */
+const RAW = '#2e86de', XFORM = '#e67e22', REMOVED = '#7f8c8d';
+
+/* ---------- small chapter helpers ---------- */
+const text = (p, str, x, y, t0, { size = 30, fill = COL.chalk, anchor = 'start', weight = 500 } = {}) => { const e = T(p, str, { x, y, size, fill, anchor, weight, o: 0 }); show(e, t0); return e; };
+const mline = (p, parts, x, y, t0, fill = COL.chalk, size = 48, anchor = 'middle') => { const e = M(p, [].concat(parts), { x, y, size, fill, anchor, o: 0 }); show(e, t0); return e; };
+
+// A horizontal value axis from lo..hi mapped to [x0, x1] at height y. Returns {X, y, x0, x1, lo, hi}.
+function hAxis(p, { x0, x1, y, lo, hi, t0, ticks = [] } = {}) {
+  const X = v => x0 + (v - lo) / (hi - lo) * (x1 - x0);
+  draw(path(p, `M${x0} ${y}H${x1}`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), t0, .6);
+  ticks.forEach(v => {
+    show(path(p, `M${X(v)} ${y - 8}V${y + 8}`, { stroke: COL.dim, 'stroke-width': 2 }, { o: 0 }), t0 + .3);
+    show(T(p, String(v), { x: X(v), y: y + 32, size: 20, fill: COL.dim, anchor: 'middle' }), t0 + .3);
+  });
+  return { X, y, x0, x1, lo, hi };
+}
+// A point on an axis that pops in.
+function axDot(p, ax, v, y, color, t0, { r = 10, label } = {}) {
+  const g = G(p, { x: ax.X(v), y, s: 0, o: 0 });
+  mk('circle', { r, fill: color, stroke: COL.board, 'stroke-width': 2 }, g);
+  tw(g, { s: 1, o: 1 }, t0, .4, back);
+  if (label) show(T(p, label, { x: ax.X(v), y: y - 20, size: 22, fill: color, anchor: 'middle' }), t0 + .2);
+  return g;
+}
+// An asymmetric bump (long tail on the right when sR > sL): reads as a skewed distribution.
+function bumpPath(ax, y0, amp, { mean = 0, sL = 1, sR = sL } = {}) {
+  let d = '';
+  const n = 140;
+  for (let i = 0; i <= n; i++) {
+    const v = ax.lo + (ax.hi - ax.lo) * i / n;
+    const s = v < mean ? sL : sR;
+    const h = Math.exp(-0.5 * ((v - mean) / s) ** 2);
+    const yy = y0 - h * amp;
+    d += `${i === 0 ? 'M' : 'L'}${ax.X(v).toFixed(1)} ${yy.toFixed(1)}`;
+  }
+  return d;
+}
+
+/* ---------- beats ---------- */
+const BEATS = [
+['intro', '标题', (m, D) => {
+  const g = G(scene, { o: 0, y: 24 });
+  T(g, '第四章', { x: 800, y: 300, size: 28, fill: COL.dim, anchor: 'middle' });
+  T(g, '数据预处理和特征工程', { x: 800, y: 400, size: 72, weight: 600, anchor: 'middle' });
+  tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+  const r = text(scene, '聚焦残差化与归一化', 800, 520, m('sub'), { size: 32, fill: COL.dim, anchor: 'middle' });
+  tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+}],
+
+['b1why', '为什么残差化', (m) => {
+  const p = panel(0);
+  const barX = 640, barW = 180, y0 = 620, totalH = 300, top = y0 - totalH;
+  const commonH = totalH * .58, aloneH = totalH - commonH;
+  text(p, '一只股票的收益', 730, top - 40, .2, { size: 34, anchor: 'middle' });
+  // the whole bar first, then the two parts laid over it as their words land
+  const total = mk('rect', { x: barX, y: top, width: barW, height: totalH, rx: 8, fill: mix(COL.board, RAW, .55), stroke: RAW, 'stroke-width': 2 }, p);
+  tw(total, { 'a_opacity': 1 }, .4, .5);
+  const commonRect = mk('rect', { x: barX, y: top, width: barW, height: commonH, rx: 8, fill: REMOVED, opacity: 0 }, p);
+  tw(commonRect, { opacity: .95 }, m('common'), .6);
+  text(p, '共同因素（大盘、行业）', barX + barW + 26, top + commonH / 2 + 8, m('common', .2), { size: 26, fill: REMOVED });
+  const aloneRect = mk('rect', { x: barX, y: top + commonH, width: barW, height: aloneH, rx: 8, fill: XFORM, opacity: 0 }, p);
+  tw(aloneRect, { opacity: .95 }, m('alone'), .6);
+  text(p, '个股自己的表现', barX + barW + 26, top + commonH + aloneH / 2 + 8, m('alone', .2), { size: 26, fill: XFORM });
+  // brace the idiosyncratic slice out to the left and name it
+  const by = top + commonH + aloneH / 2;
+  draw(path(p, `M${barX - 34} ${top + commonH}H${barX - 20}V${y0}H${barX - 34}`, { stroke: XFORM, 'stroke-width': 3 }, { d: 0 }), m('residual'), .6);
+  text(p, '剩下的就是残差收益', barX - 62, by + 8, m('residual', .3), { size: 26, fill: XFORM, anchor: 'end', weight: 600 });
+  text(p, '收益总量', 730, y0 + 46, .5, { size: 22, fill: COL.dim, anchor: 'middle' });
+}],
+
+['b2how', '怎么残差化', (m) => {
+  const p = panel(0);
+  const P = plane(p, { cx: 760, cy: 500, u: 90, x0: -3, x1: 3, y0: -3, y1: 3, t0: .1, step: 1 });
+  text(p, '大盘收益', 1180, 500, .3, { size: 24, fill: COL.dim });
+  text(p, '个股收益', 760, 90, .3, { size: 24, fill: COL.dim, anchor: 'middle' });
+  const pts = [[-2.4, -1.9], [-1.5, -0.9], [-0.6, -0.1], [0.2, 0.75], [1.1, 1.25], [1.9, 1.35], [2.4, 2.2]];
+  pts.forEach((pt, i) => P.dot(pt[0], pt[1], RAW, m('regress', .1 + i * .08), { r: 9 }));
+  // regression fit line y = 0.8x
+  P.line(-2.6, -2.08, 2.6, 2.08, XFORM, m('regress', .9), { w: 4 });
+  text(p, '回归拟合线', P.PX(1.15), P.PY(-0.15) + 38, m('regress', 1.1), { size: 24, fill: XFORM });
+  // residual drops from each point down to the fitted value: the gap IS the residual
+  pts.forEach((pt, i) => {
+    const fitY = pt[0] * 0.8;
+    const l = path(p, `M${P.PX(pt[0])} ${P.PY(pt[1])}V${P.PY(fitY)}`, { stroke: REMOVED, 'stroke-width': 4 }, { o: 0 });
+    tw(l, { o: 1 }, m('gap', .1 + i * .08), .3);
+  });
+  text(p, '每个点到拟合线的竖直距离 ＝ 残差', 760, 860, m('resid2'), { size: 28, fill: REMOVED, anchor: 'middle', weight: 600 });
+}],
+
+['q1', '小检查', () => { panel(0); }, { ask: done => quiz(BAND, [{
+  id: 'c-resid', prompt: ['残差等于：'],
+  build: choice([['实际值 减 预测值'], ['预测值 减 实际值']], 0,
+    '残差是数据里没被模型解释的那部分：实际发生的，减去模型预测的。',
+    [null, '顺序反了：残差是实际值减预测值，不是反过来。']),
+}], done) }],
+
+['b3norm', '为什么归一化', (m) => {
+  const p = panel(0);
+  text(p, '不同特征的量级差很多', 800, 160, .2, { size: 34, anchor: 'middle' });
+  const rows = [
+    { label: '股价', lo: 0, hi: 500, val: 180 },
+    { label: '市盈率', lo: 0, hi: 60, val: 22 },
+    { label: '涨跌幅 %', lo: -10, hi: 10, val: 3 },
+  ];
+  rows.forEach((r, i) => {
+    const y = 320 + i * 180;
+    text(p, r.label, 260, y - 30, m('scale', i * .15), { size: 26, anchor: 'end' });
+    const ax = hAxis(p, { x0: 320, x1: 1400, y, lo: r.lo, hi: r.hi, t0: m('scale', i * .15 + .1), ticks: [r.lo, r.hi] });
+    axDot(p, ax, r.val, y, RAW, m('scale', i * .15 + .4), { label: String(r.val) });
+  });
+  text(p, '把它们统一到同一个尺度，模型才不会被大数值带偏', 800, 830, m('same'), { size: 28, fill: COL.dim, anchor: 'middle' });
+}],
+
+['b4minmax', '最小-最大归一化', (m) => {
+  const p = panel(0);
+  mline(p, ["x' = ", F('x − xmin', 'xmax − xmin')], 800, 180, .2, COL.chalk, 46);
+  const ax1 = hAxis(p, { x0: 200, x1: 1400, y: 380, lo: 0, hi: 500, t0: .4, ticks: [0, 500] });
+  text(p, '原始范围', 200, 330, .4, { size: 22, fill: COL.dim });
+  const vals = [40, 120, 180, 310, 480];
+  const ax2 = hAxis(p, { x0: 200, x1: 1400, y: 680, lo: 0, hi: 1, t0: m('range'), ticks: [0, 1] });
+  text(p, '压缩进 [0, 1]', 200, 630, m('range'), { size: 22, fill: COL.dim });
+  vals.forEach((v, i) => {
+    const nv = +(v / 500).toFixed(2);
+    const g = G(p, { x: ax1.X(v), y: 380, o: 0, s: .4 });
+    mk('circle', { r: 10, fill: RAW, stroke: COL.board, 'stroke-width': 2 }, g);
+    tw(g, { o: 1, s: 1 }, .6 + i * .08, .35, back);
+    tw(g, { x: ax2.X(nv), y: 680 }, m('squeeze', .1 + i * .08), .8, io);
+  });
+}],
+
+['b5zscore', 'Z分数归一化', (m) => {
+  const p = panel(0);
+  mline(p, ["x' = ", F('x − mean', 'stdev')], 800, 160, .2, COL.chalk, 46);
+  const ax = hAxis(p, { x0: 250, x1: 1350, y: 560, lo: -4, hi: 4, t0: .4, ticks: [-3, 0, 3] });
+  const raw = path(p, bumpPath(ax, 560, 260, { mean: 1.2, sL: 1, sR: 1 }), { stroke: RAW, 'stroke-width': 4, fill: 'none' }, { d: 0 });
+  draw(raw, .5, 1);
+  text(p, '原始分布（均值偏左）', 1350, 350, .5, { size: 24, fill: RAW, anchor: 'end' });
+  const centred = path(p, bumpPath(ax, 560, 260, { mean: 0, sL: 1, sR: 1 }), { stroke: XFORM, 'stroke-width': 4, fill: 'none' }, { d: 0, o: 0 });
+  draw(centred, m('center'), .9); tw(centred, { o: 1 }, m('center'), .3);
+  text(p, '移到均值为 0', 1350, 650, m('center', .3), { size: 24, fill: XFORM, anchor: 'end' });
+  // mark an outlier
+  axDot(p, ax, 3.4, 560, REMOVED, m('outlier'), { label: '异常值' });
+}],
+
+['b6log', '对数归一化', (m) => {
+  const p = panel(0);
+  mline(p, ["x' = log(x)"], 800, 160, .2, COL.chalk, 46);
+  const ax = hAxis(p, { x0: 250, x1: 1350, y: 560, lo: -2, hi: 6, t0: .4, ticks: [0, 2, 4] });
+  const raw = path(p, bumpPath(ax, 560, 230, { mean: 0.5, sL: 0.85, sR: 2.3 }), { stroke: RAW, 'stroke-width': 4, fill: 'none' }, { d: 0 });
+  draw(raw, .5, 1);
+  text(p, '长尾分布（交易量）：右边拖着长尾', 1350, 330, .5, { size: 24, fill: RAW, anchor: 'end' });
+  const compact = path(p, bumpPath(ax, 560, 250, { mean: 1.05, sL: 1.05, sR: 1.15 }), { stroke: XFORM, 'stroke-width': 4, fill: 'none' }, { d: 0, o: 0 });
+  draw(compact, m('skew', .4), .9); tw(compact, { o: 1 }, m('skew', .4), .3);
+  text(p, '取对数后尾巴收拢，接近对称', 1350, 660, m('compress'), { size: 24, fill: XFORM, anchor: 'end' });
+}],
+
+['b7rank', '分位数与排名归一化', (m) => {
+  const p = panel(0);
+  mline(p, ["x' = rank(x) / n"], 800, 150, .2, COL.chalk, 44);
+  const ax = hAxis(p, { x0: 250, x1: 1350, y: 420, lo: 0, hi: 100, t0: .4, ticks: [0, 100] });
+  text(p, '原始取值（不均匀）', 250, 370, .4, { size: 22, fill: COL.dim });
+  const raws = [5, 8, 35, 40, 85, 95];
+  raws.forEach((v, i) => axDot(p, ax, v, 420, RAW, .6 + i * .1));
+  const ax2 = hAxis(p, { x0: 250, x1: 1350, y: 700, lo: 0, hi: 1, t0: m('position'), ticks: [0, 1] });
+  text(p, '按排名位置重新映射（均匀分布）', 250, 650, m('position'), { size: 22, fill: COL.dim });
+  raws.forEach((v, i) => {
+    const g = G(p, { x: ax.X(v), y: 420, o: 1 });
+    mk('circle', { r: 10, fill: XFORM, stroke: COL.board, 'stroke-width': 2 }, g);
+    tw(g, { x: ax2.X((i + 1) / raws.length), y: 700 }, m('rank', .1 + i * .1), .8, io);
+  });
+  text(p, '极端值只改变位置，不改变相对次序 → 对异常值不敏感', 800, 830, m('robust'), { size: 26, fill: COL.dim, anchor: 'middle' });
+}],
+
+['q2', '小检查', () => { panel(0); }, { ask: done => quiz(BAND, [{
+  id: 'c-skew', prompt: ['一个特征右偏严重、有少数极端大值，更适合用哪种归一化？'],
+  build: choice([['对数归一化或排名归一化'], ['最小-最大归一化']], 0,
+    '长尾和极端值会让最小-最大归一化把大多数点压缩到很窄的区间；对数或排名归一化能收拢尾巴或消除极端值的影响。',
+    [null, '最小-最大归一化受极端值影响很大：一个超大值会把其余点都压扁到接近0。']),
+}], done) }],
+
+['wrap', '小结', (m) => {
+  const p = panel(0);
+  [['残差化：用回归剔除共同因素，留下个股自己的表现。', 'w1'],
+   ['归一化：把特征统一到同一尺度，常见方法有最小-最大、Z分数、对数、分位数、排名。', 'w2'],
+   ['选哪种方法要看数据分布：长尾数据用对数或排名，关心异常值用Z分数或鲁棒缩放。', 'w3']]
+    .forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 260 + i * 160, o: 0 });
+      mk('circle', { cx: 200, cy: -12, r: 26, fill: XFORM }, g);
+      T(g, String(i + 1), { x: 200, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 260, size: 30, weight: 500 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+}],
+
+['final1', '章节练习', () => { panel(0); }, { ask: done => quiz(SCREEN, [
+  {
+    id: 'p-resid', prompt: ['下面哪一项最准确描述了残差化的目的？'],
+    build: choice(
+      [['剔除市场/行业等共同因素，分离个股自己的表现'], ['把所有特征缩放到同一个数值范围']],
+      0,
+      '残差化关心的是"剔除共同因素"，不是"统一尺度"——那是归一化的事。',
+      [null, '这是归一化的目的，不是残差化的目的。']),
+  },
+  {
+    id: 'p-norm', prompt: ['Z分数归一化用下面的哪个量做缩放单位？'],
+    build: choice([['标准差'], ['最大值减最小值']], 0,
+      'Z分数除以标准差：分布以0为中心、以1个标准差为单位，所以不受原始量级影响。',
+      [null, '那是最小-最大归一化的分母，它只看极差，不会把分布移到0。']),
+  },
+], done, '章节练习   1 of 1') }],
+
+['finish', '完成', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;   // the review scripts (overlap.py, perf.py) read it off the page under Firefox
+
+boot();
+</script>
+</body>
+</html>

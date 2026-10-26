@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>从数据到交易：量化交易的机器学习方法</title>
+<meta name="description" content="量化交易机器学习的基础课：把数据处理与特征工程，做成一节节能动手的动画课。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231d2b27'/%3E%3Ctext x='32' y='45' text-anchor='middle' font-size='48' fill='%23f0b45a'%3E∞%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="lib/units.css">
+<link rel="stylesheet" href="lib/contents.css">
+<script src="lib/units.js"></script>
+<script src="lib/contents.js"></script>
+<script src="unit-art.js"></script>
+<!-- <script src="refs.js"></script>  a book that cites works: its reference list, built by the skill's scripts/refs.py -->
+<link rel="expect" href="#ch04" blocking="render">
+<!-- The book's own look, if it differs from the chalkboard: override the tokens of lib/contents.css here, e.g.
+<style>
+:root { --board: #fcfaf3; --chalk: #26241f; --top-bg: rgba(252, 250, 243, .9); --top-line: #ddd5c3; color-scheme: light; }
+</style> -->
+</head>
+<body>
+<section id="cover">
+  <div class="chalk" aria-hidden="true"><!-- a few faint formulas or phrases from the book, drawn in chalk -->
+    <span style="left:7%;top:13%;--d:1.6">x′ = (x − mean) / stdev</span>
+    <span style="right:8%;top:17%;--d:1.9">残差 = 实际 − 预测</span>
+    <span style="left:5%;bottom:20%;--d:2.2">x′ = log(x)</span>
+    <span style="right:6%;bottom:15%;--d:2.5">x′ = (x − xmin) / (xmax − xmin)</span>
+  </div>
+  <svg class="mascot draw" id="guide" width="210" height="147"></svg>
+  <p class="kicker">一节动画课</p>
+  <h1>从数据 <i>到</i> 交易</h1>
+  <p class="lede">量化交易的机器学习方法：把特征洗干净、把尺度对齐，模型才看得见真正的信号。</p>
+  <div class="acts">
+    <a class="btn go" href="#contents" data-t="open">打开这本书<svg viewBox="0 0 16 16"><path d="M6 2.5 11.5 8 6 13.5 4.6 12.1 8.7 8 4.6 3.9z"/></svg></a>
+    <a class="btn quiet" id="resume" hidden></a>
+  </div>
+  <p class="meta" id="meta"></p>
+</section>
+
+<main id="contents">
+  <header class="top">
+    <a class="home" href="#book" aria-label="回到封面" data-t-label="toCover"><svg class="mascot" id="guideSmall" width="52" height="36"></svg><strong>从数据 <i>到</i> 交易</strong></a>
+    <span class="prog" id="prog"></span>
+  </header>
+  <div id="units"></div>
+  <p class="refs-more" id="refsMore" hidden><a href="#references"><b data-t="references">References</b><span id="refsCount"></span><i data-t="viewAll">View all →</i></a></p>
+</main>
+
+<main id="refpage" aria-labelledby="refsTitle">
+  <header class="top">
+    <a class="back" href="#contents" data-t="backToContents">← Contents</a>
+    <span class="rp-book" id="rpBook"></span>
+  </header>
+  <section class="refs" id="references">
+    <h1 id="refsTitle" tabindex="-1" data-t="references">References</h1>
+    <p class="lead" data-t="refsLead">Every work cited in the lessons.</p>
+    <ol id="refList"></ol>
+  </section>
+</main>
+
+<script>
+// Units and chapters are numbered in order from start (a book whose scope starts mid-way, e.g. at unit 3, chapter 9,
+// keeps the original numbers). Add a chapter here when its lesson is ready.
+Contents.book({
+  start: { unit: 1, chapter: 1 },
+  units: [   // [unit title, [[chapter title, minutes], ...]]
+    ['第一步：把数据洗干净', [['第四章　数据预处理和特征工程', 5, { href: 'ch04/index.html', chapter: 4 }]]],
+  ],
+  hues: ['#f0b45a'],
+});
+</script>
+</body>
+</html>

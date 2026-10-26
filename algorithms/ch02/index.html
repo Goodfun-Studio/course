@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第二章 N-Queens 问题</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#board" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 2, title: 'N-Queens 问题', minutes: 10, language: 'zh' };
+
+/* ---------- 颜色方案 ---------- */
+const DARK_SQ = '#2c3e50';
+const LIGHT_SQ = '#34495e';
+const QUEEN = '#f39c12';
+const ATTACK = '#e74c3c';
+const SAFE = '#2ecc71';
+const BACKTRACK = '#3498db';
+
+/* ---------- 棋盘尺寸 ---------- */
+const CELL_SIZE = 70;
+const boardX = (n) => 800 - (n * CELL_SIZE) / 2;
+const boardY = 200;
+
+/* ---------- 绘制棋盘 ---------- */
+function drawBoard(parent, n, x = boardX(n), y = boardY) {
+  const board = G(parent, { x, y });
+  
+  // 格子
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      const color = (r + c) % 2 === 0 ? LIGHT_SQ : DARK_SQ;
+      mk('rect', {
+        x: c * CELL_SIZE,
+        y: r * CELL_SIZE,
+        width: CELL_SIZE,
+        height: CELL_SIZE,
+        fill: color,
+      }, board);
+    }
+  }
+  
+  return board;
+}
+
+/* ---------- 绘制皇后 ---------- */
+function drawQueen(parent, row, col, n) {
+  const x = boardX(n) + col * CELL_SIZE + CELL_SIZE / 2;
+  const y = boardY + row * CELL_SIZE + CELL_SIZE / 2;
+  const q = T(parent, '♛', { x, y, size: 48, fill: QUEEN, anchor: 'middle', o: 0 });
+  q.setAttribute('dominant-baseline', 'central');
+  return q;
+}
+
+/* ---------- 绘制攻击线 ---------- */
+function drawAttackLine(parent, r1, c1, r2, c2, n) {
+  const x1 = boardX(n) + c1 * CELL_SIZE + CELL_SIZE / 2;
+  const y1 = boardY + r1 * CELL_SIZE + CELL_SIZE / 2;
+  const x2 = boardX(n) + c2 * CELL_SIZE + CELL_SIZE / 2;
+  const y2 = boardY + r2 * CELL_SIZE + CELL_SIZE / 2;
+  
+  const line = mk('line', {
+    x1, y1, x2, y2,
+    stroke: ATTACK,
+    'stroke-width': 3,
+    'stroke-dasharray': '8,4',
+    opacity: 0,
+  }, parent);
+  
+  return line;
+}
+
+/* ---------- Beats ---------- */
+const BEATS = [
+
+['intro', '问题呈现', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'N-Queens 问题', { x: 800, y: 100, size: 48, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const board = drawBoard(p, 4);
+  tw(board, { o: 1 }, 0.5, 0.5);
+  
+  // 展示一个解：[1,3,0,2]
+  const solution = [1, 3, 0, 2];
+  solution.forEach((col, row) => {
+    const q = drawQueen(p, row, col, 4);
+    tw(q, { o: 1 }, 1.5 + row * 0.3, 0.4, out);
+  });
+  
+  const rule = T(p, '规则：任意两个皇后不能在同一行、列、对角线', 
+    { x: 800, y: 680, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(rule, { o: 1 }, 3.5, 0.5);
+}],
+
+['naive', '暴力枚举的困境', () => {
+  const p = panel(0);
+  
+  const title = T(p, '暴力枚举？', { x: 800, y: 140, size: 42, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const calc = T(p, '4×4: 256 种可能', { x: 800, y: 220, size: 32, fill: '#e67e22', anchor: 'middle', o: 0 });
+  tw(calc, { o: 1 }, 1.5, 0.4);
+  
+  const calc8 = T(p, '8×8: 16,777,216 种', { x: 800, y: 270, size: 32, fill: '#e74c3c', anchor: 'middle', o: 0 });
+  tw(calc8, { o: 1 }, 2.0, 0.4);
+  
+  // 快速闪过几个无效配置
+  const board = drawBoard(p, 4);
+  tw(board, { o: 1 }, 0.3, 0.3);
+  
+  const invalid = [[0,0,0,0], [0,1,0,1], [0,1,2,3]];
+  invalid.forEach((config, i) => {
+    config.forEach((col, row) => {
+      const q = drawQueen(p, row, col, 4);
+      tw(q, { o: 1 }, 3.0 + i * 1.2, 0.2);
+      tw(q, { o: 0 }, 3.0 + i * 1.2 + 0.8, 0.3);
+    });
+  });
+  
+  const hint = T(p, '需要更聪明的方法', { x: 800, y: 640, size: 36, fill: '#3498db', weight: 600, anchor: 'middle', o: 0 });
+  tw(hint, { o: 1 }, 7.0, 0.5);
+}],
+
+['constraint', '约束条件', () => {
+  const p = panel(0);
+  
+  const title = T(p, '观察约束', { x: 800, y: 120, size: 44, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const board = drawBoard(p, 4);
+  tw(board, { o: 1 }, 0.3, 0.3);
+  
+  // 放一个皇后在 (1,1)
+  const q = drawQueen(p, 1, 1, 4);
+  tw(q, { o: 1 }, 0.8, 0.4);
+  
+  // 同行攻击
+  for (let c = 0; c < 4; c++) {
+    if (c !== 1) {
+      const line = drawAttackLine(p, 1, 1, 1, c, 4);
+      tw(line, { opacity: 0.5 }, 2.0, 0.3);
+    }
+  }
+  
+  // 同列攻击
+  for (let r = 0; r < 4; r++) {
+    if (r !== 1) {
+      const line = drawAttackLine(p, 1, 1, r, 1, 4);
+      tw(line, { opacity: 0.5 }, 4.0, 0.3);
+    }
+  }
+  
+  // 对角线攻击
+  [[0,0], [2,2], [3,3]].forEach(([r,c]) => {
+    const line = drawAttackLine(p, 1, 1, r, c, 4);
+    tw(line, { opacity: 0.5 }, 6.0, 0.3);
+  });
+  [[0,2], [2,0]].forEach(([r,c]) => {
+    const line = drawAttackLine(p, 1, 1, r, c, 4);
+    tw(line, { opacity: 0.5 }, 6.0, 0.3);
+  });
+  
+  const insight = T(p, '每行只能放一个皇后', { x: 800, y: 670, size: 34, fill: SAFE, weight: 600, anchor: 'middle', o: 0 });
+  tw(insight, { o: 1 }, 8.5, 0.5);
+}],
+
+['backtrack-idea', '回溯思想', () => {
+  const p = panel(0);
+  
+  const title = T(p, '回溯算法', { x: 800, y: 120, size: 46, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const idea = T(p, '逐行尝试，遇到冲突就回退', { x: 800, y: 200, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(idea, { o: 1 }, 0.8, 0.4);
+  
+  // 简化的搜索树
+  const treeX = 800, treeY = 320;
+  const nodeR = 25;
+  
+  // 根节点
+  const root = mk('circle', { cx: treeX, cy: treeY, r: nodeR, fill: SAFE, opacity: 0 }, p);
+  tw(root, { opacity: 1 }, 2.5, 0.3);
+  
+  // 第一层：4个选择
+  const layer1Y = treeY + 100;
+  for (let i = 0; i < 4; i++) {
+    const x = treeX - 150 + i * 100;
+    const line = mk('line', { x1: treeX, y1: treeY + nodeR, x2: x, y2: layer1Y - nodeR, stroke: COL.chalk, 'stroke-width': 2, opacity: 0 }, p);
+    tw(line, { opacity: 0.3 }, 3.0 + i * 0.2, 0.3);
+    
+    const node = mk('circle', { cx: x, cy: layer1Y, r: nodeR, fill: BACKTRACK, opacity: 0 }, p);
+    tw(node, { opacity: 1 }, 3.0 + i * 0.2, 0.3);
+    
+    const label = T(p, String(i), { x, y: layer1Y, size: 20, fill: '#fff', anchor: 'middle', o: 0 });
+    label.setAttribute('dominant-baseline', 'central');
+    tw(label, { o: 1 }, 3.0 + i * 0.2, 0.3);
+  }
+  
+  // 剪枝示例：第4个节点标记为冲突
+  const pruneX = treeX + 150;
+  const cross = T(p, '✗', { x: pruneX, y: layer1Y + 40, size: 32, fill: ATTACK, anchor: 'middle', o: 0 });
+  tw(cross, { o: 1 }, 5.5, 0.4);
+  
+  const pruneText = T(p, '冲突，剪枝', { x: 800, y: 650, size: 28, fill: ATTACK, anchor: 'middle', o: 0 });
+  tw(pruneText, { o: 1 }, 6.0, 0.4);
+}],
+
+['step-by-step', '逐步演示', () => {
+  const p = panel(0);
+  
+  const title = T(p, '完整搜索过程（4×4）', { x: 800, y: 100, size: 40, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const board = drawBoard(p, 4);
+  tw(board, { o: 1 }, 0.3, 0.3);
+  
+  // 状态显示
+  const status = T(p, '第 1 行', { x: 800, y: 650, size: 28, fill: '#3498db', anchor: 'middle', o: 0 });
+  tw(status, { o: 1 }, 0.8, 0.3);
+  
+  // 第1行，列0
+  const q0 = drawQueen(p, 0, 1, 4);
+  tw(q0, { o: 1 }, 1.5, 0.4);
+  
+  // 更新状态
+  const s2 = T(p, '第 2 行', { x: 800, y: 650, size: 28, fill: '#3498db', anchor: 'middle', o: 0 });
+  tw(status, { o: 0 }, 3.0, 0.2);
+  tw(s2, { o: 1 }, 3.0, 0.3);
+  
+  // 第2行，列3
+  const q1 = drawQueen(p, 1, 3, 4);
+  tw(q1, { o: 1 }, 3.5, 0.4);
+  
+  // 第3行尝试失败
+  const s3 = T(p, '第 3 行：无解', { x: 800, y: 650, size: 28, fill: ATTACK, anchor: 'middle', o: 0 });
+  tw(s2, { o: 0 }, 5.0, 0.2);
+  tw(s3, { o: 1 }, 5.0, 0.3);
+  
+  // 回溯
+  const back = T(p, '← 回溯', { x: 800, y: 700, size: 26, fill: BACKTRACK, anchor: 'middle', o: 0 });
+  tw(back, { o: 1 }, 6.5, 0.4);
+  tw(q1, { o: 0.3 }, 6.5, 0.3);
+  
+  // 继续搜索...
+  const cont = T(p, '继续搜索...', { x: 800, y: 650, size: 28, fill: SAFE, anchor: 'middle', o: 0 });
+  tw(s3, { o: 0 }, 8.0, 0.2);
+  tw(cont, { o: 1 }, 8.0, 0.3);
+}],
+
+['solution', '完整解', () => {
+  const p = panel(0);
+  
+  const title = T(p, '4×4 的解', { x: 800, y: 100, size: 44, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  // 解1
+  const b1 = drawBoard(p, 4, 450, 250);
+  tw(b1, { o: 1 }, 0.5, 0.3);
+  const sol1 = [1, 3, 0, 2];
+  sol1.forEach((col, row) => {
+    const q = drawQueen(p, row, col, 4);
+    put(q, { x: 450 + col * CELL_SIZE + CELL_SIZE / 2, y: 250 + row * CELL_SIZE + CELL_SIZE / 2 });
+    tw(q, { o: 1 }, 1.5 + row * 0.2, 0.3);
+  });
+  
+  const l1 = T(p, '解 1', { x: 520, y: 570, size: 26, anchor: 'middle', o: 0 });
+  tw(l1, { o: 1 }, 2.5, 0.3);
+  
+  // 解2
+  const b2 = drawBoard(p, 4, 870, 250);
+  tw(b2, { o: 1 }, 4.0, 0.3);
+  const sol2 = [2, 0, 3, 1];
+  sol2.forEach((col, row) => {
+    const q = drawQueen(p, row, col, 4);
+    put(q, { x: 870 + col * CELL_SIZE + CELL_SIZE / 2, y: 250 + row * CELL_SIZE + CELL_SIZE / 2 });
+    tw(q, { o: 1 }, 4.8 + row * 0.2, 0.3);
+  });
+  
+  const l2 = T(p, '解 2', { x: 940, y: 570, size: 26, anchor: 'middle', o: 0 });
+  tw(l2, { o: 1 }, 5.5, 0.3);
+  
+  const sym = T(p, '镜像对称', { x: 800, y: 660, size: 28, fill: '#9b59b6', anchor: 'middle', o: 0 });
+  tw(sym, { o: 1 }, 7.0, 0.4);
+}],
+
+['code', '伪代码', () => {
+  const p = panel(0);
+  
+  const title = T(p, '回溯算法实现', { x: 800, y: 120, size: 42, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const lines = [
+    [{txt: 'function ', col: '#569cd6'}, {txt: 'solveNQueens', col: '#dcdcaa'}, {txt: '(row) {', col: '#d4d4d4'}],
+    [{txt: '  if ', col: '#c586c0'}, {txt: '(row == n) {', col: '#d4d4d4'}],
+    [{txt: '    ', col: '#d4d4d4'}, {txt: '记录解', col: '#d4d4d4'}],
+    [{txt: '    return', col: '#c586c0'}],
+    [{txt: '  }', col: '#d4d4d4'}],
+    [{txt: '  for ', col: '#c586c0'}, {txt: '(col = 0; col < n; col++) {', col: '#d4d4d4'}],
+    [{txt: '    if ', col: '#c586c0'}, {txt: '(', col: '#d4d4d4'}, {txt: 'isSafe', col: '#dcdcaa'}, {txt: '(row, col)) {', col: '#d4d4d4'}],
+    [{txt: '      ', col: '#d4d4d4'}, {txt: '放置皇后', col: '#d4d4d4'}, {txt: '(row, col)', col: '#d4d4d4'}],
+    [{txt: '      ', col: '#d4d4d4'}, {txt: 'solveNQueens', col: '#dcdcaa'}, {txt: '(row + 1)', col: '#d4d4d4'}],
+    [{txt: '      ', col: '#d4d4d4'}, {txt: '移除皇后', col: '#d4d4d4'}, {txt: '(row, col)  ', col: '#d4d4d4'}, {txt: '// 回溯', col: '#6a9955'}],
+    [{txt: '    }', col: '#d4d4d4'}],
+    [{txt: '  }', col: '#d4d4d4'}],
+    [{txt: '}', col: '#d4d4d4'}],
+  ];
+  
+  const x0 = 350, y0 = 220, lh = 40;
+  const box = mk('rect', { x: x0 - 40, y: y0 - 30, width: 900, height: lines.length * lh + 30, rx: 12, fill: mix(COL.board, '#000', .35), opacity: 0 }, p);
+  tw(box, { opacity: .95 }, 0.3, 0.5);
+  
+  lines.forEach((parts, i) => {
+    let xOffset = 0;
+    const lineGroup = G(p, { x: x0, y: y0 + i * lh, o: 0 });
+    parts.forEach(({txt, col}) => {
+      const t = T(lineGroup, txt, { x: xOffset, y: 0, size: 22, fill: col, font: 'ui-monospace, Menlo, monospace' });
+      xOffset += t.getComputedTextLength();
+    });
+    tw(lineGroup, { o: 1 }, 0.8 + i * 0.15, 0.3);
+  });
+}],
+
+['safe-check', '安全检查', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'isSafe 函数', { x: 800, y: 120, size: 44, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const board = drawBoard(p, 4, 300, 250);
+  tw(board, { o: 1 }, 0.5, 0.3);
+  
+  // 标记要检查的位置
+  const testR = 2, testC = 1;
+  const highlight = mk('rect', {
+    x: 300 + testC * CELL_SIZE,
+    y: 250 + testR * CELL_SIZE,
+    width: CELL_SIZE,
+    height: CELL_SIZE,
+    fill: '#3498db',
+    opacity: 0,
+  }, p);
+  tw(highlight, { opacity: 0.3 }, 1.0, 0.3);
+  
+  // 检查项列表
+  const checks = [
+    { title: '✓ 列检查', y: 300, t: 3.0 },
+    { title: '✓ 主对角线 (row - col)', y: 360, t: 5.5 },
+    { title: '✓ 副对角线 (row + col)', y: 420, t: 8.0 },
+  ];
+  
+  checks.forEach(({title, y, t}) => {
+    const txt = T(p, title, { x: 1050, y, size: 28, fill: SAFE, o: 0 });
+    tw(txt, { o: 1 }, t, 0.4);
+  });
+  
+  const fast = T(p, '用集合存储，O(1) 检查', { x: 800, y: 650, size: 26, fill: '#e67e22', anchor: 'middle', o: 0 });
+  tw(fast, { o: 1 }, 11.0, 0.5);
+}],
+
+['eight-queens', '8 皇后问题', () => {
+  const p = panel(0);
+  
+  const title = T(p, '8 皇后问题', { x: 800, y: 100, size: 46, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const info = T(p, '92 个解', { x: 800, y: 170, size: 32, fill: '#e67e22', anchor: 'middle', o: 0 });
+  tw(info, { o: 1 }, 0.8, 0.4);
+  
+  // 8x8 棋盘
+  const board = drawBoard(p, 8, 545, 240);
+  tw(board, { o: 1 }, 1.5, 0.5);
+  
+  // 第一个解
+  const sol = [0, 4, 7, 5, 2, 6, 1, 3];
+  sol.forEach((col, row) => {
+    const q = drawQueen(p, row, col, 8);
+    put(q, { x: 545 + col * CELL_SIZE + CELL_SIZE / 2, y: 240 + row * CELL_SIZE + CELL_SIZE / 2 });
+    tw(q, { o: 1 }, 3.0 + row * 0.15, 0.3);
+  });
+  
+  const fast = T(p, '几毫秒找到全部解', { x: 800, y: 780, size: 28, fill: SAFE, anchor: 'middle', o: 0 });
+  tw(fast, { o: 1 }, 5.5, 0.4);
+}],
+
+['complexity', '复杂度分析', () => {
+  const p = panel(0);
+  
+  const title = T(p, '时间复杂度', { x: 800, y: 120, size: 44, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const worst = T(p, '最坏情况：O(N!)', { x: 800, y: 250, size: 36, fill: '#e74c3c', anchor: 'middle', o: 0 });
+  tw(worst, { o: 1 }, 2.0, 0.4);
+  
+  const explain = T(p, '每行 N 种选择，共 N 行', { x: 800, y: 310, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(explain, { o: 1 }, 2.5, 0.3);
+  
+  const prune = T(p, '剪枝效果显著', { x: 800, y: 420, size: 36, fill: SAFE, weight: 600, anchor: 'middle', o: 0 });
+  tw(prune, { o: 1 }, 5.0, 0.4);
+  
+  const actual = T(p, '8 皇后：2000+ 节点 vs 800 万种可能', { x: 800, y: 490, size: 28, fill: '#3498db', anchor: 'middle', o: 0 });
+  tw(actual, { o: 1 }, 6.5, 0.4);
+  
+  const ratio = T(p, '探索不到 0.03%', { x: 800, y: 550, size: 32, fill: '#f39c12', weight: 600, anchor: 'middle', o: 0 });
+  tw(ratio, { o: 1 }, 8.0, 0.4);
+}],
+
+['optimization', '优化技巧', () => {
+  const p = panel(0);
+  
+  const title = T(p, '进一步优化', { x: 800, y: 120, size: 44, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const opts = [
+    { title: '位运算优化', desc: '用位掩码表示列和对角线', t: 2.0, color: '#e67e22' },
+    { title: '对称性剪枝', desc: '只搜索一半，利用对称性', t: 5.0, color: '#9b59b6' },
+    { title: '启发式搜索', desc: '优先尝试冲突少的位置', t: 8.0, color: '#3498db' },
+  ];
+  
+  opts.forEach(({title, desc, t, color}, i) => {
+    const y = 260 + i * 140;
+    const h = T(p, title, { x: 800, y, size: 34, fill: color, weight: 600, anchor: 'middle', o: 0 });
+    tw(h, { o: 1 }, t, 0.4);
+    
+    const d = T(p, desc, { x: 800, y: y + 50, size: 24, fill: COL.dim, anchor: 'middle', o: 0 });
+    tw(d, { o: 1 }, t + 0.3, 0.3);
+  });
+}],
+
+['summary', '总结', () => {
+  const p = panel(0);
+  
+  const title = T(p, '回溯算法', { x: 800, y: 100, size: 48, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6);
+  
+  const core = T(p, '递归 + 剪枝', { x: 800, y: 190, size: 38, fill: '#f39c12', weight: 600, anchor: 'middle', o: 0 });
+  tw(core, { o: 1 }, 1.5, 0.5);
+  
+  const three = T(p, '三要素', { x: 800, y: 300, size: 36, weight: 600, anchor: 'middle', o: 0 });
+  tw(three, { o: 1 }, 3.5, 0.4);
+  
+  const items = [
+    '1. 选择空间',
+    '2. 约束条件',
+    '3. 目标状态',
+  ];
+  
+  items.forEach((txt, i) => {
+    const t = T(p, txt, { x: 800, y: 370 + i * 50, size: 28, fill: COL.chalk, anchor: 'middle', o: 0 });
+    tw(t, { o: 1 }, 4.0 + i * 0.4, 0.3);
+  });
+  
+  const apps = T(p, '应用：数独、图着色、排列组合...', { x: 800, y: 630, size: 26, fill: '#3498db', anchor: 'middle', o: 0 });
+  tw(apps, { o: 1 }, 7.0, 0.5);
+  
+  const key = T(p, '关键：找到高效的剪枝条件', { x: 800, y: 700, size: 28, fill: SAFE, weight: 600, anchor: 'middle', o: 0 });
+  tw(key, { o: 1 }, 9.0, 0.5);
+}],
+
+].map(([id, title, run]) => ({ id, title, run }));
+
+window.BEATS = BEATS;
+boot();
+</script>
+</body>
+</html>

@@ -376,19 +376,20 @@ const BEATS = [
   const info = T(p, '92 个解', { x: 800, y: 170, size: 32, fill: '#e67e22', anchor: 'middle', o: 0 });
   tw(info, { o: 1 }, 0.8, 0.4);
   
-  // 8x8 棋盘
-  const board = drawBoard(p, 8, 545, 240);
+  // 8x8 棋盘（上移到 y=200）
+  const boardY8 = 200;
+  const board = drawBoard(p, 8, 545, boardY8);
   tw(board, { o: 1 }, 1.5, 0.5);
   
   // 第一个解
   const sol = [0, 4, 7, 5, 2, 6, 1, 3];
   sol.forEach((col, row) => {
-    const q = drawQueen(p, row, col, 8);
-    put(q, { x: 545 + col * CELL_SIZE + CELL_SIZE / 2, y: 240 + row * CELL_SIZE + CELL_SIZE / 2 });
+    const q = drawQueen(p, row, col, 8, boardY8);
+    put(q, { x: 545 + col * CELL_SIZE + CELL_SIZE / 2, y: boardY8 + row * CELL_SIZE + CELL_SIZE / 2 });
     tw(q, { o: 1 }, 3.0 + row * 0.15, 0.3);
   });
   
-  const fast = T(p, '几毫秒找到全部解', { x: 800, y: 780, size: 28, fill: SAFE, anchor: 'middle', o: 0 });
+  const fast = T(p, '几毫秒找到全部解', { x: 800, y: 790, size: 28, fill: SAFE, anchor: 'middle', o: 0 });
   tw(fast, { o: 1 }, 5.5, 0.4);
 }],
 

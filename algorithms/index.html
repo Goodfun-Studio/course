@@ -15,8 +15,8 @@
   <div class="chalk" aria-hidden="true">
     <span style="left:8%;top:15%;--d:1.5">T(n) = 2T(n/2) + O(n)</span>
     <span style="right:7%;top:18%;--d:1.8">递归 = 简化 + 委托</span>
-    <span style="left:6%;bottom:22%;--d:2.1">Hanoi(n-1, src, tmp, dst)</span>
-    <span style="right:9%;bottom:17%;--d:2.4">2^n - 1 步</span>
+    <span style="left:6%;bottom:22%;--d:2.1">dp[i][j] = min(insert, delete, replace)</span>
+    <span style="right:9%;bottom:17%;--d:2.4">编辑距离 Edit Distance</span>
   </div>
   <p class="kicker">算法动画课</p>
   <h1>Algorithms</h1>
@@ -45,6 +45,9 @@ Contents.book({
     ['递归与回溯', [
       ['第一章　汉诺塔：递归的第一课', 8, { chapter: 1, href: 'ch01/index.html' }],
       ['第二章　N-Queens 问题：回溯算法', 10, { chapter: 2, href: 'ch02/index.html' }],
+    ]],
+    ['动态规划', [
+      ['第三章　编辑距离：动态规划入门', 10, { chapter: 3, href: 'ch03/index.html' }],
     ]],
   ],
   hues: ['#4facfe'],

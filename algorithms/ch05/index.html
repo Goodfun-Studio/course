@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第五章 Dijkstra 最短路径算法</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#table" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 5, title: 'Dijkstra 最短路径算法', language: 'zh', minutes: 4 };
+
+/* ---------- 颜色方案 ---------- */
+const PRIMARY = '#667eea';
+const SECONDARY = '#764ba2';
+const UNVISITED = '#95a5a6';
+const CURRENT = '#3498db';
+const VISITED = '#2ecc71';
+const EDGE_DEFAULT = '#7f8c8d';
+const EDGE_ACTIVE = '#e74c3c';
+const INF_COLOR = '#c0392b';
+
+/* ---------- 辅助函数：绘制图 ---------- */
+// 节点位置（6个节点，圆形布局）
+const NODES = {
+  A: { x: 400, y: 400, label: 'A' },
+  B: { x: 650, y: 250, label: 'B' },
+  C: { x: 850, y: 350, label: 'C' },
+  D: { x: 850, y: 550, label: 'D' },
+  E: { x: 650, y: 650, label: 'E' },
+  F: { x: 450, y: 600, label: 'F' }
+};
+
+// 边（无向图）
+const EDGES = [
+  { from: 'A', to: 'B', weight: 4 },
+  { from: 'A', to: 'C', weight: 2 },
+  { from: 'B', to: 'C', weight: 1 },
+  { from: 'B', to: 'D', weight: 5 },
+  { from: 'C', to: 'D', weight: 8 },
+  { from: 'C', to: 'E', weight: 10 },
+  { from: 'D', to: 'E', weight: 2 },
+  { from: 'D', to: 'F', weight: 6 },
+  { from: 'E', to: 'F', weight: 3 }
+];
+
+function drawGraph(parent, showWeights = true) {
+  const g = G(parent, { o: 0 });
+  
+  // 先画边（背景层）
+  const edgeGroup = G(g);
+  EDGES.forEach(edge => {
+    const from = NODES[edge.from];
+    const to = NODES[edge.to];
+    
+    // 边的线
+    const line = mk('line', {
+      x1: from.x, y1: from.y,
+      x2: to.x, y2: to.y,
+      stroke: EDGE_DEFAULT,
+      'stroke-width': 3,
+      opacity: 0.6
+    }, edgeGroup);
+    line.dataset.from = edge.from;
+    line.dataset.to = edge.to;
+    
+    // 权重标签
+    if (showWeights) {
+      const mx = (from.x + to.x) / 2;
+      const my = (from.y + to.y) / 2;
+      T(edgeGroup, String(edge.weight), {
+        x: mx, y: my,
+        size: 20,
+        fill: '#34495e',
+        weight: 600,
+        anchor: 'middle'
+      });
+    }
+  });
+  
+  // 再画节点（前景层）
+  const nodeGroup = G(g);
+  Object.entries(NODES).forEach(([key, node]) => {
+    const nodeG = G(nodeGroup, { x: node.x, y: node.y });
+    nodeG.dataset.node = key;
+    
+    // 节点圆圈
+    mk('circle', {
+      r: 35,
+      fill: UNVISITED,
+      stroke: '#2c3e50',
+      'stroke-width': 3
+    }, nodeG);
+    
+    // 节点标签
+    T(nodeG, node.label, {
+      x: 0, y: 5,
+      size: 28,
+      fill: '#fff',
+      weight: 700,
+      anchor: 'middle'
+    });
+  });
+  
+  g._edges = edgeGroup;
+  g._nodes = nodeGroup;
+  
+  return g;
+}
+
+function drawDistanceLabels(parent) {
+  const g = G(parent, { o: 0 });
+  
+  Object.entries(NODES).forEach(([key, node]) => {
+    const label = G(g, { x: node.x, y: node.y - 60 });
+    label.dataset.node = key;
+    
+    // 背景框
+    mk('rect', {
+      x: -30, y: -15,
+      width: 60, height: 30,
+      fill: '#ecf0f1',
+      stroke: '#bdc3c7',
+      'stroke-width': 2,
+      rx: 5
+    }, label);
+    
+    // 距离文字
+    const text = T(label, '∞', {
+      x: 0, y: 5,
+      size: 20,
+      fill: INF_COLOR,
+      weight: 600,
+      anchor: 'middle'
+    });
+    
+    label._text = text;
+  });
+  
+  return g;
+}
+
+function updateNodeColor(nodeGroup, nodeKey, color, t0) {
+  const node = nodeGroup.querySelector(`[data-node="${nodeKey}"]`);
+  if (node) {
+    const circle = node.querySelector('circle');
+    tw(circle, { fill: color }, t0, 0.5, out);
+  }
+}
+
+function updateDistance(labelGroup, nodeKey, distance, t0) {
+  const label = labelGroup.querySelector(`[data-node="${nodeKey}"]`);
+  if (label && label._text) {
+    const text = label._text;
+    const displayText = distance === Infinity ? '∞' : String(distance);
+    const color = distance === Infinity ? INF_COLOR : PRIMARY;
+    
+    // 缩放动画
+    tw(text, { s: 1.3 }, t0, 0.2, out);
+    tw(text, { s: 1 }, t0 + 0.2, 0.3, io);
+    
+    // 更新文字
+    setTimeout(() => {
+      text.textContent = displayText;
+      text.setAttribute('fill', color);
+    }, t0 * 1000);
+  }
+}
+
+function highlightEdge(edgeGroup, from, to, color, t0) {
+  const edges = edgeGroup.querySelectorAll('line');
+  for (const edge of edges) {
+    const ef = edge.dataset.from;
+    const et = edge.dataset.to;
+    if ((ef === from && et === to) || (ef === to && et === from)) {
+      tw(edge, { stroke: color, 'stroke-width': 5, opacity: 1 }, t0, 0.4, out);
+    }
+  }
+}
+
+/* ---------- Beats ---------- */
+let BEATS = [
+
+// beat 0: intro
+['intro', '算法简介', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, 'Dijkstra 最短路径', { x: 800, y: 150, size: 56, weight: 700, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, 'Dijkstra\'s Shortest Path Algorithm', 
+    { x: 800, y: 220, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 0.5, 0.5);
+  
+  // 地图图标
+  const mapIcon = T(p, '🗺️', { x: 650, y: 380, size: 80, anchor: 'middle', o: 0 });
+  tw(mapIcon, { o: 1 }, 5.0, 0.6);
+  
+  const routeIcon = T(p, '📍→🎯', { x: 950, y: 380, size: 60, anchor: 'middle', o: 0 });
+  tw(routeIcon, { o: 1 }, 6.0, 0.6);
+  
+  // 发明者信息
+  const inventor = T(p, 'Edsger W. Dijkstra (1956)', 
+    { x: 800, y: 520, size: 30, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(inventor, { o: 1 }, 10.0, 0.7);
+  
+  const time = T(p, '20分钟构思出的经典算法', 
+    { x: 800, y: 580, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(time, { o: 1 }, 12.0, 0.6);
+  
+  clockRun(t => {
+    if (t > 5) {
+      const phase = Math.sin(t * 0.5) * 0.05 + 1;
+      put(title, { s: phase });
+    }
+  }, dur, { tail: true });
+}],
+
+// beat 1: graph_intro
+['graph_intro', '图的表示', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '加权图', { x: 800, y: 80, size: 44, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  // 绘制图
+  const graph = drawGraph(p);
+  tw(graph, { o: 1 }, 3.0, 0.8);
+  
+  // 说明文字
+  const desc1 = T(p, '节点 = 城市', 
+    { x: 200, y: 200, size: 26, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(desc1, { o: 1 }, 8.0, 0.5);
+  
+  const desc2 = T(p, '边 = 道路', 
+    { x: 200, y: 250, size: 26, fill: SECONDARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(desc2, { o: 1 }, 9.0, 0.5);
+  
+  const desc3 = T(p, '权重 = 距离', 
+    { x: 200, y: 300, size: 26, fill: '#e74c3c', anchor: 'middle', o: 0, weight: 600 });
+  tw(desc3, { o: 1 }, 10.0, 0.5);
+  
+  // 目标说明
+  const goal = T(p, '目标：从 A 出发，找到到达所有城市的最短路径', 
+    { x: 800, y: 750, size: 28, fill: VISITED, anchor: 'middle', o: 0, weight: 600 });
+  tw(goal, { o: 1 }, 15.0, 0.7);
+}],
+
+// beat 2: naive
+['naive', '朴素方案', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '朴素方案：穷举', { x: 800, y: 100, size: 44, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const idea = T(p, '枚举所有可能的路径', 
+    { x: 800, y: 250, size: 34, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(idea, { o: 1 }, 3.0, 0.6);
+  
+  // 路径数量爆炸
+  const paths = [
+    'A → B → C → D → E',
+    'A → C → B → D → E',
+    'A → C → D → E',
+    'A → C → E',
+    '...'
+  ];
+  
+  let t = 7.0;
+  paths.forEach((path, i) => {
+    const text = T(p, path, 
+      { x: 800, y: 350 + i * 50, size: 24, fill: COL.dim, anchor: 'middle', o: 0 });
+    tw(text, { o: 1 }, t, 0.4);
+    t += 0.5;
+  });
+  
+  // 问题
+  const problem = T(p, '路径数量 = 指数级增长！', 
+    { x: 800, y: 650, size: 36, fill: '#e74c3c', anchor: 'middle', o: 0, weight: 700 });
+  tw(problem, { o: 1 }, 12.0, 0.7);
+  
+  // 解决方案
+  const solution = T(p, 'Dijkstra：贪心策略 + 优先队列', 
+    { x: 800, y: 730, size: 32, fill: VISITED, anchor: 'middle', o: 0, weight: 600 });
+  tw(solution, { o: 1 }, 14.0, 0.7);
+}],
+
+// beat 3: greedy_proof
+['greedy_proof', '贪心策略正确性', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '贪心策略', { x: 800, y: 100, size: 48, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const strategy = T(p, '每次选择当前距离最近的节点', 
+    { x: 800, y: 220, size: 34, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(strategy, { o: 1 }, 3.0, 0.6);
+  
+  // 关键洞察
+  const insight = T(p, '关键洞察', 
+    { x: 800, y: 320, size: 30, fill: SECONDARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(insight, { o: 1 }, 8.0, 0.5);
+  
+  const proof1 = T(p, '对于非负权重图', 
+    { x: 800, y: 390, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(proof1, { o: 1 }, 10.0, 0.5);
+  
+  const proof2 = T(p, '已确定的最短路径不会被更新', 
+    { x: 800, y: 440, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(proof2, { o: 1 }, 11.0, 0.5);
+  
+  const proof3 = T(p, '因为：所有边权重 > 0', 
+    { x: 800, y: 490, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(proof3, { o: 1 }, 12.0, 0.5);
+  
+  // 类比
+  const analogy = T(p, '就像高速公路：只能越走越远', 
+    { x: 800, y: 600, size: 32, fill: VISITED, anchor: 'middle', o: 0, weight: 600 });
+  tw(analogy, { o: 1 }, 15.0, 0.7);
+}],
+
+// beat 4: relax
+['relax', '松弛操作', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '松弛 (Relaxation)', { x: 800, y: 100, size: 48, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const def = T(p, '核心操作：更新最短距离', 
+    { x: 800, y: 200, size: 30, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(def, { o: 1 }, 3.0, 0.6);
+  
+  // 公式
+  const formula = T(p, 'if  dist[u] + weight(u,v) < dist[v]:', 
+    { x: 800, y: 320, size: 28, fill: '#2c3e50', anchor: 'middle', o: 0, weight: 500 });
+  tw(formula, { o: 1 }, 8.0, 0.6);
+  
+  const update = T(p, 'dist[v] = dist[u] + weight(u,v)', 
+    { x: 850, y: 380, size: 28, fill: SECONDARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(update, { o: 1 }, 10.0, 0.6);
+  
+  // 示例
+  const exampleG = G(p, { x: 400, y: 520, o: 0 });
+  mk('circle', { cx: 0, cy: 0, r: 30, fill: CURRENT, stroke: '#2c3e50', 'stroke-width': 2 }, exampleG);
+  T(exampleG, 'u', { x: 0, y: 5, size: 24, fill: '#fff', weight: 600, anchor: 'middle' });
+  T(exampleG, '5', { x: 0, y: -50, size: 20, fill: PRIMARY, weight: 600, anchor: 'middle' });
+  tw(exampleG, { o: 1 }, 13.0, 0.5);
+  
+  const arrow = mk('line', { x1: 430, y1: 520, x2: 570, y2: 520, 
+    stroke: EDGE_ACTIVE, 'stroke-width': 3, opacity: 0 }, p);
+  tw(arrow, { opacity: 1 }, 14.0, 0.4);
+  T(p, '3', { x: 500, y: 500, size: 18, fill: '#e74c3c', weight: 600, anchor: 'middle', o: 0 });
+  
+  const exampleV = G(p, { x: 600, y: 520, o: 0 });
+  mk('circle', { cx: 0, cy: 0, r: 30, fill: UNVISITED, stroke: '#2c3e50', 'stroke-width': 2 }, exampleV);
+  T(exampleV, 'v', { x: 0, y: 5, size: 24, fill: '#fff', weight: 600, anchor: 'middle' });
+  const vDist = T(exampleV, '9', { x: 0, y: -50, size: 20, fill: INF_COLOR, weight: 600, anchor: 'middle' });
+  tw(exampleV, { o: 1 }, 13.5, 0.5);
+  
+  // 更新
+  setTimeout(() => {
+    vDist.textContent = '8';
+    vDist.setAttribute('fill', PRIMARY);
+  }, 16000);
+  tw(vDist, { s: 1.4 }, 16.0, 0.3, out);
+  tw(vDist, { s: 1 }, 16.3, 0.4, io);
+  
+  const result = T(p, '发现了更短的路！', 
+    { x: 800, y: 650, size: 32, fill: VISITED, anchor: 'middle', o: 0, weight: 600 });
+  tw(result, { o: 1 }, 18.0, 0.7);
+}],
+
+// beat 5: priority_queue
+['priority_queue', '优先队列', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '优先队列', { x: 800, y: 100, size: 48, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const purpose = T(p, '加速器：快速找到距离最小的节点', 
+    { x: 800, y: 200, size: 30, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(purpose, { o: 1 }, 3.0, 0.6);
+  
+  // 对比
+  const naive = T(p, '暴力扫描：O(n)', 
+    { x: 400, y: 320, size: 28, fill: '#e74c3c', anchor: 'middle', o: 0, weight: 600 });
+  tw(naive, { o: 1 }, 8.0, 0.5);
+  
+  const heap = T(p, '最小堆：O(log n)', 
+    { x: 1200, y: 320, size: 28, fill: VISITED, anchor: 'middle', o: 0, weight: 600 });
+  tw(heap, { o: 1 }, 10.0, 0.5);
+  
+  // 最小堆可视化
+  const heapG = G(p, { x: 800, y: 450, o: 0 });
+  
+  // 堆的三层结构
+  const nodes = [
+    { x: 0, y: 0, val: '3' },
+    { x: -80, y: 80, val: '5' },
+    { x: 80, y: 80, val: '7' },
+    { x: -120, y: 160, val: '8' },
+    { x: -40, y: 160, val: '9' },
+  ];
+  
+  nodes.forEach((node, i) => {
+    const g = G(heapG, { x: node.x, y: node.y });
+    mk('circle', { r: 25, fill: i === 0 ? CURRENT : UNVISITED, 
+      stroke: '#2c3e50', 'stroke-width': 2 }, g);
+    T(g, node.val, { x: 0, y: 5, size: 20, fill: '#fff', weight: 600, anchor: 'middle' });
+  });
+  
+  tw(heapG, { o: 1 }, 15.0, 0.7);
+  
+  // 复杂度
+  const complexity = T(p, '总时间：O(n²) → O((n+m) log n)', 
+    { x: 800, y: 680, size: 32, fill: SECONDARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(complexity, { o: 1 }, 19.0, 0.7);
+}],
+
+// beat 6: demo_step
+['demo_step', '演示：初始化', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '算法演示', { x: 800, y: 60, size: 40, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  // 绘制图
+  const graph = drawGraph(p);
+  tw(graph, { o: 1 }, 0.5, 0.5);
+  
+  // 距离标签
+  const labels = drawDistanceLabels(p);
+  tw(labels, { o: 1 }, 1.0, 0.5);
+  
+  // 初始化
+  updateDistance(labels, 'A', 0, 5.0);
+  updateNodeColor(graph._nodes, 'A', CURRENT, 5.5);
+  
+  const step = T(p, '步骤 1：起点 A 距离 = 0，其余 = ∞', 
+    { x: 800, y: 750, size: 26, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(step, { o: 1 }, 8.0, 0.6);
+}],
+
+// beat 7: demo_middle
+['demo_middle', '演示：松弛过程', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '松弛邻居', { x: 800, y: 60, size: 40, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const graph = drawGraph(p);
+  tw(graph, { o: 1 }, 0.3, 0.3);
+  
+  const labels = drawDistanceLabels(p);
+  tw(labels, { o: 1 }, 0.3, 0.3);
+  
+  // 恢复状态
+  updateDistance(labels, 'A', 0, 0.5);
+  updateNodeColor(graph._nodes, 'A', CURRENT, 0.5);
+  
+  // A 的邻居：B(4), C(2)
+  highlightEdge(graph._edges, 'A', 'B', EDGE_ACTIVE, 3.0);
+  updateDistance(labels, 'B', 4, 3.5);
+  
+  highlightEdge(graph._edges, 'A', 'C', EDGE_ACTIVE, 5.0);
+  updateDistance(labels, 'C', 2, 5.5);
+  
+  // 选择 C（距离最小）
+  updateNodeColor(graph._nodes, 'A', VISITED, 8.0);
+  updateNodeColor(graph._nodes, 'C', CURRENT, 8.5);
+  
+  // C 的邻居
+  highlightEdge(graph._edges, 'C', 'D', EDGE_ACTIVE, 10.0);
+  updateDistance(labels, 'D', 7, 10.5);
+  
+  highlightEdge(graph._edges, 'C', 'B', EDGE_ACTIVE, 13.0);
+  updateDistance(labels, 'B', 3, 13.5);
+  
+  const note = T(p, 'B 更新：4 → 3（通过 C 更近）', 
+    { x: 800, y: 750, size: 26, fill: VISITED, anchor: 'middle', o: 0, weight: 600 });
+  tw(note, { o: 1 }, 15.0, 0.7);
+}],
+
+// beat 8: demo_end
+['demo_end', '演示：完成', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '继续处理', { x: 800, y: 60, size: 40, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const graph = drawGraph(p);
+  tw(graph, { o: 1 }, 0.3, 0.3);
+  
+  const labels = drawDistanceLabels(p);
+  tw(labels, { o: 1 }, 0.3, 0.3);
+  
+  // 显示中间状态
+  updateDistance(labels, 'A', 0, 0.5);
+  updateDistance(labels, 'B', 3, 0.5);
+  updateDistance(labels, 'C', 2, 0.5);
+  updateDistance(labels, 'D', 7, 0.5);
+  
+  updateNodeColor(graph._nodes, 'A', VISITED, 0.5);
+  updateNodeColor(graph._nodes, 'C', VISITED, 0.5);
+  updateNodeColor(graph._nodes, 'B', CURRENT, 0.5);
+  
+  // 处理 B
+  updateNodeColor(graph._nodes, 'B', VISITED, 5.0);
+  updateNodeColor(graph._nodes, 'D', CURRENT, 5.5);
+  
+  // 处理 D
+  updateDistance(labels, 'E', 9, 8.0);
+  updateDistance(labels, 'F', 13, 8.5);
+  
+  // 最终结果
+  updateNodeColor(graph._nodes, 'D', VISITED, 12.0);
+  updateNodeColor(graph._nodes, 'E', VISITED, 12.5);
+  updateNodeColor(graph._nodes, 'F', VISITED, 13.0);
+  
+  const result = T(p, '所有节点确定最短距离！', 
+    { x: 800, y: 750, size: 30, fill: VISITED, anchor: 'middle', o: 0, weight: 700 });
+  tw(result, { o: 1 }, 14.0, 0.7);
+}],
+
+// beat 9: complexity
+['complexity', '复杂度分析', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '算法复杂度', { x: 800, y: 100, size: 48, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  // 时间复杂度
+  const timeTitle = T(p, '时间复杂度', 
+    { x: 800, y: 220, size: 36, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(timeTitle, { o: 1 }, 3.0, 0.5);
+  
+  const timeFormula = T(p, 'O((V + E) log V)', 
+    { x: 800, y: 280, size: 40, fill: SECONDARY, anchor: 'middle', o: 0, weight: 700 });
+  tw(timeFormula, { o: 1 }, 5.0, 0.6);
+  
+  const timeExplain = T(p, 'V = 节点数，E = 边数', 
+    { x: 800, y: 340, size: 24, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(timeExplain, { o: 1 }, 7.0, 0.5);
+  
+  // 空间复杂度
+  const spaceTitle = T(p, '空间复杂度', 
+    { x: 800, y: 440, size: 36, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(spaceTitle, { o: 1 }, 12.0, 0.5);
+  
+  const spaceFormula = T(p, 'O(V + E)', 
+    { x: 800, y: 500, size: 40, fill: SECONDARY, anchor: 'middle', o: 0, weight: 700 });
+  tw(spaceFormula, { o: 1 }, 14.0, 0.6);
+  
+  // 限制
+  const constraint = T(p, '⚠️  限制：仅适用于非负权重图', 
+    { x: 800, y: 620, size: 30, fill: '#e74c3c', anchor: 'middle', o: 0, weight: 600 });
+  tw(constraint, { o: 1 }, 17.0, 0.7);
+  
+  const alternative = T(p, '负权重？使用 Bellman-Ford 算法', 
+    { x: 800, y: 680, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(alternative, { o: 1 }, 18.5, 0.5);
+}],
+
+// beat 10: applications
+['applications', '应用场景', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, 'Dijkstra 的应用', { x: 800, y: 100, size: 48, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const apps = [
+    { icon: '🗺️', name: '地图导航', desc: 'Google Maps / 高德地图', y: 240, t: 3.0 },
+    { icon: '🌐', name: '网络路由', desc: 'OSPF 协议', y: 340, t: 8.0 },
+    { icon: '🎮', name: '游戏 AI', desc: '寻路算法', y: 440, t: 13.0 }
+  ];
+  
+  apps.forEach(app => {
+    const g = G(p, { x: 400, y: app.y, o: 0 });
+    T(g, app.icon, { x: 0, y: 0, size: 48, anchor: 'middle' });
+    T(g, app.name, { x: 100, y: -10, size: 32, fill: PRIMARY, weight: 600 });
+    T(g, app.desc, { x: 100, y: 25, size: 24, fill: COL.dim });
+    tw(g, { o: 1 }, app.t, 0.6);
+  });
+  
+  // A* 算法
+  const astar = T(p, 'A* = Dijkstra + 启发函数', 
+    { x: 800, y: 600, size: 32, fill: SECONDARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(astar, { o: 1 }, 16.0, 0.7);
+  
+  const summary = T(p, '图算法：软件工程必备武器', 
+    { x: 800, y: 680, size: 30, fill: VISITED, anchor: 'middle', o: 0, weight: 600 });
+  tw(summary, { o: 1 }, 17.0, 0.7);
+}],
+
+// beat 11: summary
+['summary', '总结回顾', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '算法步骤', { x: 800, y: 100, size: 48, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const steps = [
+    '1. 初始化：起点 = 0，其余 = ∞',
+    '2. 贪心选择：取距离最小的未访问节点',
+    '3. 松弛：更新邻居的距离',
+    '4. 标记为已访问',
+    '5. 重复 2-4，直到所有节点处理完'
+  ];
+  
+  let t = 5.0;
+  steps.forEach((step, i) => {
+    const text = T(p, step, 
+      { x: 350, y: 220 + i * 70, size: 28, fill: PRIMARY, o: 0, weight: 500 });
+    tw(text, { o: 1 }, t, 0.6);
+    t += 3.0;
+  });
+  
+  const key = T(p, '关键：贪心 + 优先队列', 
+    { x: 800, y: 650, size: 36, fill: SECONDARY, anchor: 'middle', o: 0, weight: 700 });
+  tw(key, { o: 1 }, 22.0, 0.7);
+  
+  const beauty = T(p, '简洁、高效、实用', 
+    { x: 800, y: 720, size: 32, fill: VISITED, anchor: 'middle', o: 0, weight: 600 });
+  tw(beauty, { o: 1 }, 25.0, 0.7);
+  
+  clockRun(t => {
+    if (t > 20) {
+      const phase = Math.sin(t * 0.6) * 0.03 + 1;
+      put(title, { s: phase });
+    }
+  }, dur, { tail: true });
+}]
+
+];
+
+// 练习题
+let QUIZ = [
+  {
+    q: 'Dijkstra 算法的时间复杂度（使用最小堆）是？',
+    a: ['O((V+E) log V)', 'O(V²)', 'O(E log V)', 'O(V log E)']
+  },
+  {
+    q: 'Dijkstra 算法不能处理以下哪种图？',
+    a: ['有负权重边的图', '有环的图', '无向图', '稠密图']
+  },
+  {
+    q: '在 Dijkstra 中，"松弛"操作的作用是？',
+    a: ['更新节点的最短距离', '删除多余的边', '合并相邻节点', '检测环']
+  }
+];
+
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
+boot();
+
+if (typeof module !== 'undefined') module.exports = { CHAPTER, BEATS, QUIZ };
+</script>
+</body>
+</html>

@@ -334,15 +334,13 @@ let BEATS = [
   
   // 填充第一行
   for (let j = 0; j < 8; j++) {
-    const val = setCellValue(p, 0, j, 0, 50);
-    put(val, { x: 350 + j * 50, y: 200 });
+    const val = setCellValue(table, 0, j, 0, 50);
     tw(val, { o: 1 }, 3.0 + j * 0.15, 0.3);
   }
   
   // 填充第一列
-  for (let i = 0; i < 7; i++) {
-    const val = setCellValue(p, i, 0, 0, 50);
-    put(val, { x: 350, y: 200 + i * 50 });
+  for (let i = 1; i < 7; i++) {
+    const val = setCellValue(table, i, 0, 0, 50);
     tw(val, { o: 1 }, 8.0 + i * 0.15, 0.3);
   }
   
@@ -364,12 +362,12 @@ let BEATS = [
   
   // 边界（简化显示）
   for (let j = 0; j < 8; j++) {
-    const val = setCellValue(p, 0, j, 0, 50);
-    put(val, { x: 350 + j * 50, y: 150, o: 0.3 });
+    const val = setCellValue(table, 0, j, 0, 50);
+    put(val, { o: 0.3 });
   }
   for (let i = 1; i < 7; i++) {
-    const val = setCellValue(p, i, 0, 0, 50);
-    put(val, { x: 350, y: 150 + i * 50, o: 0.3 });
+    const val = setCellValue(table, i, 0, 0, 50);
+    put(val, { o: 0.3 });
   }
   
   // 序列
@@ -380,28 +378,25 @@ let BEATS = [
   let t = 2.0;
   
   // (1,1): A vs G，不同
-  let hl = highlightCell(p, 1, 1, 50, HIGHLIGHT);
+  let hl = highlightCell(table, 1, 1, 50, HIGHLIGHT);
   tw(hl, { opacity: 0.8 }, t, 0.3);
-  let val = setCellValue(p, 1, 1, 0, 50);
-  put(val, { x: 350 + 1 * 50, y: 150 + 1 * 50 });
+  let val = setCellValue(table, 1, 1, 0, 50);
   tw(val, { o: 1 }, t + 0.3, 0.3);
   tw(hl, { opacity: 0 }, t + 1.0, 0.3);
   t += 1.5;
   
   // (1,2): A vs X，不同
-  hl = highlightCell(p, 1, 2, 50, HIGHLIGHT);
+  hl = highlightCell(table, 1, 2, 50, HIGHLIGHT);
   tw(hl, { opacity: 0.8 }, t, 0.3);
-  val = setCellValue(p, 1, 2, 0, 50);
-  put(val, { x: 350 + 2 * 50, y: 150 + 1 * 50 });
+  val = setCellValue(table, 1, 2, 0, 50);
   tw(val, { o: 1 }, t + 0.3, 0.3);
   tw(hl, { opacity: 0 }, t + 1.0, 0.3);
   t += 1.5;
   
   // (2,1): G vs G，匹配！
-  hl = highlightCell(p, 2, 1, 50, MATCH);
+  hl = highlightCell(table, 2, 1, 50, MATCH);
   tw(hl, { opacity: 0.8 }, t, 0.3);
-  val = setCellValue(p, 2, 1, 1, 50);
-  put(val, { x: 350 + 1 * 50, y: 150 + 2 * 50 });
+  val = setCellValue(table, 2, 1, 1, 50);
   tw(val, { o: 1 }, t + 0.3, 0.3);
   t += 2.0;
   
@@ -419,15 +414,14 @@ let BEATS = [
   for (let i = 1; i < 7; i++) {
     for (let j = 1; j < 8; j++) {
       if ((i === 1 && j <= 2) || (i === 2 && j === 1)) continue;
-      const v = setCellValue(p, i, j, dpTable[i][j], 50);
-      put(v, { x: 350 + j * 50, y: 150 + i * 50 });
+      const v = setCellValue(table, i, j, dpTable[i][j], 50);
       tw(v, { o: 1 }, t, 0.2);
       t += 0.1;
     }
   }
   
   // 高亮最终答案
-  const finalHL = highlightCell(p, 6, 7, 50, HIGHLIGHT);
+  const finalHL = highlightCell(table, 6, 7, 50, HIGHLIGHT);
   tw(finalHL, { opacity: 0.9 }, t + 1.0, 0.5);
   
   const answer = T(p, '答案：4', 
@@ -458,8 +452,8 @@ let BEATS = [
   
   for (let i = 0; i < 7; i++) {
     for (let j = 0; j < 8; j++) {
-      const v = setCellValue(p, i, j, dpTable[i][j], 50);
-      put(v, { x: 350 + j * 50, y: 150 + i * 50, o: 0.4 });
+      const v = setCellValue(table, i, j, dpTable[i][j], 50);
+      put(v, { o: 0.4 });
     }
   }
   
@@ -472,7 +466,7 @@ let BEATS = [
     const [r2, c2] = path[i + 1];
     
     // 高亮当前格子
-    const hl = highlightCell(p, r1, c1, 50, PATH_COLOR);
+    const hl = highlightCell(table, r1, c1, 50, PATH_COLOR);
     tw(hl, { opacity: 0.8 }, t, 0.4);
     
     // 箭头
@@ -487,7 +481,7 @@ let BEATS = [
   }
   
   // 最终高亮起点
-  const startHL = highlightCell(p, 0, 0, 50, PATH_COLOR);
+  const startHL = highlightCell(table, 0, 0, 50, PATH_COLOR);
   tw(startHL, { opacity: 0.8 }, t, 0.4);
   
   // 显示LCS
@@ -619,8 +613,11 @@ let QUIZ = [
   }
 ];
 
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
+boot();
+
 if (typeof module !== 'undefined') module.exports = { CHAPTER, BEATS, QUIZ };
-if (typeof window !== 'undefined') { window.BEATS = BEATS; window.QUIZ = QUIZ; window.CHAPTER = CHAPTER; }
 </script>
 </body>
 </html>

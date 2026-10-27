@@ -13,7 +13,7 @@
 <script src="audio/zh/timings.js"></script>
 <script>
 'use strict';
-const CHAPTER = { number: 3, title: '编辑距离：动态规划入门', language: 'zh', minutes: 10 };
+const CHAPTER = { number: 3, title: '编辑距离：动态规划入门', language: 'zh', minutes: 11 };
 
 /* ---------- 颜色方案 ---------- */
 const PRIMARY = '#667eea';
@@ -39,11 +39,9 @@ function drawArrow(parent, x1, y1, x2, y2, color = PRIMARY) {
   const g = G(parent, { o: 0 });
   const dx = x2 - x1, dy = y2 - y1;
   const angle = Math.atan2(dy, dx);
-  const len = Math.sqrt(dx * dx + dy * dy);
   
   mk('line', { x1, y1, x2, y2, stroke: color, 'stroke-width': 3 }, g);
   
-  // 箭头头部
   const arrowSize = 10;
   const x3 = x2 - arrowSize * Math.cos(angle - Math.PI / 6);
   const y3 = y2 - arrowSize * Math.sin(angle - Math.PI / 6);
@@ -59,9 +57,8 @@ function drawArrow(parent, x1, y1, x2, y2, color = PRIMARY) {
 function drawTable(parent, rows, cols, cellSize = 60, x = 400, y = 200) {
   const g = G(parent, { x, y, o: 0 });
   
-  // 绘制网格
-  for (let r = 0; r <= rows; r++) {
-    for (let c = 0; c <= cols; c++) {
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
       mk('rect', {
         x: c * cellSize,
         y: r * cellSize,
@@ -102,8 +99,8 @@ function highlightCell(parent, row, col, cellSize = 60, color = HIGHLIGHT) {
 /* ---------- Beats ---------- */
 let BEATS = [
 
-// beat
-['intro', '问题呈现', () => {
+// beat 0: intro
+['intro', '问题呈现', (m, dur) => {
   const p = panel(0);
   
   const title = T(p, '编辑距离', { x: 800, y: 150, size: 56, weight: 700, anchor: 'middle', o: 0 });
@@ -120,10 +117,33 @@ let BEATS = [
   const def = T(p, '编辑距离：将一个字符串转换成另一个字符串所需的最少编辑操作次数', 
     { x: 800, y: 500, size: 30, fill: PRIMARY, anchor: 'middle', o: 0, w: 1000 });
   tw(def, { o: 1 }, 3.0, 0.7);
+  
+  // 13s: KITTEN / SITTING 例子出现
+  const ex1 = drawString(p, 'KITTEN', 550, 620, 45);
+  tw(ex1, { o: 1 }, 13.0, 0.6);
+  
+  const exArrow = drawArrow(p, 820, 607, 900, 607);  // N 右缘 x≈803，S 左缘 x=920；y=607 为大写字母竖向中线
+  tw(exArrow, { o: 1 }, 14.0, 0.4);
+  
+  const ex2 = drawString(p, 'SITTING', 920, 620, 45);
+  tw(ex2, { o: 1 }, 14.5, 0.6);
+  
+  // 29s: 应用领域提示
+  const apps = T(p, '应用：拼写检查 · 搜索纠错 · 版本对比', 
+    { x: 800, y: 710, size: 24, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(apps, { o: 1 }, 29.0, 0.8);
+  
+  // 持续呼吸效果
+  clockRun(t => {
+    if (t > 4) {
+      const phase = Math.sin(t * 0.5) * 0.05 + 1;
+      put(title, { s: phase });
+    }
+  }, dur, { tail: true });
 }],
 
-// beat
-['example', '具体示例', () => {
+// beat 1: example
+['example', '具体示例', (m, dur) => {
   const p = panel(0);
   
   const title = T(p, '从 SUNDAY 到 SATURDAY', { x: 800, y: 120, size: 42, weight: 600, anchor: 'middle', o: 0 });
@@ -132,18 +152,51 @@ let BEATS = [
   const str1 = drawString(p, 'SUNDAY', 500, 250);
   tw(str1, { o: 1 }, 0.8, 0.5);
   
-  const arrow = drawArrow(p, 800, 270, 800, 340);
+  const arrow = drawArrow(p, 650, 278, 650, 330);  // 含 ±2px 摆动仍不碰上下高亮框
   tw(arrow, { o: 1 }, 1.5, 0.4);
+  
+  const arrowBaseY = 305;
   
   const str2 = drawString(p, 'SATURDAY', 450, 380);
   tw(str2, { o: 1 }, 2.0, 0.5);
   
-  const steps = T(p, '需要多少步？', { x: 800, y: 550, size: 36, fill: HIGHLIGHT, anchor: 'middle', o: 0 });
-  tw(steps, { o: 1 }, 3.0, 0.5);
+  // 10.7s: 高亮开头S和结尾DAY相同
+  const highlight1 = mk('rect', { x: 485, y: 209, width: 50, height: 60, 
+    fill: 'none', stroke: MATCH, 'stroke-width': 3, opacity: 0 }, p);
+  tw(highlight1, { opacity: 0.8 }, 10.7, 0.5);
+  
+  const highlight2 = mk('rect', { x: 637, y: 209, width: 150, height: 60, 
+    fill: 'none', stroke: MATCH, 'stroke-width': 3, opacity: 0 }, p);
+  tw(highlight2, { opacity: 0.8 }, 11.2, 0.5);
+  
+  const highlight3 = mk('rect', { x: 435, y: 339, width: 50, height: 60, 
+    fill: 'none', stroke: MATCH, 'stroke-width': 3, opacity: 0 }, p);
+  tw(highlight3, { opacity: 0.8 }, 11.7, 0.5);
+  
+  const highlight4 = mk('rect', { x: 687, y: 339, width: 150, height: 60, 
+    fill: 'none', stroke: MATCH, 'stroke-width': 3, opacity: 0 }, p);
+  tw(highlight4, { opacity: 0.8 }, 12.2, 0.5);
+  
+  // 27s: 方案示意
+  const plan = T(p, '方案一：插入 T 和 R　　方案二：…', 
+    { x: 800, y: 500, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(plan, { o: 1 }, 27.0, 0.6);
+  
+  // 38.6s: 答案
+  const answer = T(p, '答案：3 步', 
+    { x: 800, y: 600, size: 42, fill: HIGHLIGHT, weight: 700, anchor: 'middle', o: 0 });
+  tw(answer, { o: 1 }, 38.6, 0.7);
+  
+  clockRun(t => {
+    if (t > 5) {
+      const wobble = Math.sin(t * 1.2) * 2;
+      put(arrow, { y: wobble });
+    }
+  }, dur, { tail: true });
 }],
 
-// beat
-['operations', '三种操作', () => {
+// beat 2: operations
+['operations', '三种操作', (m, dur) => {
   const p = panel(0);
   
   const title = T(p, '允许的操作', { x: 800, y: 100, size: 44, weight: 600, anchor: 'middle', o: 0 });
@@ -156,12 +209,24 @@ let BEATS = [
   T(ins, 'INSERT', { x: 0, y: 30, size: 20, fill: COL.dim, anchor: 'middle' });
   tw(ins, { o: 1 }, 1.0, 0.5);
   
+  // 8.6s: 插入演示 CAT → SCAT/CAST/CATS
+  const catIns = T(p, 'CAT', { x: 180, y: 380, size: 28, fill: '#fff', o: 0 });
+  tw(catIns, { o: 1 }, 8.6, 0.4);
+  const scatEx = T(p, '→ SCAT / CAST / CATS', { x: 280, y: 380, size: 24, fill: INSERT, o: 0 });
+  tw(scatEx, { o: 1 }, 9.5, 0.6);
+  
   // 删除
   const del = G(p, { x: 800, y: 250, o: 0 });
   mk('circle', { cx: 0, cy: 0, r: 80, fill: DELETE, opacity: 0.2 }, del);
   T(del, '删除', { x: 0, y: -10, size: 32, weight: 600, anchor: 'middle', fill: DELETE });
   T(del, 'DELETE', { x: 0, y: 30, size: 20, fill: COL.dim, anchor: 'middle' });
   tw(del, { o: 1 }, 1.5, 0.5);
+  
+  // 21.5s: 删除演示 CAT → CT
+  const catDel = T(p, 'CAT', { x: 680, y: 380, size: 28, fill: '#fff', o: 0 });
+  tw(catDel, { o: 1 }, 21.5, 0.4);
+  const ctEx = T(p, '→ CT', { x: 780, y: 380, size: 24, fill: DELETE, o: 0 });
+  tw(ctEx, { o: 1 }, 22.2, 0.6);
   
   // 替换
   const rep = G(p, { x: 1300, y: 250, o: 0 });
@@ -170,16 +235,37 @@ let BEATS = [
   T(rep, 'REPLACE', { x: 0, y: 30, size: 20, fill: COL.dim, anchor: 'middle' });
   tw(rep, { o: 1 }, 2.0, 0.5);
   
-  const cost = T(p, '每种操作的代价都是 1', { x: 800, y: 450, size: 32, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(cost, { o: 1 }, 3.0, 0.5);
+  // 30.4s: 替换演示 CAT → CUT
+  const catRep = T(p, 'CAT', { x: 1180, y: 380, size: 28, fill: '#fff', o: 0 });
+  tw(catRep, { o: 1 }, 30.4, 0.4);
+  const cutEx = T(p, '→ CUT', { x: 1280, y: 380, size: 24, fill: REPLACE, o: 0 });
+  tw(cutEx, { o: 1 }, 31.0, 0.6);
   
-  const example = T(p, 'CAT → CUT：替换 A 为 U，代价 = 1', 
-    { x: 800, y: 580, size: 28, fill: PRIMARY, anchor: 'middle', o: 0 });
-  tw(example, { o: 1 }, 4.0, 0.6);
+  const cost = T(p, '每种操作的代价都是 1', { x: 800, y: 500, size: 32, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(cost, { o: 1 }, 35.0, 0.5);
+  
+  // 51.6s: 不许替换则代价变2
+  const compare = T(p, '替换：代价 1　｜　删+插：代价 2', 
+    { x: 800, y: 600, size: 28, fill: PRIMARY, anchor: 'middle', o: 0 });
+  tw(compare, { o: 1 }, 51.6, 0.7);
+  
+  // 57.4s: 操作集合不同，距离也不同
+  const outro = T(p, '操作集合不同 → 编辑距离不同', 
+    { x: 800, y: 660, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(outro, { o: 1 }, 57.4, 0.7);
+  
+  clockRun(t => {
+    if (t > 10) {
+      const pulse = 1 + Math.sin(t * 2) * 0.08;
+      put(ins, { s: pulse });
+      put(del, { s: pulse });
+      put(rep, { s: pulse });
+    }
+  }, dur, { tail: true });
 }],
 
-// beat
-['naive', '暴力递归的困境', () => {
+// beat 3: naive
+['naive', '暴力递归的困境', (m, dur) => {
   const p = panel(0);
   
   const title = T(p, '暴力递归', { x: 800, y: 120, size: 44, weight: 600, anchor: 'middle', o: 0 });
@@ -189,36 +275,65 @@ let BEATS = [
     { x: 800, y: 220, size: 32, fill: COL.dim, anchor: 'middle', o: 0 });
   tw(idea, { o: 1 }, 1.0, 0.5);
   
-  // 画递归树
+  // 递归树逐层生长
   const tree = G(p, { x: 800, y: 350, o: 0 });
   
   // 根节点
-  mk('circle', { cx: 0, cy: 0, r: 20, fill: PRIMARY }, tree);
+  const root = mk('circle', { cx: 0, cy: 0, r: 20, fill: PRIMARY, opacity: 0 }, tree);
+  tw(root, { opacity: 1 }, 2.7, 0.4);
   
-  // 第一层
+  // 19.8s: 第一层分支生长
+  const layer1 = [];
   [-150, 0, 150].forEach((dx, i) => {
-    mk('line', { x1: 0, y1: 20, x2: dx, y2: 80, stroke: COL.dim, 'stroke-width': 2 }, tree);
-    mk('circle', { cx: dx, cy: 100, r: 16, fill: SECONDARY }, tree);
+    const line = mk('line', { x1: 0, y1: 20, x2: 0, y2: 20, stroke: COL.dim, 'stroke-width': 2, opacity: 0 }, tree);
+    tw(line, { opacity: 1, a_x2: dx, a_y2: 80 }, 19.8 + i * 0.3, 0.5);
+    const circle = mk('circle', { cx: dx, cy: 100, r: 16, fill: SECONDARY, opacity: 0 }, tree);
+    tw(circle, { opacity: 1 }, 20.3 + i * 0.3, 0.4);
+    layer1.push({ dx, circle });
   });
   
-  // 第二层
+  // 24.9s: 第二层 3^n
   [-150, 0, 150].forEach((dx1) => {
-    [-80, 0, 80].forEach((dx2) => {
+    [-80, 0, 80].forEach((dx2, j) => {
       const x = dx1 + dx2 * 0.5;
-      mk('line', { x1: dx1, y1: 116, x2: x, y2: 170, stroke: COL.dim, 'stroke-width': 1.5 }, tree);
-      mk('circle', { cx: x, cy: 180, r: 12, fill: SECONDARY, opacity: 0.6 }, tree);
+      const line = mk('line', { x1: dx1, y1: 116, x2: dx1, y2: 116, stroke: COL.dim, 'stroke-width': 1.5, opacity: 0 }, tree);
+      tw(line, { opacity: 0.7, a_x2: x, a_y2: 170 }, 24.9 + j * 0.15, 0.4);
+      const circle = mk('circle', { cx: x, cy: 180, r: 12, fill: SECONDARY, opacity: 0 }, tree);
+      tw(circle, { opacity: 0.6 }, 25.4 + j * 0.15, 0.3);
     });
   });
   
-  tw(tree, { o: 1 }, 2.0, 0.7);
+  tw(tree, { o: 1 }, 2.0, 0.5);
   
-  const problem = T(p, '指数级的时间复杂度：O(3^n)', 
-    { x: 800, y: 600, size: 36, fill: HIGHLIGHT, weight: 600, anchor: 'middle', o: 0 });
-  tw(problem, { o: 1 }, 3.5, 0.6);
+  // 30s: n=10 五万节点
+  const num1 = T(p, 'n=10: 50,000+ 节点', 
+    { x: 800, y: 560, size: 32, fill: HIGHLIGHT, anchor: 'middle', o: 0 });
+  tw(num1, { o: 1 }, 30.0, 0.6);
+  
+  // 33.8s: n=20 三十亿
+  const num2 = T(p, 'n=20: 3,000,000,000+ 节点', 
+    { x: 800, y: 620, size: 32, fill: '#ff6b6b', weight: 600, anchor: 'middle', o: 0 });
+  tw(num2, { o: 1 }, 33.8, 0.7);
+  
+  const problem = T(p, '指数级的时间复杂度：O(3ⁿ)', 
+    { x: 800, y: 690, size: 32, fill: DELETE, anchor: 'middle', o: 0 });
+  tw(problem, { o: 1 }, 38.0, 0.7);
+  
+  // 43.9s: 让暴力递归根本跑不动
+  const cant = T(p, '→ 暴力递归根本跑不动', 
+    { x: 800, y: 740, size: 28, fill: '#ff6b6b', anchor: 'middle', o: 0 });
+  tw(cant, { o: 1 }, 43.9, 0.7);
+  
+  clockRun(t => {
+    if (t > 3) {
+      const fade = 0.5 + Math.sin(t * 1.5) * 0.3;
+      put(tree, { o: 0.6 + fade * 0.4 });
+    }
+  }, dur, { tail: true });
 }],
 
-// beat
-['observation', '重复子问题', () => {
+// beat 4: observation
+['observation', '重复子问题', (m, dur) => {
   const p = panel(0);
   
   const title = T(p, '观察：大量重复计算', { x: 800, y: 120, size: 44, weight: 600, anchor: 'middle', o: 0 });
@@ -240,13 +355,48 @@ let BEATS = [
     { x: 1100, y: 350, size: 36, fill: SECONDARY, weight: 600, o: 0 });
   tw(insight, { o: 1 }, 3.0, 0.6);
   
+  // 20s: 九九乘法表类比
+  const analogy = T(p, '类比：每次都重背九九乘法表', 
+    { x: 800, y: 530, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(analogy, { o: 1 }, 20.0, 0.6);
+  
+  // 32.6s: 先删后插 vs 先插后删 → 同一状态
+  const seq1 = T(p, '先删后插', { x: 400, y: 630, size: 28, fill: DELETE, o: 0 });
+  tw(seq1, { o: 1 }, 32.6, 0.5);
+  
+  const convergArrow = drawArrow(p, 525, 650, 985, 650, MATCH);  // 先删后插右缘 x=512，先插后删左缘 x=1000
+  tw(convergArrow, { o: 1 }, 33.5, 0.4);
+  
+  const seq2 = T(p, '先插后删', { x: 1000, y: 630, size: 28, fill: INSERT, o: 0 });
+  tw(seq2, { o: 1 }, 33.0, 0.5);
+  
+  const sameState = T(p, '同一中间状态', { x: 800, y: 690, size: 26, fill: MATCH, anchor: 'middle', weight: 600, o: 0 });
+  tw(sameState, { o: 1 }, 34.0, 0.6);
+  
   const solution = T(p, '解决方案：记录已经计算过的结果', 
-    { x: 800, y: 560, size: 34, fill: INSERT, anchor: 'middle', o: 0 });
-  tw(solution, { o: 1 }, 4.0, 0.6);
+    { x: 800, y: 740, size: 32, fill: INSERT, anchor: 'middle', o: 0 });
+  tw(solution, { o: 1 }, 43.6, 0.7);
+  
+  // 47.1s: 记忆化
+  const memo = T(p, '记忆化 = 动态规划的基石', 
+    { x: 800, y: 790, size: 26, fill: PRIMARY, anchor: 'middle', weight: 600, o: 0 });
+  tw(memo, { o: 1 }, 47.1, 0.7);
+  
+  clockRun(t => {
+    if (t > 4 && t < 43.6) {
+      // 保持 insight 微呼吸，避免 t=3.6→20s 长时间静止
+      const pulse = 0.9 + Math.sin(t * 1.2) * 0.1;
+      put(insight, { o: pulse });
+    }
+    if (t > 43.6) {
+      const glow = 0.8 + Math.sin(t * 2) * 0.2;
+      put(solution, { o: glow });
+    }
+  }, dur, { tail: true });
 }],
 
-// beat
-['dp_idea', '动态规划思想', () => {
+// beat 5: dp_idea
+['dp_idea', '动态规划思想', (m, dur) => {
   const p = panel(0);
   
   const title = T(p, '动态规划', { x: 800, y: 100, size: 50, weight: 700, anchor: 'middle', o: 0 });
@@ -255,25 +405,65 @@ let BEATS = [
   const subtitle = T(p, 'Dynamic Programming', { x: 800, y: 170, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
   tw(subtitle, { o: 1 }, 0.5, 0.4);
   
-  const step1 = T(p, '1. 定义状态：dp[i][j] = 前i个字符转换到前j个字符的最小代价', 
-    { x: 200, y: 280, size: 28, fill: PRIMARY, o: 0, w: 1200 });
-  tw(step1, { o: 1 }, 1.5, 0.6);
+  // 7.1s: 第一步定义状态
+  const step1Title = T(p, '1. 定义状态', { x: 200, y: 260, size: 32, fill: PRIMARY, weight: 600, o: 0 });
+  tw(step1Title, { o: 1 }, 7.1, 0.5);
   
-  const step2 = T(p, '2. 状态转移：从已知的子问题推导出当前问题', 
-    { x: 200, y: 380, size: 28, fill: PRIMARY, o: 0, w: 1200 });
-  tw(step2, { o: 1 }, 2.5, 0.6);
+  const step1Detail = T(p, 'dp[i][j] = 前 i 个字符转换到前 j 个字符的最小代价', 
+    { x: 220, y: 310, size: 26, fill: COL.dim, o: 0, w: 1200 });
+  tw(step1Detail, { o: 1 }, 8.0, 0.6);
   
-  const step3 = T(p, '3. 初始条件：空串到空串的距离是0', 
-    { x: 200, y: 480, size: 28, fill: PRIMARY, o: 0, w: 1200 });
-  tw(step3, { o: 1 }, 3.5, 0.6);
+  // 15.1s: i/j 从零开始
+  const step1Note = T(p, 'i 和 j 从 0 开始（0 表示空串）', 
+    { x: 220, y: 350, size: 24, fill: '#95a5a6', o: 0 });
+  tw(step1Note, { o: 1 }, 15.1, 0.5);
   
-  const key = T(p, '核心：用表格存储中间结果，避免重复计算', 
-    { x: 800, y: 600, size: 32, fill: HIGHLIGHT, weight: 600, anchor: 'middle', o: 0 });
-  tw(key, { o: 1 }, 5.0, 0.7);
+  // 22.4s: 第二步状态转移
+  const step2Title = T(p, '2. 状态转移', { x: 200, y: 420, size: 32, fill: PRIMARY, weight: 600, o: 0 });
+  tw(step2Title, { o: 1 }, 22.4, 0.5);
+  
+  const step2Detail = T(p, '从更小的子问题推导当前问题', 
+    { x: 220, y: 470, size: 26, fill: COL.dim, o: 0 });
+  tw(step2Detail, { o: 1 }, 23.0, 0.6);
+  
+  // 31.6s: 三种选择
+  const step2Choices = T(p, '删除源[i] / 插入目标[j] / 替换[i]→[j]', 
+    { x: 220, y: 510, size: 24, fill: '#95a5a6', o: 0 });
+  tw(step2Choices, { o: 1 }, 31.6, 0.6);
+  
+  // 40.9s: 取最小
+  const step2Min = T(p, '取代价最小的选择', 
+    { x: 220, y: 550, size: 24, fill: HIGHLIGHT, o: 0 });
+  tw(step2Min, { o: 1 }, 40.9, 0.5);
+  
+  // 46.8s: 第三步边界
+  const step3Title = T(p, '3. 确定边界', { x: 200, y: 610, size: 32, fill: PRIMARY, weight: 600, o: 0 });
+  tw(step3Title, { o: 1 }, 46.8, 0.5);
+  
+  const step3Detail = T(p, '空串 → 空串：距离 0　｜　空串 ↔ 非空串：全插入/全删除', 
+    { x: 220, y: 660, size: 24, fill: COL.dim, o: 0, w: 1200 });
+  tw(step3Detail, { o: 1 }, 49.8, 0.7);
+  
+  // 62.9s: 指数→多项式
+  const magic = T(p, '用表格存储 → 指数时间降为多项式时间', 
+    { x: 800, y: 730, size: 30, fill: INSERT, weight: 600, anchor: 'middle', o: 0 });
+  tw(magic, { o: 1 }, 62.9, 0.8);
+  
+  // 67.7s: 动态规划的魔法
+  const magicLabel = T(p, '✨ 动态规划的魔法', 
+    { x: 800, y: 790, size: 28, fill: HIGHLIGHT, anchor: 'middle', weight: 600, o: 0 });
+  tw(magicLabel, { o: 1 }, 67.7, 0.8);
+  
+  clockRun(t => {
+    if (t > 63) {
+      const pulse = 1 + Math.sin(t * 3) * 0.1;
+      put(magic, { s: pulse });
+    }
+  }, dur, { tail: true });
 }],
 
-// beat
-['table', '构建DP表格', () => {
+// beat 6: table
+['table', '构建DP表格', (m, dur) => {
   const p = panel(0);
   
   const title = T(p, 'DP 表格', { x: 800, y: 80, size: 42, weight: 600, anchor: 'middle', o: 0 });
@@ -282,7 +472,6 @@ let BEATS = [
   const str1 = 'SUN';
   const str2 = 'SAT';
   
-  // 列标签（str2）
   const colLabels = G(p, { x: 460, y: 160, o: 0 });
   T(colLabels, 'ε', { x: 0, y: 0, size: 24, fill: COL.dim, anchor: 'middle' });
   str2.split('').forEach((ch, i) => {
@@ -290,7 +479,6 @@ let BEATS = [
   });
   tw(colLabels, { o: 1 }, 0.8, 0.5);
   
-  // 行标签（str1）
   const rowLabels = G(p, { x: 360, y: 220, o: 0 });
   T(rowLabels, 'ε', { x: 0, y: 0, size: 24, fill: COL.dim, anchor: 'middle' });
   str1.split('').forEach((ch, i) => {
@@ -298,17 +486,52 @@ let BEATS = [
   });
   tw(rowLabels, { o: 1 }, 1.2, 0.5);
   
-  // 表格
   const table = drawTable(p, str1.length + 1, str2.length + 1, 60, 400, 200);
   tw(table, { o: 1 }, 2.0, 0.6);
   
-  const explain = T(p, '行：源字符串 SUN　列：目标字符串 SAT', 
-    { x: 800, y: 600, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(explain, { o: 1 }, 3.0, 0.5);
+  // 12.9s: 4×4
+  const size = T(p, '3 字母 × 3 字母 → 4 行 × 4 列', 
+    { x: 800, y: 540, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(size, { o: 1 }, 12.9, 0.6);
+  
+  // 18.2s: m+1 × n+1
+  const formula = T(p, '一般：(m+1) 行 × (n+1) 列', 
+    { x: 800, y: 590, size: 28, fill: PRIMARY, anchor: 'middle', o: 0 });
+  tw(formula, { o: 1 }, 18.2, 0.6);
+  
+  // 36.6s: 右下角是答案 - 用箭头指示
+  const answerBox = highlightCell(table, 3, 3, 60, HIGHLIGHT);
+  tw(answerBox, { opacity: 0.8 }, 36.6, 0.6);
+  
+  const answerLabel = T(p, '← 最终答案', { x: 720, y: 410, size: 28, fill: HIGHLIGHT, weight: 600, o: 0 });
+  tw(answerLabel, { o: 1 }, 37.2, 0.6);
+  
+  const explain = T(p, '每格存一个子问题的最优解', 
+    { x: 800, y: 660, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(explain, { o: 1 }, 23.2, 0.6);
+  
+  // 41.7s: 右下角对应整个源串变成整个目标串
+  const whyCorner = T(p, '右下角 = 整个源串 → 整个目标串', 
+    { x: 800, y: 710, size: 26, fill: PRIMARY, anchor: 'middle', o: 0 });
+  tw(whyCorner, { o: 1 }, 41.7, 0.7);
+  
+  // 持续闪烁+时间计数器
+  const timer = T(p, '', { x: 800, y: 760, size: 22, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(timer, { o: 0.7 }, 42.0, 0.5);
+  
+  clockRun(t => {
+    if (t > 37) {
+      const blink = t % 1.2 < 0.6 ? 0.8 : 0.3;
+      put(answerBox, { opacity: blink });
+    }
+    if (t > 42) {
+      timer.textContent = `填表完成后，从右下角读取答案 (${(dur - t).toFixed(0)}s)`;
+    }
+  }, dur, { tail: true });
 }],
 
-// beat
-['base', '基础情况', () => {
+// beat 7: base
+['base', '基础情况', (m, dur) => {
   const p = panel(0);
   
   const title = T(p, '初始化：空串情况', { x: 800, y: 80, size: 42, weight: 600, anchor: 'middle', o: 0 });
@@ -332,53 +555,75 @@ let BEATS = [
   const table = drawTable(p, str1.length + 1, str2.length + 1, 60, 400, 200);
   put(table, { o: 1 });
   
-  // 第一行：ε → SAT
+  // 7.6s: 第一行逐个填充 0,1,2,3
   for (let j = 0; j <= str2.length; j++) {
     const val = setCellValue(table, 0, j, j, 60);
-    tw(val, { o: 1 }, 1.0 + j * 0.3, 0.3);
+    tw(val, { o: 1 }, 7.6 + j * 1.5, 0.4);
+    const hl = highlightCell(table, 0, j, 60, INSERT);
+    tw(hl, { opacity: 0.5 }, 7.6 + j * 1.5, 0.3);
+    tw(hl, { opacity: 0 }, 8.0 + j * 1.5, 0.3);
   }
   
-  // 第一列：SUN → ε
+  // 18.5s: 第一列逐个填充
   for (let i = 1; i <= str1.length; i++) {
     const val = setCellValue(table, i, 0, i, 60);
-    tw(val, { o: 1 }, 2.2 + i * 0.3, 0.3);
+    tw(val, { o: 1 }, 18.5 + i * 1.5, 0.4);
+    const hl = highlightCell(table, i, 0, 60, DELETE);
+    tw(hl, { opacity: 0.5 }, 18.5 + i * 1.5, 0.3);
+    tw(hl, { opacity: 0 }, 18.9 + i * 1.5, 0.3);
   }
   
-  const explain1 = T(p, '空串 → SAT：需要插入3个字符', 
-    { x: 800, y: 550, size: 28, fill: INSERT, anchor: 'middle', o: 0 });
-  tw(explain1, { o: 1 }, 3.5, 0.5);
+  const explain1 = T(p, '第一行：空串 → SAT，需要插入 0/1/2/3 个字符', 
+    { x: 800, y: 580, size: 26, fill: INSERT, anchor: 'middle', o: 0 });
+  tw(explain1, { o: 1 }, 13.5, 0.6);
   
-  const explain2 = T(p, 'SUN → 空串：需要删除3个字符', 
-    { x: 800, y: 600, size: 28, fill: DELETE, anchor: 'middle', o: 0 });
-  tw(explain2, { o: 1 }, 4.0, 0.5);
+  const explain2 = T(p, '第一列：SUN → 空串，需要删除 0/1/2/3 个字符', 
+    { x: 800, y: 630, size: 26, fill: DELETE, anchor: 'middle', o: 0 });
+  tw(explain2, { o: 1 }, 24.1, 0.6);
+  
+  const warning = T(p, '⚠️ 边界是地基，错了则全错', 
+    { x: 800, y: 700, size: 28, fill: HIGHLIGHT, weight: 600, anchor: 'middle', o: 0 });
+  tw(warning, { o: 1 }, 28.9, 0.7);
+  
+  // 34.9s: 千万要小心
+  const careful = T(p, '所以千万要小心', 
+    { x: 800, y: 750, size: 26, fill: DELETE, anchor: 'middle', o: 0 });
+  tw(careful, { o: 1 }, 34.9, 0.7);
+  
+  clockRun(t => {
+    if (t > 29) {
+      const pulse = 1 + Math.sin(t * 2.5) * 0.12;
+      put(warning, { s: pulse });
+    }
+  }, dur, { tail: true });
 }],
 
-// beat
-['fill', '填充表格规则', () => {
+// beat 8: fill - 最关键，85.4s
+['fill', '填充表格规则', (m, dur) => {
   const p = panel(0);
   
-  const title = T(p, '状态转移方程', { x: 800, y: 80, size: 42, weight: 600, anchor: 'middle', o: 0 });
+  const title = T(p, '状态转移方程', { x: 800, y: 60, size: 38, weight: 600, anchor: 'middle', o: 0 });
   tw(title, { o: 1 }, 0.1, 0.5);
   
   const str1 = 'SUN';
   const str2 = 'SAT';
   
-  const colLabels = G(p, { x: 260, y: 160, o: 1 });
+  const colLabels = G(p, { x: 260, y: 130, o: 1 });
   T(colLabels, 'ε', { x: 0, y: 0, size: 20, fill: COL.dim, anchor: 'middle' });
   str2.split('').forEach((ch, i) => {
     T(colLabels, ch, { x: (i + 1) * 50, y: 0, size: 20, fill: PRIMARY, weight: 600, anchor: 'middle' });
   });
   
-  const rowLabels = G(p, { x: 180, y: 220, o: 1 });
+  const rowLabels = G(p, { x: 180, y: 180, o: 1 });
   T(rowLabels, 'ε', { x: 0, y: 0, size: 20, fill: COL.dim, anchor: 'middle' });
   str1.split('').forEach((ch, i) => {
     T(rowLabels, ch, { x: 0, y: (i + 1) * 50, size: 20, fill: PRIMARY, weight: 600, anchor: 'middle' });
   });
   
-  const table = drawTable(p, str1.length + 1, str2.length + 1, 50, 200, 200);
+  const table = drawTable(p, str1.length + 1, str2.length + 1, 50, 200, 160);
   put(table, { o: 1 });
   
-  // 初始化第一行和第一列
+  // 初始化边界
   for (let j = 0; j <= str2.length; j++) {
     const val = setCellValue(table, 0, j, j, 50);
     put(val, { o: 1 });
@@ -388,67 +633,132 @@ let BEATS = [
     put(val, { o: 1 });
   }
   
-  // 填充剩余单元格
+  // DP计算
   const dp = Array(str1.length + 1).fill(0).map(() => Array(str2.length + 1).fill(0));
   for (let i = 0; i <= str1.length; i++) dp[i][0] = i;
   for (let j = 0; j <= str2.length; j++) dp[0][j] = j;
   
-  let t = 1.5;
+  // 右侧说明区
+  const ruleTitle = T(p, '每格看三个邻居：', { x: 550, y: 200, size: 24, fill: PRIMARY, weight: 600, o: 0 });
+  tw(ruleTitle, { o: 1 }, 1.0, 0.5);
+  
+  // 7.6s: 三个邻居箭头（右侧说明区，箭头指示来源方向）
+  const neighborG = G(p, { x: 650, y: 260, o: 0 });
+  
+  // 13.8s: 上方=删除（箭头向下，表示从上方来）
+  const upArrow = drawArrow(neighborG, 20, 0, 20, 40, DELETE);
+  const upLabel = T(neighborG, '上方 → 删除 (+1)', { x: 50, y: 20, size: 20, fill: DELETE });
+  tw(upArrow, { o: 1 }, 13.8, 0.5);
+  tw(upLabel, { o: 1 }, 14.0, 0.5);
+  
+  // 21.6s: 左方=插入（箭头向右，表示从左方来）
+  const leftArrow = drawArrow(neighborG, 0, 80, 40, 80, INSERT);
+  const leftLabel = T(neighborG, '左方 → 插入 (+1)', { x: 50, y: 70, size: 20, fill: INSERT });
+  tw(leftArrow, { o: 1 }, 21.6, 0.5);
+  tw(leftLabel, { o: 1 }, 21.8, 0.5);
+  
+  // 29.4s: 左上方=匹配/替换（对角箭头）
+  const diagArrow = drawArrow(neighborG, 0, 120, 40, 160, MATCH);
+  const diagLabel = T(neighborG, '左上 → 匹配/替换', { x: 50, y: 140, size: 20, fill: MATCH });
+  tw(diagArrow, { o: 1 }, 29.4, 0.5);
+  tw(diagLabel, { o: 1 }, 29.6, 0.5);
+  
+  tw(neighborG, { o: 1 }, 7.6, 0.4);
+  
+  // 34.0s: 相同则继承
+  const matchRule = T(p, '字符相同 → 继承左上', { x: 550, y: 450, size: 22, fill: MATCH, o: 0 });
+  tw(matchRule, { o: 1 }, 34.0, 0.5);
+  
+  // 41.6s: 不同则替换+1
+  const replaceRule = T(p, '字符不同 → 左上+1', { x: 550, y: 490, size: 22, fill: REPLACE, o: 0 });
+  tw(replaceRule, { o: 1 }, 41.6, 0.5);
+  
+  const minRule = T(p, '取三者最小值', { x: 550, y: 530, size: 22, fill: HIGHLIGHT, weight: 600, o: 0 });
+  tw(minRule, { o: 1 }, 46.8, 0.5);
+  
+  // 52.2s 开始逐格填充，每格约 3s
+  let fillTime = 52.2;
   for (let i = 1; i <= str1.length; i++) {
     for (let j = 1; j <= str2.length; j++) {
       const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
       dp[i][j] = Math.min(
-        dp[i - 1][j] + 1,      // 删除
-        dp[i][j - 1] + 1,      // 插入
-        dp[i - 1][j - 1] + cost // 替换或匹配
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + cost
       );
       
       const highlight = highlightCell(table, i, j, 50);
-      tw(highlight, { opacity: 0.8 }, t, 0.2);
-      tw(highlight, { opacity: 0 }, t + 0.4, 0.2);
+      tw(highlight, { opacity: 0.8 }, fillTime, 0.4);
+      tw(highlight, { opacity: 0 }, fillTime + 2.0, 0.4);
       
       const val = setCellValue(table, i, j, dp[i][j], 50);
-      tw(val, { o: 1 }, t + 0.2, 0.3);
+      tw(val, { o: 1 }, fillTime + 0.3, 0.5);
       
-      t += 0.5;
+      // 59.2s: 比较 U 和 A
+      if (i === 2 && j === 2) {
+        const compLabel = T(p, `比较 ${str1[i-1]} ≠ ${str2[j-1]}`, 
+          { x: 550, y: 580, size: 20, fill: '#ff6b6b', o: 0 });
+        tw(compLabel, { o: 1 }, fillTime + 0.2, 0.5);
+        tw(compLabel, { o: 0 }, fillTime + 2.5, 0.3);
+      }
+      
+      fillTime += 3.2;
     }
   }
   
-  const formula = T(p, 'dp[i][j] = min(删除, 插入, 替换/匹配)', 
-    { x: 900, y: 300, size: 26, fill: PRIMARY, o: 0, w: 600 });
-  tw(formula, { o: 1 }, 1.0, 0.5);
+  // 75.8s: 右下角是二
+  const finalBox = highlightCell(table, 3, 3, 50, HIGHLIGHT);
+  tw(finalBox, { opacity: 1 }, 75.8, 0.6);
   
-  const detail = T(p, '删除: dp[i-1][j] + 1\n插入: dp[i][j-1] + 1\n替换: dp[i-1][j-1] + cost', 
-    { x: 900, y: 400, size: 22, fill: COL.dim, o: 0, w: 600 });
-  tw(detail, { o: 1 }, 1.8, 0.6);
+  const finalLabel = T(p, '右下角：答案 = 2', 
+    { x: 550, y: 630, size: 26, fill: HIGHLIGHT, weight: 700, o: 0 });
+  tw(finalLabel, { o: 1 }, 76.5, 0.7);
+  
+  // 80.8s: 局部最优→全局最优
+  const conclusion = T(p, '每格局部最优 → 全局最优', 
+    { x: 550, y: 675, size: 22, fill: INSERT, o: 0 });
+  tw(conclusion, { o: 1 }, 80.8, 0.7);
+  
+  const status = T(p, '', { x: 550, y: 715, size: 18, fill: COL.dim, o: 0 });
+  tw(status, { o: 0.6 }, 81.0, 0.4);
+  
+  // 持续闪烁最终答案+状态更新
+  clockRun(t => {
+    if (t > 76) {
+      const pulse = 0.7 + Math.sin(t * 2.5) * 0.3;
+      put(finalBox, { opacity: pulse });
+    }
+    if (t > 81) {
+      status.textContent = `填表算法完成 (${Math.ceil(dur - t)}s)`;
+    }
+  }, dur, { tail: true });
 }],
 
-// beat
-['traceback', '回溯找路径', () => {
+// beat 9: traceback
+['traceback', '回溯找路径', (m, dur) => {
   const p = panel(0);
   
-  const title = T(p, '最优路径', { x: 800, y: 80, size: 42, weight: 600, anchor: 'middle', o: 0 });
+  const title = T(p, '最优路径回溯', { x: 800, y: 80, size: 42, weight: 600, anchor: 'middle', o: 0 });
   tw(title, { o: 1 }, 0.1, 0.5);
   
   const str1 = 'SUN';
   const str2 = 'SAT';
   
-  const colLabels = G(p, { x: 460, y: 160, o: 1 });
+  const colLabels = G(p, { x: 360, y: 160, o: 1 });
   T(colLabels, 'ε', { x: 0, y: 0, size: 24, fill: COL.dim, anchor: 'middle' });
   str2.split('').forEach((ch, i) => {
     T(colLabels, ch, { x: (i + 1) * 60, y: 0, size: 24, fill: PRIMARY, weight: 600, anchor: 'middle' });
   });
   
-  const rowLabels = G(p, { x: 360, y: 220, o: 1 });
+  const rowLabels = G(p, { x: 260, y: 220, o: 1 });
   T(rowLabels, 'ε', { x: 0, y: 0, size: 24, fill: COL.dim, anchor: 'middle' });
   str1.split('').forEach((ch, i) => {
     T(rowLabels, ch, { x: 0, y: (i + 1) * 60, size: 24, fill: PRIMARY, weight: 600, anchor: 'middle' });
   });
   
-  const table = drawTable(p, str1.length + 1, str2.length + 1, 60, 400, 200);
+  const table = drawTable(p, str1.length + 1, str2.length + 1, 60, 300, 200);
   put(table, { o: 1 });
   
-  // 计算并显示所有值
   const dp = Array(str1.length + 1).fill(0).map(() => Array(str2.length + 1).fill(0));
   for (let i = 0; i <= str1.length; i++) dp[i][0] = i;
   for (let j = 0; j <= str2.length; j++) dp[0][j] = j;
@@ -477,102 +787,250 @@ let BEATS = [
   
   // 回溯路径
   const path = [];
+  const ops = [];
   let i = str1.length, j = str2.length;
   while (i > 0 || j > 0) {
     path.push([i, j]);
-    if (i === 0) { j--; continue; }
-    if (j === 0) { i--; continue; }
+    if (i === 0) { ops.push('插入'); j--; continue; }
+    if (j === 0) { ops.push('删除'); i--; continue; }
     
     const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
     const diag = dp[i - 1][j - 1] + cost;
     const up = dp[i - 1][j] + 1;
     const left = dp[i][j - 1] + 1;
     
-    if (diag <= up && diag <= left) { i--; j--; }
-    else if (up <= left) { i--; }
-    else { j--; }
+    if (diag <= up && diag <= left) { 
+      ops.push(cost === 0 ? '匹配' : '替换');
+      i--; j--;
+    }
+    else if (up <= left) { ops.push('删除'); i--; }
+    else { ops.push('插入'); j--; }
   }
   path.push([0, 0]);
   path.reverse();
+  ops.reverse();
   
-  // 动画显示路径
+  // 9.9s 开始逐步走路径
+  let traceTime = 9.9;
   path.forEach(([r, c], idx) => {
     const highlight = highlightCell(table, r, c, 60, INSERT);
-    tw(highlight, { opacity: 0.6 }, 1.5 + idx * 0.4, 0.3);
+    tw(highlight, { opacity: 0.6 }, traceTime, 0.5);
+    
+    // 标注操作类型
+    if (idx > 0 && idx < ops.length) {
+      const op = ops[idx];
+      let opColor = COL.dim;
+      if (op === '删除') opColor = DELETE;
+      else if (op === '插入') opColor = INSERT;
+      else if (op === '替换') opColor = REPLACE;
+      else if (op === '匹配') opColor = MATCH;
+      
+      const opLabel = T(table, op, { 
+        x: c * 60 + 30, y: r * 60 + 2, 
+        size: 13, fill: opColor, anchor: 'middle', weight: 600, o: 0 
+      });
+      tw(opLabel, { o: 1 }, traceTime + 0.3, 0.4);
+      
+      // 15.6s, 20.7s, 24.9s 对应旁白
+      if (op === '替换' && traceTime < 16) traceTime = 15.6;
+      else if (op === '删除' && traceTime < 21) traceTime = 20.7;
+      else if (op === '插入' && traceTime < 25) traceTime = 24.9;
+    }
+    
+    traceTime += 2.8;
   });
   
+  // 34.8s: 总结
+  const summary = T(p, 'S 不变，U→A，N→T，共两步', 
+    { x: 800, y: 580, size: 30, fill: HIGHLIGHT, weight: 600, anchor: 'middle', o: 0 });
+  tw(summary, { o: 1 }, 34.8, 0.7);
+  
   const result = T(p, `最短编辑距离：${dp[str1.length][str2.length]}`, 
-    { x: 800, y: 580, size: 36, fill: HIGHLIGHT, weight: 600, anchor: 'middle', o: 0 });
-  tw(result, { o: 1 }, 3.5, 0.6);
+    { x: 800, y: 640, size: 32, fill: INSERT, anchor: 'middle', o: 0 });
+  tw(result, { o: 1 }, 5.9, 0.6);
+  
+  // 44.3s: 路径可能不唯一
+  const note = T(p, '注意：最优路径可能不唯一', 
+    { x: 800, y: 700, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(note, { o: 1 }, 44.3, 0.6);
+  
+  // 50.4s: 但代价都相同
+  const sameCost = T(p, '但它们的代价都相同，都是最小的', 
+    { x: 800, y: 750, size: 26, fill: INSERT, anchor: 'middle', o: 0 });
+  tw(sameCost, { o: 1 }, 50.4, 0.7);
+  
+  clockRun(t => {
+    if (t > 45) {
+      const shift = Math.sin(t * 1.8) * 3;
+      put(summary, { y: 580 + shift });
+    }
+  }, dur, { tail: true });
 }],
 
-// beat
-['complexity', '复杂度分析', () => {
+// beat 10: complexity
+['complexity', '复杂度分析', (m, dur) => {
   const p = panel(0);
   
-  const title = T(p, '时间与空间复杂度', { x: 800, y: 120, size: 44, weight: 600, anchor: 'middle', o: 0 });
+  const title = T(p, '时间与空间复杂度', { x: 800, y: 100, size: 44, weight: 600, anchor: 'middle', o: 0 });
   tw(title, { o: 1 }, 0.1, 0.5);
   
   const time = T(p, '时间复杂度：O(m × n)', 
-    { x: 800, y: 280, size: 40, fill: PRIMARY, weight: 600, anchor: 'middle', o: 0 });
+    { x: 800, y: 230, size: 40, fill: PRIMARY, weight: 600, anchor: 'middle', o: 0 });
   tw(time, { o: 1 }, 1.5, 0.6);
   
-  const timeExp = T(p, 'm 和 n 分别是两个字符串的长度\n需要填充 m×n 的表格，每个单元格 O(1)', 
-    { x: 800, y: 360, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(timeExp, { o: 1 }, 2.2, 0.6);
+  const timeExp = T(p, '填充 m×n 表格，每格 O(1)', 
+    { x: 800, y: 290, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(timeExp, { o: 1 }, 7.0, 0.6);
+  
+  // 19.5s: 3^n vs m×n 对比
+  const compare = T(p, '暴力递归 O(3ⁿ)　vs　动态规划 O(m×n)', 
+    { x: 800, y: 350, size: 30, fill: HIGHLIGHT, anchor: 'middle', weight: 600, o: 0 });
+  tw(compare, { o: 1 }, 19.5, 0.7);
+  
+  const example = T(p, 'n=20: 1小时 → 几毫秒', 
+    { x: 800, y: 400, size: 28, fill: INSERT, anchor: 'middle', o: 0 });
+  tw(example, { o: 1 }, 26.3, 0.6);
   
   const space = T(p, '空间复杂度：O(m × n)', 
     { x: 800, y: 480, size: 40, fill: SECONDARY, weight: 600, anchor: 'middle', o: 0 });
-  tw(space, { o: 1 }, 3.5, 0.6);
+  tw(space, { o: 1 }, 11.3, 0.6);
   
-  const spaceExp = T(p, '存储整个 DP 表格\n（可优化到 O(min(m,n))）', 
-    { x: 800, y: 560, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(spaceExp, { o: 1 }, 4.2, 0.6);
+  // 30.8s: 滚动数组优化 - 画两行
+  const scrollTitle = T(p, '空间优化：滚动数组', 
+    { x: 800, y: 560, size: 32, fill: PRIMARY, weight: 600, anchor: 'middle', o: 0 });
+  tw(scrollTitle, { o: 1 }, 30.8, 0.6);
+  
+  const scrollG = G(p, { x: 400, y: 600, o: 0 });
+  
+  // 画两行滚动
+  const row1 = G(scrollG, { x: 0, y: 0, o: 0 });
+  for (let c = 0; c < 5; c++) {
+    mk('rect', { x: c * 50, y: 0, width: 48, height: 40, 
+      fill: TABLE_BG, stroke: TABLE_BORDER, 'stroke-width': 2 }, row1);
+  }
+  T(row1, '上一行', { x: 125, y: 55, size: 20, fill: COL.dim, anchor: 'middle' });
+  tw(row1, { o: 1 }, 35.0, 0.5);
+  
+  const row2 = G(scrollG, { x: 0, y: 50, o: 0 });
+  for (let c = 0; c < 5; c++) {
+    mk('rect', { x: c * 50, y: 0, width: 48, height: 40, 
+      fill: '#34495e', stroke: HIGHLIGHT, 'stroke-width': 3 }, row2);
+  }
+  T(row2, '当前行', { x: 125, y: 55, size: 20, fill: HIGHLIGHT, anchor: 'middle', weight: 600 });
+  tw(row2, { o: 1 }, 35.5, 0.5);
+  
+  tw(scrollG, { o: 1 }, 34.9, 0.4);
+  
+  // 39.9s: O(min(m,n))
+  const optim = T(p, '→ O(min(m, n))', 
+    { x: 1100, y: 650, size: 32, fill: INSERT, weight: 600, o: 0 });
+  tw(optim, { o: 1 }, 39.9, 0.7);
+  
+  const tip = T(p, '常见的空间优化技巧', 
+    { x: 800, y: 740, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(tip, { o: 1 }, 46.8, 0.6);
+  
+  const progress = T(p, '', { x: 800, y: 790, size: 20, fill: '#95a5a6', anchor: 'middle', o: 0 });
+  tw(progress, { o: 0.6 }, 47.0, 0.4);
+  
+  // 滚动动画+进度显示
+  clockRun(t => {
+    if (t > 36) {
+      const offset = (t - 36) * 3;
+      put(row1, { y: -offset % 50 });
+      put(row2, { y: 50 - offset % 50 });
+    }
+    if (t > 47) {
+      progress.textContent = `优化技巧演示中... ${Math.floor(dur - t)}s`;
+    }
+  }, dur, { tail: true });
 }],
 
-// beat
-['finish', '总结与应用', () => {
+// beat 11: finish
+['finish', '总结与应用', (m, dur) => {
   const p = panel(0);
   
-  const title = T(p, '编辑距离的应用', { x: 800, y: 100, size: 48, weight: 700, anchor: 'middle', o: 0 });
+  const title = T(p, '编辑距离的应用', { x: 800, y: 90, size: 48, weight: 700, anchor: 'middle', o: 0 });
   tw(title, { o: 1 }, 0.1, 0.6);
   
-  const app1 = G(p, { x: 250, y: 250, o: 0 });
+  // 应用图标逐个出现
+  const app1 = G(p, { x: 250, y: 220, o: 0 });
   T(app1, '📝', { x: 0, y: 0, size: 48, anchor: 'middle' });
   T(app1, '拼写检查', { x: 0, y: 70, size: 28, weight: 600, anchor: 'middle', fill: PRIMARY });
-  tw(app1, { o: 1 }, 1.5, 0.5);
+  tw(app1, { o: 1 }, 3.8, 0.5);
   
-  const app2 = G(p, { x: 800, y: 250, o: 0 });
+  const app2 = G(p, { x: 800, y: 220, o: 0 });
   T(app2, '🔍', { x: 0, y: 0, size: 48, anchor: 'middle' });
   T(app2, '搜索建议', { x: 0, y: 70, size: 28, weight: 600, anchor: 'middle', fill: PRIMARY });
-  tw(app2, { o: 1 }, 2.0, 0.5);
+  tw(app2, { o: 1 }, 10.8, 0.5);
   
-  const app3 = G(p, { x: 1350, y: 250, o: 0 });
+  const app3 = G(p, { x: 1350, y: 220, o: 0 });
   T(app3, '🧬', { x: 0, y: 0, size: 48, anchor: 'middle' });
   T(app3, 'DNA 序列比对', { x: 0, y: 70, size: 28, weight: 600, anchor: 'middle', fill: PRIMARY });
-  tw(app3, { o: 1 }, 2.5, 0.5);
+  tw(app3, { o: 1 }, 16.3, 0.5);
   
-  const app4 = G(p, { x: 500, y: 450, o: 0 });
+  const app4 = G(p, { x: 500, y: 400, o: 0 });
   T(app4, '📋', { x: 0, y: 0, size: 48, anchor: 'middle' });
   T(app4, '版本对比', { x: 0, y: 70, size: 28, weight: 600, anchor: 'middle', fill: PRIMARY });
-  tw(app4, { o: 1 }, 3.0, 0.5);
+  tw(app4, { o: 1 }, 24.8, 0.5);
   
-  const app5 = G(p, { x: 1100, y: 450, o: 0 });
-  T(app5, '🗣️', { x: 0, y: 0, size: 48, anchor: 'middle' });
-  T(app5, '语音识别', { x: 0, y: 70, size: 28, weight: 600, anchor: 'middle', fill: PRIMARY });
-  tw(app5, { o: 1 }, 3.5, 0.5);
+  // 33.3s: 机器翻译
+  const app5 = G(p, { x: 1100, y: 400, o: 0 });
+  T(app5, '🌐', { x: 0, y: 0, size: 48, anchor: 'middle' });
+  T(app5, '机器翻译', { x: 0, y: 70, size: 28, weight: 600, anchor: 'middle', fill: PRIMARY });
+  tw(app5, { o: 1 }, 33.3, 0.5);
   
-  const summary = T(p, '动态规划：分解问题 + 记忆化 = 高效求解', 
-    { x: 800, y: 620, size: 34, fill: HIGHLIGHT, weight: 600, anchor: 'middle', o: 0 });
-  tw(summary, { o: 1 }, 5.0, 0.7);
+  // 41.2s 起：整章回顾逐项出现
+  const reviewTitle = T(p, '本章回顾', { x: 800, y: 540, size: 32, weight: 600, anchor: 'middle', fill: HIGHLIGHT, o: 0 });
+  tw(reviewTitle, { o: 1 }, 41.2, 0.5);
+  
+  const step1 = T(p, '① 暴力递归：指数时间', 
+    { x: 300, y: 600, size: 26, fill: COL.dim, o: 0 });
+  tw(step1, { o: 1 }, 43.0, 0.5);
+  
+  const step2 = T(p, '② 发现重复子问题', 
+    { x: 300, y: 640, size: 26, fill: COL.dim, o: 0 });
+  tw(step2, { o: 1 }, 47.0, 0.5);
+  
+  const step3 = T(p, '③ 用表格存储答案', 
+    { x: 300, y: 680, size: 26, fill: COL.dim, o: 0 });
+  tw(step3, { o: 1 }, 50.0, 0.5);
+  
+  const step4 = T(p, '④ 指数→多项式', 
+    { x: 300, y: 720, size: 26, fill: INSERT, weight: 600, o: 0 });
+  tw(step4, { o: 1 }, 53.1, 0.5);
+  
+  // 56.7s: 三步法
+  const method = T(p, '动态规划三步法', 
+    { x: 1000, y: 600, size: 28, weight: 600, fill: PRIMARY, o: 0 });
+  tw(method, { o: 1 }, 56.7, 0.5);
+  
+  const m1 = T(p, '1️⃣ 定义状态', { x: 900, y: 650, size: 24, fill: COL.dim, o: 0 });
+  tw(m1, { o: 1 }, 58.0, 0.4);
+  
+  const m2 = T(p, '2️⃣ 写出转移', { x: 900, y: 685, size: 24, fill: COL.dim, o: 0 });
+  tw(m2, { o: 1 }, 59.0, 0.4);
+  
+  const m3 = T(p, '3️⃣ 确定边界', { x: 900, y: 720, size: 24, fill: COL.dim, o: 0 });
+  tw(m3, { o: 1 }, 60.0, 0.4);
+  
+  const summary = T(p, '掌握这三步，你就入门了动态规划！', 
+    { x: 800, y: 770, size: 30, fill: HIGHLIGHT, weight: 700, anchor: 'middle', o: 0 });
+  tw(summary, { o: 1 }, 62.2, 0.8);
+  
+  // 持续脉冲效果
+  clockRun(t => {
+    if (t > 62) {
+      const pulse = 1 + Math.sin(t * 2.2) * 0.08;
+      put(summary, { s: pulse });
+    }
+  }, dur, { tail: true });
 }],
 
 ]; // end BEATS
 
-// 转换元组为对象
 BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
 
-/* ---------- 引擎启动 ---------- */
 window.BEATS = BEATS;
 boot();
 </script>

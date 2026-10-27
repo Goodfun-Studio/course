@@ -17,5 +17,16 @@
       // arrow suggesting movement
       P('M290 90Q325 70 360 90', 'a') +
       Tx(250, 60, '递归', 26) + C(530, 70, 24, 'a')),
+    
+    // 2 Dynamic Programming: DP table with filling arrows
+    reset(
+      // table grid (3x4 cells)
+      P('M200 50h350M200 90h350M200 130h350', '') + P('M200 50v80M290 50v80M380 50v80M470 50v80M550 50v80', '') +
+      // values in cells
+      Tx(245, 75, '0', 20, '', 'middle') + Tx(335, 75, '1', 20, '', 'middle') + Tx(425, 75, '2', 20, '', 'middle') + Tx(510, 75, '3', 20, '', 'middle') +
+      Tx(245, 115, '1', 20, '', 'middle') + Tx(335, 115, '1', 20, '', 'middle') + Tx(425, 115, '2', 20, '', 'middle') +
+      // diagonal arrow
+      P('M290 90L380 50', 'a') +
+      Tx(220, 35, 'DP', 26) + C(530, 70, 24, 'a')),
   ];
 })();

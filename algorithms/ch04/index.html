@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第四章 最长公共子序列：深化动态规划</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#table" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 4, title: '最长公共子序列：深化动态规划', language: 'zh', minutes: 7 };
+
+/* ---------- 颜色方案 ---------- */
+const PRIMARY = '#667eea';
+const SECONDARY = '#764ba2';
+const MATCH = '#43e97b';
+const SKIP = '#f093fb';
+const HIGHLIGHT = '#f39c12';
+const TABLE_BG = '#2c3e50';
+const TABLE_BORDER = '#34495e';
+const PATH_COLOR = '#fa709a';
+
+/* ---------- 辅助函数 ---------- */
+function drawString(parent, str, x, y, spacing = 50) {
+  const g = G(parent, { x, y, o: 0 });
+  str.split('').forEach((ch, i) => {
+    T(g, ch, { x: i * spacing, y: 0, size: 36, weight: 600, fill: PRIMARY });
+  });
+  return g;
+}
+
+function drawTable(parent, rows, cols, cellSize = 60, x = 400, y = 200) {
+  const g = G(parent, { x, y, o: 0 });
+  
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      mk('rect', {
+        x: c * cellSize,
+        y: r * cellSize,
+        width: cellSize,
+        height: cellSize,
+        fill: TABLE_BG,
+        stroke: TABLE_BORDER,
+        'stroke-width': 2,
+      }, g);
+    }
+  }
+  
+  return g;
+}
+
+function setCellValue(parent, row, col, value, cellSize = 60) {
+  const x = col * cellSize + cellSize / 2;
+  const y = row * cellSize + cellSize / 2;
+  const t = T(parent, String(value), { x, y, size: 24, weight: 600, fill: '#ecf0f1', anchor: 'middle', o: 0 });
+  t.setAttribute('dominant-baseline', 'central');
+  return t;
+}
+
+function highlightCell(parent, row, col, cellSize = 60, color = HIGHLIGHT) {
+  const rect = mk('rect', {
+    x: col * cellSize + 2,
+    y: row * cellSize + 2,
+    width: cellSize - 4,
+    height: cellSize - 4,
+    fill: 'none',
+    stroke: color,
+    'stroke-width': 4,
+    opacity: 0,
+  }, parent);
+  return rect;
+}
+
+function drawArrow(parent, x1, y1, x2, y2, color = PRIMARY) {
+  const g = G(parent, { o: 0 });
+  const dx = x2 - x1, dy = y2 - y1;
+  const angle = Math.atan2(dy, dx);
+  
+  mk('line', { x1, y1, x2, y2, stroke: color, 'stroke-width': 3 }, g);
+  
+  const arrowSize = 10;
+  const x3 = x2 - arrowSize * Math.cos(angle - Math.PI / 6);
+  const y3 = y2 - arrowSize * Math.sin(angle - Math.PI / 6);
+  const x4 = x2 - arrowSize * Math.cos(angle + Math.PI / 6);
+  const y4 = y2 - arrowSize * Math.sin(angle + Math.PI / 6);
+  
+  mk('line', { x1: x2, y1: y2, x2: x3, y2: y3, stroke: color, 'stroke-width': 3 }, g);
+  mk('line', { x1: x2, y1: y2, x2: x4, y2: y4, stroke: color, 'stroke-width': 3 }, g);
+  
+  return g;
+}
+
+/* ---------- Beats ---------- */
+let BEATS = [
+
+// beat 0: intro
+['intro', '问题呈现', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '最长公共子序列', { x: 800, y: 150, size: 56, weight: 700, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, 'Longest Common Subsequence (LCS)', 
+    { x: 800, y: 220, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 0.5, 0.5);
+  
+  const q = T(p, '如何找到两个序列的最长公共部分？', 
+    { x: 800, y: 350, size: 38, weight: 600, anchor: 'middle', o: 0 });
+  tw(q, { o: 1 }, 1.5, 0.6);
+  
+  const def = T(p, '子序列不要求连续，只需保持相对顺序', 
+    { x: 800, y: 500, size: 30, fill: PRIMARY, anchor: 'middle', o: 0, w: 1000 });
+  tw(def, { o: 1 }, 3.0, 0.7);
+  
+  // 示例：ABCD 和 ACBD
+  const ex1 = drawString(p, 'ABCD', 600, 620, 45);
+  tw(ex1, { o: 1 }, 10.0, 0.6);
+  
+  const ex2 = drawString(p, 'ACBD', 950, 620, 45);
+  tw(ex2, { o: 1 }, 10.5, 0.6);
+  
+  const exResult = T(p, 'LCS: ABD 或 ACD (长度 = 3)', 
+    { x: 800, y: 700, size: 26, fill: MATCH, anchor: 'middle', o: 0 });
+  tw(exResult, { o: 1 }, 15.0, 0.7);
+  
+  // 应用领域
+  const apps = T(p, '应用：版本控制 · 基因测序 · 文档比对', 
+    { x: 800, y: 760, size: 24, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(apps, { o: 1 }, 30.0, 0.8);
+  
+  clockRun(t => {
+    if (t > 4) {
+      const phase = Math.sin(t * 0.5) * 0.05 + 1;
+      put(title, { s: phase });
+    }
+  }, dur, { tail: true });
+}],
+
+// beat 1: example
+['example', '具体示例', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, 'AGGTAB ⟷ GXTXAYB', { x: 800, y: 120, size: 42, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const str1 = drawString(p, 'AGGTAB', 500, 280);
+  tw(str1, { o: 1 }, 1.0, 0.5);
+  
+  const str2 = drawString(p, 'GXTXAYB', 450, 400);
+  tw(str2, { o: 1 }, 2.0, 0.5);
+  
+  // 高亮共同字母 G
+  const h1 = mk('rect', { x: 535, y: 239, width: 50, height: 60, 
+    fill: 'none', stroke: MATCH, 'stroke-width': 3, opacity: 0 }, p);
+  tw(h1, { opacity: 0.8 }, 8.0, 0.5);
+  
+  const h2 = mk('rect', { x: 435, y: 359, width: 50, height: 60, 
+    fill: 'none', stroke: MATCH, 'stroke-width': 3, opacity: 0 }, p);
+  tw(h2, { opacity: 0.8 }, 8.5, 0.5);
+  
+  // 提示文字
+  const hint = T(p, '共同字母：G、T、A、B', 
+    { x: 800, y: 520, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(hint, { o: 1 }, 10.0, 0.6);
+  
+  const warning = T(p, '但匹配方式有多种...', 
+    { x: 800, y: 580, size: 28, fill: SKIP, anchor: 'middle', o: 0 });
+  tw(warning, { o: 1 }, 15.0, 0.6);
+  
+  const answer = T(p, '答案：GTAB (长度 = 4)', 
+    { x: 800, y: 680, size: 42, fill: HIGHLIGHT, weight: 700, anchor: 'middle', o: 0 });
+  tw(answer, { o: 1 }, 25.0, 0.7);
+}],
+
+// beat 2: vs_edit
+['vs_edit', 'LCS与编辑距离', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, 'LCS 与编辑距离的关系', { x: 800, y: 100, size: 44, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  // 双胞胎图示
+  const lcs = G(p, { x: 400, y: 280, o: 0 });
+  mk('circle', { cx: 0, cy: 0, r: 80, fill: PRIMARY, opacity: 0.2 }, lcs);
+  T(lcs, 'LCS', { x: 0, y: 0, size: 32, weight: 600, anchor: 'middle', fill: PRIMARY });
+  tw(lcs, { o: 1 }, 1.0, 0.5);
+  
+  const edit = G(p, { x: 1200, y: 280, o: 0 });
+  mk('circle', { cx: 0, cy: 0, r: 80, fill: SECONDARY, opacity: 0.2 }, edit);
+  T(edit, '编辑距离', { x: 0, y: 0, size: 28, weight: 600, anchor: 'middle', fill: SECONDARY });
+  tw(edit, { o: 1 }, 1.5, 0.5);
+  
+  // 连接线
+  const link = mk('line', { x1: 480, y1: 280, x2: 1120, y2: 280, 
+    stroke: COL.dim, 'stroke-width': 2, 'stroke-dasharray': '5,5', opacity: 0 }, p);
+  tw(link, { opacity: 0.6 }, 5.0, 0.4);
+  
+  // 公式
+  const formula = T(p, '编辑距离 = (m + n) − 2 × LCS', 
+    { x: 800, y: 420, size: 34, fill: HIGHLIGHT, anchor: 'middle', o: 0, weight: 600 });
+  tw(formula, { o: 1 }, 10.0, 0.7);
+  
+  const explain = T(p, '公共部分不需要改，非公共部分删除或插入', 
+    { x: 800, y: 500, size: 28, fill: COL.dim, anchor: 'middle', o: 0, w: 900 });
+  tw(explain, { o: 1 }, 15.0, 0.6);
+  
+  // Git diff
+  const git = T(p, 'Git diff 的核心就是 LCS', 
+    { x: 800, y: 620, size: 36, fill: MATCH, anchor: 'middle', o: 0, weight: 600 });
+  tw(git, { o: 1 }, 25.0, 0.7);
+}],
+
+// beat 3: dp_state
+['dp_state', 'DP状态定义', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '定义状态', { x: 800, y: 100, size: 48, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  // 状态定义
+  const def = T(p, 'dp[i][j] = 前i个字符与前j个字符的LCS长度', 
+    { x: 800, y: 280, size: 32, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(def, { o: 1 }, 3.0, 0.7);
+  
+  // 示例
+  const ex1 = T(p, 'i = 0：空序列', 
+    { x: 800, y: 380, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(ex1, { o: 1 }, 10.0, 0.5);
+  
+  const ex2 = T(p, 'dp[m][n]：完整序列的LCS长度（最终答案）', 
+    { x: 800, y: 450, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(ex2, { o: 1 }, 15.0, 0.6);
+  
+  // 关键问题
+  const question = T(p, '关键：如何从小问题推出大问题？', 
+    { x: 800, y: 580, size: 34, fill: HIGHLIGHT, anchor: 'middle', o: 0, weight: 600 });
+  tw(question, { o: 1 }, 22.0, 0.7);
+}],
+
+// beat 4: transition
+['transition', '状态转移', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '状态转移方程', { x: 800, y: 100, size: 48, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  // 情况1：字符相同
+  const case1Title = T(p, '情况1：字符相同', 
+    { x: 800, y: 220, size: 34, fill: MATCH, anchor: 'middle', o: 0, weight: 600 });
+  tw(case1Title, { o: 1 }, 3.0, 0.5);
+  
+  const case1Formula = T(p, 'dp[i][j] = dp[i−1][j−1] + 1', 
+    { x: 800, y: 280, size: 30, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(case1Formula, { o: 1 }, 6.0, 0.6);
+  
+  // 情况2：字符不同
+  const case2Title = T(p, '情况2：字符不同', 
+    { x: 800, y: 380, size: 34, fill: SKIP, anchor: 'middle', o: 0, weight: 600 });
+  tw(case2Title, { o: 1 }, 15.0, 0.5);
+  
+  const case2Formula = T(p, 'dp[i][j] = max(dp[i−1][j], dp[i][j−1])', 
+    { x: 800, y: 440, size: 30, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(case2Formula, { o: 1 }, 20.0, 0.6);
+  
+  const case2Explain = T(p, '跳过第一个序列的字符，或跳过第二个序列的字符', 
+    { x: 800, y: 510, size: 26, fill: COL.dim, anchor: 'middle', o: 0, w: 900 });
+  tw(case2Explain, { o: 1 }, 22.0, 0.5);
+  
+  // 总结
+  const beauty = T(p, '比编辑距离更简洁！', 
+    { x: 800, y: 620, size: 36, fill: HIGHLIGHT, anchor: 'middle', o: 0, weight: 600 });
+  tw(beauty, { o: 1 }, 35.0, 0.7);
+}],
+
+// beat 5: table_setup
+['table_setup', '表格结构', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, 'DP 表格', { x: 800, y: 80, size: 44, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  // 序列标注
+  const seq1 = T(p, '序列1: AGGTAB', 
+    { x: 250, y: 150, size: 26, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(seq1, { o: 1 }, 2.0, 0.5);
+  
+  const seq2 = T(p, '序列2: GXTXAYB', 
+    { x: 250, y: 190, size: 26, fill: SECONDARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(seq2, { o: 1 }, 2.5, 0.5);
+  
+  // 绘制表格 (7行8列，cellSize=50)
+  const table = drawTable(p, 7, 8, 50, 350, 250);
+  tw(table, { o: 1 }, 5.0, 0.7);
+  
+  // 表头标注
+  const colLabels = '∅GXTXAYB';
+  for (let i = 0; i < colLabels.length; i++) {
+    const label = T(p, colLabels[i], 
+      { x: 350 + i * 50 + 25, y: 230, size: 20, fill: SECONDARY, anchor: 'middle', o: 0, weight: 600 });
+    tw(label, { o: 1 }, 6.0 + i * 0.1, 0.3);
+  }
+  
+  const rowLabels = '∅AGGTAB';
+  for (let i = 0; i < rowLabels.length; i++) {
+    const label = T(p, rowLabels[i], 
+      { x: 320, y: 250 + i * 50 + 25, size: 20, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+    tw(label, { o: 1 }, 7.0 + i * 0.1, 0.3);
+  }
+  
+  const hint = T(p, '7行8列：(m+1) × (n+1)', 
+    { x: 800, y: 650, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(hint, { o: 1 }, 12.0, 0.6);
+  
+  const target = T(p, '右下角 = 最终答案', 
+    { x: 800, y: 710, size: 30, fill: HIGHLIGHT, anchor: 'middle', o: 0, weight: 600 });
+  tw(target, { o: 1 }, 18.0, 0.6);
+}],
+
+// beat 6: base_fill
+['base_fill', '填充边界', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '边界条件', { x: 800, y: 80, size: 44, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  // 表格
+  const table = drawTable(p, 7, 8, 50, 350, 200);
+  tw(table, { o: 1 }, 0.5, 0.4);
+  
+  // 填充第一行
+  for (let j = 0; j < 8; j++) {
+    const val = setCellValue(p, 0, j, 0, 50);
+    put(val, { x: 350 + j * 50, y: 200 });
+    tw(val, { o: 1 }, 3.0 + j * 0.15, 0.3);
+  }
+  
+  // 填充第一列
+  for (let i = 0; i < 7; i++) {
+    const val = setCellValue(p, i, 0, 0, 50);
+    put(val, { x: 350, y: 200 + i * 50 });
+    tw(val, { o: 1 }, 8.0 + i * 0.15, 0.3);
+  }
+  
+  const explain = T(p, '空序列与任何序列的LCS = 0', 
+    { x: 800, y: 600, size: 30, fill: PRIMARY, anchor: 'middle', o: 0 });
+  tw(explain, { o: 1 }, 12.0, 0.6);
+}],
+
+// beat 7: inner_fill
+['inner_fill', '填充表格', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '逐格填表', { x: 800, y: 60, size: 40, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  // 表格
+  const table = drawTable(p, 7, 8, 50, 350, 150);
+  tw(table, { o: 1 }, 0.5, 0.3);
+  
+  // 边界（简化显示）
+  for (let j = 0; j < 8; j++) {
+    const val = setCellValue(p, 0, j, 0, 50);
+    put(val, { x: 350 + j * 50, y: 150, o: 0.3 });
+  }
+  for (let i = 1; i < 7; i++) {
+    const val = setCellValue(p, i, 0, 0, 50);
+    put(val, { x: 350, y: 150 + i * 50, o: 0.3 });
+  }
+  
+  // 序列
+  const s1 = 'AGGTAB';
+  const s2 = 'GXTXAYB';
+  
+  // 填充关键格子并高亮
+  let t = 2.0;
+  
+  // (1,1): A vs G，不同
+  let hl = highlightCell(p, 1, 1, 50, HIGHLIGHT);
+  tw(hl, { opacity: 0.8 }, t, 0.3);
+  let val = setCellValue(p, 1, 1, 0, 50);
+  put(val, { x: 350 + 1 * 50, y: 150 + 1 * 50 });
+  tw(val, { o: 1 }, t + 0.3, 0.3);
+  tw(hl, { opacity: 0 }, t + 1.0, 0.3);
+  t += 1.5;
+  
+  // (1,2): A vs X，不同
+  hl = highlightCell(p, 1, 2, 50, HIGHLIGHT);
+  tw(hl, { opacity: 0.8 }, t, 0.3);
+  val = setCellValue(p, 1, 2, 0, 50);
+  put(val, { x: 350 + 2 * 50, y: 150 + 1 * 50 });
+  tw(val, { o: 1 }, t + 0.3, 0.3);
+  tw(hl, { opacity: 0 }, t + 1.0, 0.3);
+  t += 1.5;
+  
+  // (2,1): G vs G，匹配！
+  hl = highlightCell(p, 2, 1, 50, MATCH);
+  tw(hl, { opacity: 0.8 }, t, 0.3);
+  val = setCellValue(p, 2, 1, 1, 50);
+  put(val, { x: 350 + 1 * 50, y: 150 + 2 * 50 });
+  tw(val, { o: 1 }, t + 0.3, 0.3);
+  t += 2.0;
+  
+  // 快速填充剩余部分（简化动画）
+  const dpTable = [
+    [0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0],
+    [0,1,1,1,1,1,1,1],
+    [0,1,1,1,1,1,1,1],
+    [0,1,1,2,2,2,2,2],
+    [0,1,1,2,2,3,3,3],
+    [0,1,1,2,2,3,3,4]
+  ];
+  
+  for (let i = 1; i < 7; i++) {
+    for (let j = 1; j < 8; j++) {
+      if ((i === 1 && j <= 2) || (i === 2 && j === 1)) continue;
+      const v = setCellValue(p, i, j, dpTable[i][j], 50);
+      put(v, { x: 350 + j * 50, y: 150 + i * 50 });
+      tw(v, { o: 1 }, t, 0.2);
+      t += 0.1;
+    }
+  }
+  
+  // 高亮最终答案
+  const finalHL = highlightCell(p, 6, 7, 50, HIGHLIGHT);
+  tw(finalHL, { opacity: 0.9 }, t + 1.0, 0.5);
+  
+  const answer = T(p, '答案：4', 
+    { x: 800, y: 580, size: 40, fill: HIGHLIGHT, anchor: 'middle', o: 0, weight: 700 });
+  tw(answer, { o: 1 }, t + 1.5, 0.7);
+}],
+
+// beat 8: traceback
+['traceback', '回溯路径', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '回溯重建LCS', { x: 800, y: 60, size: 40, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  // 表格（已填充）
+  const table = drawTable(p, 7, 8, 50, 350, 150);
+  tw(table, { o: 1 }, 0.5, 0.3);
+  
+  const dpTable = [
+    [0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0],
+    [0,1,1,1,1,1,1,1],
+    [0,1,1,1,1,1,1,1],
+    [0,1,1,2,2,2,2,2],
+    [0,1,1,2,2,3,3,3],
+    [0,1,1,2,2,3,3,4]
+  ];
+  
+  for (let i = 0; i < 7; i++) {
+    for (let j = 0; j < 8; j++) {
+      const v = setCellValue(p, i, j, dpTable[i][j], 50);
+      put(v, { x: 350 + j * 50, y: 150 + i * 50, o: 0.4 });
+    }
+  }
+  
+  // 回溯路径：(6,7) → (5,6) → (4,3) → (2,1) → (0,0)
+  const path = [[6,7], [5,6], [4,3], [2,1], [0,0]];
+  let t = 10.0;
+  
+  for (let i = 0; i < path.length - 1; i++) {
+    const [r1, c1] = path[i];
+    const [r2, c2] = path[i + 1];
+    
+    // 高亮当前格子
+    const hl = highlightCell(p, r1, c1, 50, PATH_COLOR);
+    tw(hl, { opacity: 0.8 }, t, 0.4);
+    
+    // 箭头
+    const x1 = 350 + c1 * 50 + 25;
+    const y1 = 150 + r1 * 50 + 25;
+    const x2 = 350 + c2 * 50 + 25;
+    const y2 = 150 + r2 * 50 + 25;
+    const arrow = drawArrow(p, x1, y1, x2, y2, PATH_COLOR);
+    tw(arrow, { o: 1 }, t + 0.3, 0.4);
+    
+    t += 1.5;
+  }
+  
+  // 最终高亮起点
+  const startHL = highlightCell(p, 0, 0, 50, PATH_COLOR);
+  tw(startHL, { opacity: 0.8 }, t, 0.4);
+  
+  // 显示LCS
+  const result = T(p, 'LCS = GTAB', 
+    { x: 800, y: 580, size: 42, fill: MATCH, anchor: 'middle', o: 0, weight: 700 });
+  tw(result, { o: 1 }, t + 1.0, 0.7);
+}],
+
+// beat 9: complexity
+['complexity', '复杂度分析', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '算法复杂度', { x: 800, y: 100, size: 48, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  // 时间复杂度
+  const timeTitle = T(p, '时间复杂度', 
+    { x: 800, y: 220, size: 36, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(timeTitle, { o: 1 }, 3.0, 0.5);
+  
+  const timeFormula = T(p, 'O(m × n)', 
+    { x: 800, y: 280, size: 40, fill: HIGHLIGHT, anchor: 'middle', o: 0, weight: 700 });
+  tw(timeFormula, { o: 1 }, 5.0, 0.6);
+  
+  const timeExplain = T(p, '表格大小 × 常数时间', 
+    { x: 800, y: 340, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(timeExplain, { o: 1 }, 7.0, 0.5);
+  
+  // 空间复杂度
+  const spaceTitle = T(p, '空间复杂度', 
+    { x: 800, y: 420, size: 36, fill: SECONDARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(spaceTitle, { o: 1 }, 15.0, 0.5);
+  
+  const spaceFormula = T(p, 'O(m × n)　或　O(min(m, n))', 
+    { x: 800, y: 480, size: 34, fill: HIGHLIGHT, anchor: 'middle', o: 0, weight: 700 });
+  tw(spaceFormula, { o: 1 }, 18.0, 0.6);
+  
+  const spaceExplain = T(p, '滚动数组优化（但无法回溯路径）', 
+    { x: 800, y: 540, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(spaceExplain, { o: 1 }, 22.0, 0.5);
+  
+  // 对比
+  const compare = T(p, 'vs 暴力枚举：指数级 → 多项式级', 
+    { x: 800, y: 640, size: 32, fill: MATCH, anchor: 'middle', o: 0, weight: 600 });
+  tw(compare, { o: 1 }, 26.0, 0.7);
+}],
+
+// beat 10: applications
+['applications', '应用场景', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, 'LCS 的应用', { x: 800, y: 100, size: 48, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const apps = [
+    { icon: '📝', name: 'Git Diff', desc: '版本对比核心算法', y: 220, t: 3.0 },
+    { icon: '🧬', name: 'DNA比对', desc: '生物信息学序列分析', y: 320, t: 8.0 },
+    { icon: '📄', name: '文本查重', desc: '判断文章相似度', y: 420, t: 15.0 },
+    { icon: '🎬', name: '字幕对齐', desc: '时间轴与翻译匹配', y: 520, t: 22.0 }
+  ];
+  
+  apps.forEach(app => {
+    const g = G(p, { x: 400, y: app.y, o: 0 });
+    T(g, app.icon, { x: 0, y: 0, size: 48, anchor: 'middle' });
+    T(g, app.name, { x: 100, y: -10, size: 32, fill: PRIMARY, weight: 600 });
+    T(g, app.desc, { x: 100, y: 25, size: 24, fill: COL.dim });
+    tw(g, { o: 1 }, app.t, 0.6);
+  });
+  
+  const summary = T(p, '只要涉及序列匹配，LCS就可能派上用场', 
+    { x: 800, y: 650, size: 30, fill: HIGHLIGHT, anchor: 'middle', o: 0, weight: 600 });
+  tw(summary, { o: 1 }, 30.0, 0.8);
+}],
+
+// beat 11: summary
+['summary', '总结回顾', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '本章回顾', { x: 800, y: 100, size: 48, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const points = [
+    '状态定义：dp[i][j] = 前i和前j的LCS长度',
+    '状态转移：相同+1，不同取max',
+    '边界条件：第一行第一列都是0',
+    '填表 → 得到长度',
+    '回溯 → 得到序列'
+  ];
+  
+  let t = 5.0;
+  points.forEach((point, i) => {
+    const text = T(p, `${i + 1}. ${point}`, 
+      { x: 350, y: 220 + i * 70, size: 28, fill: PRIMARY, o: 0, weight: 500 });
+    tw(text, { o: 1 }, t, 0.6);
+    t += 3.0;
+  });
+  
+  const power = T(p, 'DP的威力：指数 → 多项式', 
+    { x: 800, y: 600, size: 36, fill: HIGHLIGHT, anchor: 'middle', o: 0, weight: 700 });
+  tw(power, { o: 1 }, 25.0, 0.7);
+  
+  const practice = T(p, '掌握框架：定义状态·找转移·填表·回溯', 
+    { x: 800, y: 680, size: 30, fill: MATCH, anchor: 'middle', o: 0, weight: 600 });
+  tw(practice, { o: 1 }, 32.0, 0.8);
+  
+  clockRun(t => {
+    if (t > 30) {
+      const phase = Math.sin(t * 0.6) * 0.03 + 1;
+      put(title, { s: phase });
+    }
+  }, dur, { tail: true });
+}]
+
+];
+
+// 练习题
+let QUIZ = [
+  {
+    q: '字符串 "ABCDEF" 和 "AECFBD" 的LCS长度是？',
+    a: ['4 (ACBD)', '5 (ABCEF)', '3 (ABC)', '6 (全部)']
+  },
+  {
+    q: 'LCS与编辑距离（只允许插入删除）的关系是？',
+    a: ['等价（可互相转换）', '完全无关', 'LCS总是更小', '编辑距离总是更大']
+  },
+  {
+    q: 'LCS的空间复杂度可以优化到？',
+    a: ['O(min(m,n))', 'O(1)', 'O(m+n)', 'O(mn)']
+  }
+];
+
+if (typeof module !== 'undefined') module.exports = { CHAPTER, BEATS, QUIZ };
+if (typeof window !== 'undefined') { window.BEATS = BEATS; window.QUIZ = QUIZ; window.CHAPTER = CHAPTER; }
+</script>
+</body>
+</html>

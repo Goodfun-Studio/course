@@ -1,21 +1,21 @@
 window.TIMINGS = {
  "intro": {
-  "dur": 19.536,
+  "dur": 48.048,
   "marks": {},
   "cues": []
  },
  "divide_conquer": {
-  "dur": 16.224,
+  "dur": 53.88,
   "marks": {},
   "cues": []
  },
  "partition": {
-  "dur": 19.032,
+  "dur": 50.184,
   "marks": {},
   "cues": []
  },
  "partition_demo": {
-  "dur": 20.592,
+  "dur": 65.616,
   "marks": {},
   "cues": []
  },

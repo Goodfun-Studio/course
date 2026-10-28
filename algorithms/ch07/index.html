@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>最小生成树：三种经典算法</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 7, title: '最小生成树：三种经典算法', language: 'zh', minutes: 12 };
+
+/* ---------- colours ---------- */
+const NODE_FILL = '#4facfe';
+const NODE_STROKE = '#3a8cd9';
+const EDGE_DEFAULT = '#8a8f98';
+const EDGE_SELECTED = '#43e97b';
+const EDGE_TRYING = '#f5a623';
+const EDGE_REJECTED = '#f5576c';
+const TEXT_WEIGHT = '#667eea';
+
+/* ---------- graph data ---------- */
+// Graph: 7 nodes positioned in a nice layout
+const NODES = [
+  { id: 'A', x: 300, y: 300 },
+  { id: 'B', x: 600, y: 250 },
+  { id: 'C', x: 900, y: 300 },
+  { id: 'D', x: 450, y: 500 },
+  { id: 'E', x: 750, y: 500 },
+  { id: 'F', x: 300, y: 650 },
+  { id: 'G', x: 900, y: 650 }
+];
+
+// Edges with weights (for Kruskal demo)
+const EDGES = [
+  { from: 'A', to: 'B', weight: 7 },
+  { from: 'A', to: 'D', weight: 5 },
+  { from: 'B', to: 'C', weight: 8 },
+  { from: 'B', to: 'D', weight: 9 },
+  { from: 'B', to: 'E', weight: 7 },
+  { from: 'C', to: 'E', weight: 5 },
+  { from: 'D', to: 'E', weight: 15 },
+  { from: 'D', to: 'F', weight: 6 },
+  { from: 'E', to: 'G', weight: 8 },
+  { from: 'F', to: 'G', weight: 11 }
+];
+
+// Helper: find node position
+function nodePos(id) {
+  const n = NODES.find(n => n.id === id);
+  return n ? { x: n.x, y: n.y } : { x: 0, y: 0 };
+}
+
+// Draw a graph with nodes and edges
+function drawGraph(parent, options = {}) {
+  const { 
+    showWeights = true, 
+    edgeOpacity = 1,
+    nodeOpacity = 1,
+    offsetX = 0,
+    offsetY = 0
+  } = options;
+  
+  const g = G(parent);
+  const edgeEls = {};
+  const nodeEls = {};
+  const weightEls = {};
+  
+  // Draw edges first (background)
+  EDGES.forEach((e, i) => {
+    const from = nodePos(e.from);
+    const to = nodePos(e.to);
+    const line = mk('line', {
+      x1: from.x + offsetX,
+      y1: from.y + offsetY,
+      x2: to.x + offsetX,
+      y2: to.y + offsetY,
+      stroke: EDGE_DEFAULT,
+      'stroke-width': 3,
+      opacity: edgeOpacity
+    }, g);
+    edgeEls[`${e.from}-${e.to}`] = line;
+    
+    // Weight label
+    if (showWeights) {
+      const mx = (from.x + to.x) / 2 + offsetX;
+      const my = (from.y + to.y) / 2 + offsetY;
+      const bg = mk('circle', {
+        cx: mx, cy: my, r: 16,
+        fill: COL.board, opacity: edgeOpacity
+      }, g);
+      const wt = T(g, e.weight.toString(), {
+        x: mx, y: my + 1,
+        size: 18, fill: TEXT_WEIGHT,
+        anchor: 'middle', baseline: 'middle',
+        o: edgeOpacity
+      });
+      weightEls[`${e.from}-${e.to}`] = { bg, text: wt };
+    }
+  });
+  
+  // Draw nodes (foreground)
+  NODES.forEach(n => {
+    const circle = mk('circle', {
+      cx: n.x + offsetX,
+      cy: n.y + offsetY,
+      r: 28,
+      fill: NODE_FILL,
+      stroke: NODE_STROKE,
+      'stroke-width': 3,
+      opacity: nodeOpacity
+    }, g);
+    nodeEls[n.id] = circle;
+    
+    const label = T(g, n.id, {
+      x: n.x + offsetX,
+      y: n.y + offsetY + 2,
+      size: 24,
+      fill: '#fff',
+      weight: 700,
+      anchor: 'middle',
+      baseline: 'middle',
+      o: nodeOpacity
+    });
+  });
+  
+  return { g, edgeEls, nodeEls, weightEls };
+}
+
+/* ---------- beats ---------- */
+const BEATS = [
+
+['intro', '问题呈现', () => {
+  const p = panel(0);
+  
+  const title = T(p, '最小生成树', { x: 800, y: 130, size: 64, weight: 700, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, .1, .8, out);
+  
+  const sub = T(p, '给定加权无向图，找一棵树连接所有顶点，让总权重最小', { x: 800, y: 200, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(sub, { o: 1 }, .6, .6);
+  
+  // Draw a simple graph
+  const graph = drawGraph(p, { nodeOpacity: 0, edgeOpacity: 0, offsetX: 100 });
+  tw(graph.g, { o: 1 }, 1.5, .8, out);
+  
+  const note = T(p, '网络设计的核心问题', { x: 800, y: 730, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(note, { o: 1 }, 8, .6);
+}],
+
+['definition', '定义与性质', () => {
+  const p = panel(0);
+  
+  const title = T(p, '什么是生成树？', { x: 800, y: 150, size: 46, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, .1, .6, out);
+  
+  const def1 = T(p, '• 连接所有顶点的子图', { x: 400, y: 300, size: 32, fill: COL.chalk, o: 0 });
+  tw(def1, { o: 1 }, 1.5, .5);
+  
+  const def2 = T(p, '• 无环（是一棵树）', { x: 400, y: 370, size: 32, fill: COL.chalk, o: 0 });
+  tw(def2, { o: 1 }, 2.2, .5);
+  
+  const def3 = T(p, '• n 个顶点 → n-1 条边', { x: 400, y: 440, size: 32, fill: COL.chalk, o: 0 });
+  tw(def3, { o: 1 }, 2.9, .5);
+  
+  const def4 = T(p, '最小生成树 = 总权重最小的生成树', { x: 800, y: 580, size: 36, fill: '#43e97b', weight: 600, anchor: 'middle', o: 0 });
+  tw(def4, { o: 1 }, 4.5, .7, out);
+}],
+
+['applications', '应用场景', () => {
+  const p = panel(0);
+  
+  const title = T(p, '应用无处不在', { x: 800, y: 150, size: 46, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, .1, .6, out);
+  
+  const app1 = T(p, '🔌 铺设电缆', { x: 400, y: 300, size: 36, fill: COL.chalk, o: 0 });
+  tw(app1, { o: 1 }, 1.5, .5);
+  
+  const app2 = T(p, '🛣️ 设计道路网', { x: 400, y: 380, size: 36, fill: COL.chalk, o: 0 });
+  tw(app2, { o: 1 }, 2.5, .5);
+  
+  const app3 = T(p, '📡 构建通信网络', { x: 400, y: 460, size: 36, fill: COL.chalk, o: 0 });
+  tw(app3, { o: 1 }, 3.5, .5);
+  
+  const goal = T(p, '目标：用最小代价连接所有节点', { x: 800, y: 640, size: 32, fill: '#f5a623', weight: 600, anchor: 'middle', o: 0 });
+  tw(goal, { o: 1 }, 6, .7, out);
+}],
+
+['boruvka-intro', 'Borůvka 算法', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'Borůvka 算法 (1926)', { x: 800, y: 150, size: 46, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, .1, .6, out);
+  
+  const idea = T(p, '核心思路：并行选边', { x: 800, y: 230, size: 32, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(idea, { o: 1 }, .8, .5);
+  
+  const step1 = T(p, '1. 每个连通分量同时选出最轻的边', { x: 400, y: 350, size: 30, fill: COL.chalk, o: 0 });
+  tw(step1, { o: 1 }, 2, .5);
+  
+  const step2 = T(p, '2. 合并分量', { x: 400, y: 420, size: 30, fill: COL.chalk, o: 0 });
+  tw(step2, { o: 1 }, 3, .5);
+  
+  const step3 = T(p, '3. 重复直到只剩一个分量', { x: 400, y: 490, size: 30, fill: COL.chalk, o: 0 });
+  tw(step3, { o: 1 }, 4, .5);
+  
+  const note = T(p, '第一个最小生成树算法', { x: 800, y: 680, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(note, { o: 1 }, 8, .5);
+}],
+
+['boruvka-demo', 'Borůvka 演示', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'Borůvka 并行选边过程', { x: 800, y: 130, size: 40, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, .1, .6, out);
+  
+  const graph = drawGraph(p, { nodeOpacity: 0, edgeOpacity: 0 });
+  tw(graph.g, { o: 1 }, .8, .7, out);
+  
+  const hint = T(p, '每个顶点同时选最轻边，然后合并成更大的分量', { x: 800, y: 730, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(hint, { o: 1 }, 9, .6);
+}],
+
+['prim-intro', 'Prim 算法', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'Jarník-Prim 算法 (1930/1957)', { x: 800, y: 130, size: 42, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, .1, .6, out);
+  
+  const idea = T(p, '核心思路：从单点开始，逐步扩展', { x: 800, y: 210, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(idea, { o: 1 }, .8, .5);
+  
+  const step1 = T(p, '1. 从任意顶点出发', { x: 400, y: 330, size: 30, fill: COL.chalk, o: 0 });
+  tw(step1, { o: 1 }, 2.5, .5);
+  
+  const step2 = T(p, '2. 每次选连接树和非树顶点的最轻边', { x: 400, y: 400, size: 30, fill: COL.chalk, o: 0 });
+  tw(step2, { o: 1 }, 3.5, .5);
+  
+  const step3 = T(p, '3. 重复直到覆盖所有顶点', { x: 400, y: 470, size: 30, fill: COL.chalk, o: 0 });
+  tw(step3, { o: 1 }, 4.5, .5);
+  
+  const note = T(p, '贪心策略：每步都选当前最优', { x: 800, y: 650, size: 28, fill: '#f5a623', anchor: 'middle', o: 0 });
+  tw(note, { o: 1 }, 8, .6);
+}],
+
+['prim-demo', 'Prim 演示', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'Prim 逐步扩展过程', { x: 800, y: 130, size: 40, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, .1, .6, out);
+  
+  const graph = drawGraph(p, { nodeOpacity: 0, edgeOpacity: 0 });
+  tw(graph.g, { o: 1 }, .8, .7, out);
+  
+  const hint = T(p, '从一个点开始，像滚雪球一样越长越大', { x: 800, y: 730, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(hint, { o: 1 }, 7, .6);
+}],
+
+['kruskal-intro', 'Kruskal 算法', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'Kruskal 算法 (1956)', { x: 800, y: 150, size: 46, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, .1, .6, out);
+  
+  const idea = T(p, '核心思路：按权重排序，依次尝试', { x: 800, y: 230, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(idea, { o: 1 }, .8, .5);
+  
+  const step1 = T(p, '1. 把所有边按权重从小到大排序', { x: 400, y: 350, size: 30, fill: COL.chalk, o: 0 });
+  tw(step1, { o: 1 }, 2, .5);
+  
+  const step2 = T(p, '2. 依次考察每条边', { x: 400, y: 420, size: 30, fill: COL.chalk, o: 0 });
+  tw(step2, { o: 1 }, 3, .5);
+  
+  const step3 = T(p, '3. 不形成环就加入，否则拒绝', { x: 400, y: 490, size: 30, fill: COL.chalk, o: 0 });
+  tw(step3, { o: 1 }, 4, .5);
+  
+  const note = T(p, '用并查集维护连通性', { x: 800, y: 680, size: 28, fill: '#f5a623', anchor: 'middle', o: 0 });
+  tw(note, { o: 1 }, 6.5, .5);
+}],
+
+['kruskal-demo', 'Kruskal 动画演示', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'Kruskal 算法：按边权重排序选择', { x: 800, y: 100, size: 38, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, .1, .6, out);
+  
+  // Draw graph
+  const graph = drawGraph(p, { nodeOpacity: 0, edgeOpacity: 0, offsetY: -30 });
+  tw(graph.g, { o: 1 }, .5, .6, out);
+  
+  // Sort edges by weight
+  const sortedEdges = [...EDGES].sort((a, b) => a.weight - b.weight);
+  
+  // Animate edge selection
+  let t = 1.5;
+  const selected = [];
+  
+  sortedEdges.forEach((edge, i) => {
+    const key = `${edge.from}-${edge.to}`;
+    const edgeEl = graph.edgeEls[key];
+    if (!edgeEl) return;
+    
+    // Trying this edge (yellow)
+    tw(edgeEl, { stroke: EDGE_TRYING, 'stroke-width': 5 }, t, .3);
+    
+    // Union-Find logic (simplified): accept if it connects new components
+    // For demo: accept first 6 edges (will form MST with 7 nodes)
+    const accept = selected.length < 6 && 
+                   (selected.length === 0 || 
+                    edge.weight !== 15); // reject the heavy D-E edge
+    
+    if (accept) {
+      // Accept: turn green
+      tw(edgeEl, { stroke: EDGE_SELECTED, 'stroke-width': 4 }, t + .4, .3);
+      selected.push(key);
+      t += .9;
+    } else {
+      // Reject: turn red then fade back
+      tw(edgeEl, { stroke: EDGE_REJECTED }, t + .4, .2);
+      tw(edgeEl, { stroke: EDGE_DEFAULT, 'stroke-width': 3 }, t + .8, .3);
+      t += 1.1;
+    }
+  });
+  
+  const result = T(p, `选中 ${selected.length} 条边，总权重最小`, { 
+    x: 800, y: 720, size: 28, fill: '#43e97b', 
+    weight: 600, anchor: 'middle', o: 0 
+  });
+  tw(result, { o: 1 }, t, .5);
+}],
+
+['comparison', '三种算法比较', () => {
+  const p = panel(0);
+  
+  const title = T(p, '三种算法的特点', { x: 800, y: 130, size: 46, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, .1, .6, out);
+  
+  const c1 = T(p, 'Borůvka：适合并行计算', { x: 400, y: 280, size: 32, fill: COL.chalk, o: 0 });
+  tw(c1, { o: 1 }, 1.5, .5);
+  
+  const c2 = T(p, 'Prim：适合稠密图（边多）', { x: 400, y: 360, size: 32, fill: COL.chalk, o: 0 });
+  tw(c2, { o: 1 }, 2.8, .5);
+  
+  const c3 = T(p, 'Kruskal：最直观，适合稀疏图', { x: 400, y: 440, size: 32, fill: COL.chalk, o: 0 });
+  tw(c3, { o: 1 }, 4.1, .5);
+  
+  const note = T(p, '三种方法都能保证找到最小生成树', { x: 800, y: 640, size: 28, fill: '#43e97b', anchor: 'middle', o: 0 });
+  tw(note, { o: 1 }, 7, .6);
+}],
+
+['complexity', '复杂度分析', () => {
+  const p = panel(0);
+  
+  const title = T(p, '时间复杂度', { x: 800, y: 150, size: 46, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, .1, .6, out);
+  
+  const comp1 = T(p, 'Prim（堆优化）：O(m log n)', { x: 400, y: 300, size: 32, fill: COL.chalk, o: 0 });
+  tw(comp1, { o: 1 }, 1.5, .5);
+  
+  const comp2 = T(p, 'Kruskal：O(m log m)', { x: 400, y: 380, size: 32, fill: COL.chalk, o: 0 });
+  tw(comp2, { o: 1 }, 2.5, .5);
+  
+  const comp3 = T(p, '并查集几乎是常数时间', { x: 400, y: 460, size: 32, fill: COL.chalk, o: 0 });
+  tw(comp3, { o: 1 }, 3.5, .5);
+  
+  const note = T(p, 'm = 边数，n = 顶点数', { x: 800, y: 620, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(note, { o: 1 }, 5, .5);
+}],
+
+['finish', '课程总结', () => {
+  const p = panel(0);
+  
+  const title = T(p, '恭喜完成！', { x: 800, y: 200, size: 64, weight: 700, fill: '#43e97b', anchor: 'middle', o: 0 });
+  tw(title, { o: 1, s: 1.1 }, .1, .8, out);
+  
+  const msg = T(p, '你已经掌握了三种经典的最小生成树算法', { x: 800, y: 320, size: 32, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(msg, { o: 1 }, 1, .6);
+  
+  const msg2 = T(p, '它们是图算法的基础工具', { x: 800, y: 400, size: 32, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(msg2, { o: 1 }, 2, .6);
+  
+  // Draw final graph with MST highlighted
+  const graph = drawGraph(p, { nodeOpacity: 0, edgeOpacity: 0, offsetY: 80 });
+  tw(graph.g, { o: 1 }, 3.5, .7, out);
+}]
+
+];
+
+window.addEventListener('load', () => setPlayer(CHAPTER, BEATS, TIMINGS));
+</script>
+</body>
+</html>

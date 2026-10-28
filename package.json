@@ -5,7 +5,8 @@
   "scripts": {
     "test": "playwright test",
     "test:ch03": "playwright test tests/ch03.spec.js",
-    "test:ch04": "playwright test tests/ch04.spec.js"
+    "test:ch04": "playwright test tests/ch04.spec.js",
+    "test:ch05": "playwright test tests/ch05.spec.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0"

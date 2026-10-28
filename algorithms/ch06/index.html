@@ -309,7 +309,7 @@ const BEATS = [
   let t = 3;
   const code = T(p, '扫描：j < pivot 时，交换 arr[i] 和 arr[j]，i++', {
     x: 800,
-    y: 510,
+    y: 540,
     size: 22,
     fill: COL.dim,
     anchor: 'middle',
@@ -332,8 +332,8 @@ const BEATS = [
         tw(bars[j], { c_fill: SWAP }, t + 1.6, 0.2);
         
         // 交换位置（使用索引计算目标位置，不读状态）
-        const xI = x0 + iPos * barW;
-        const xJ = x0 + j * barW;
+        const xI = x0 + iPos * barW + 5;
+        const xJ = x0 + j * barW + 5;
         tw(bars[iPos], { x: xJ }, t + 1.6, 0.4, io);
         tw(bars[j], { x: xI }, t + 1.6, 0.4, io);
         tw(labels[iPos], { x: xJ + (barW - 10) / 2 }, t + 1.6, 0.4, io);
@@ -351,9 +351,9 @@ const BEATS = [
         tw(bars[j], { c_fill: LESS }, t + 1.6, 0.3);
       }
       
-      t += 3.84;  // 1.2 × 3.2
+      t += 6.7;  // 1.2 × 5.58 ≈ 6.7，匹配 65.6s 旁白
     } else {
-      t += 2.56;  // 0.8 × 3.2
+      t += 4.5;  // 0.8 × 5.58 ≈ 4.5
     }
   }
   
@@ -373,8 +373,8 @@ const BEATS = [
   tw(bars[n - 1], { c_fill: SWAP }, t + 1.6, 0.2);
   
   // 交换位置（使用索引计算目标位置，不读状态）
-  const xPivotFinal = x0 + pivotFinalPos * barW;
-  const xPivotCurrent = x0 + (n - 1) * barW;
+  const xPivotFinal = x0 + pivotFinalPos * barW + 5;
+  const xPivotCurrent = x0 + (n - 1) * barW + 5;
   tw(bars[pivotFinalPos], { x: xPivotCurrent }, t + 1.6, 0.5, io);
   tw(bars[n - 1], { x: xPivotFinal }, t + 1.6, 0.5, io);
   tw(labels[pivotFinalPos], { x: xPivotCurrent + (barW - 10) / 2 }, t + 1.6, 0.5, io);

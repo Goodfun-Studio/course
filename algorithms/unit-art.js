@@ -40,5 +40,22 @@
       // weights on edges
       Tx(280, 65, '2', 16, '') + Tx(280, 115, '4', 16, '') +
       Tx(395, 68, '✓', 18, 'a', 'middle')),
+
+    // 4 Sorting: a bar chart with a pivot highlighted
+    reset(
+      // baseline
+      P('M200 130h350', '') +
+      // bars of different heights
+      P('M215 130v-30h30v30z', '') +
+      P('M265 130v-55h30v55z', '') +
+      P('M315 130v-42h30v42z', '') +
+      P('M365 130v-75h30v75z', 'a') +
+      P('M415 130v-50h30v50z', '') +
+      P('M465 130v-62h30v62z', '') +
+      // pivot marker on the tall bar
+      P('M380 45l-8 12h16z', 'a') +
+      // divider showing the partition
+      P('M350 45v85', 'a') +
+      Tx(200, 35, '快排', 26) + C(530, 70, 24, 'a')),
   ];
 })();

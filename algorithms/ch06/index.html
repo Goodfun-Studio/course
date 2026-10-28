@@ -262,7 +262,7 @@ const BEATS = [
     const by = y0 - h;
     
     const bar = mk('rect', {
-      x: bx,
+      x: 0,
       y: by,
       width: barW - 10,
       height: h,
@@ -296,7 +296,7 @@ const BEATS = [
   const iLabel = T(p, 'i', { x: 0, y: y0 + 60, size: 24, fill: LESS, anchor: 'middle', weight: 600, o: 0 });
   
   const jArrow = path(p, '', { stroke: COMPARING, 'stroke-width': 3, opacity: 0 });
-  const jLabel = T(p, 'j', { x: 0, y: y0 + 90, size: 24, fill: COMPARING, anchor: 'middle', weight: 600, o: 0 });
+  const jLabel = T(p, 'j', { x: 0, y: y0 + 95, size: 24, fill: COMPARING, anchor: 'middle', weight: 600, o: 0 });
   
   function movePointer(arrow, label, idx, t0) {
     const px = x0 + idx * barW + barW / 2;
@@ -328,16 +328,16 @@ const BEATS = [
       // 交换动画
       if (iPos !== j) {
         // 变色
-        tw(bars[iPos], { c_fill: SWAP }, t + 0.5, 0.2);
-        tw(bars[j], { c_fill: SWAP }, t + 0.5, 0.2);
+        tw(bars[iPos], { c_fill: SWAP }, t + 1.6, 0.2);
+        tw(bars[j], { c_fill: SWAP }, t + 1.6, 0.2);
         
         // 交换位置
         const xI = st(bars[iPos]).x;
         const xJ = st(bars[j]).x;
-        tw(bars[iPos], { x: xJ }, t + 0.5, 0.4, io);
-        tw(bars[j], { x: xI }, t + 0.5, 0.4, io);
-        tw(labels[iPos], { x: xJ + (barW - 10) / 2 }, t + 0.5, 0.4, io);
-        tw(labels[j], { x: xI + (barW - 10) / 2 }, t + 0.5, 0.4, io);
+        tw(bars[iPos], { x: xJ }, t + 1.6, 0.4, io);
+        tw(bars[j], { x: xI }, t + 1.6, 0.4, io);
+        tw(labels[iPos], { x: xJ + (barW - 10) / 2 }, t + 1.6, 0.4, io);
+        tw(labels[j], { x: xI + (barW - 10) / 2 }, t + 1.6, 0.4, io);
         
         // 交换数组中的引用
         [bars[iPos], bars[j]] = [bars[j], bars[iPos]];
@@ -345,10 +345,10 @@ const BEATS = [
         [arr[iPos], arr[j]] = [arr[j], arr[iPos]];
         
         // 变回小于颜色
-        tw(bars[iPos], { c_fill: LESS }, t + 0.9, 0.2);
-        tw(bars[j], { c_fill: LESS }, t + 0.9, 0.2);
+        tw(bars[iPos], { c_fill: LESS }, t + 2.9, 0.2);
+        tw(bars[j], { c_fill: LESS }, t + 2.9, 0.2);
       } else {
-        tw(bars[j], { c_fill: LESS }, t + 0.5, 0.3);
+        tw(bars[j], { c_fill: LESS }, t + 1.6, 0.3);
       }
       
       t += 1.2;
@@ -369,22 +369,22 @@ const BEATS = [
   tw(finalSwap, { o: 1 }, t, 0.4);
   
   const pivotFinalPos = iPos + 1;
-  tw(bars[pivotFinalPos], { c_fill: SWAP }, t + 0.5, 0.2);
-  tw(bars[n - 1], { c_fill: SWAP }, t + 0.5, 0.2);
+  tw(bars[pivotFinalPos], { c_fill: SWAP }, t + 1.6, 0.2);
+  tw(bars[n - 1], { c_fill: SWAP }, t + 1.6, 0.2);
   
   // 交换位置
   const xPivotFinal = st(bars[pivotFinalPos]).x;
   const xPivotCurrent = st(bars[n - 1]).x;
-  tw(bars[pivotFinalPos], { x: xPivotCurrent }, t + 0.5, 0.5, io);
-  tw(bars[n - 1], { x: xPivotFinal }, t + 0.5, 0.5, io);
-  tw(labels[pivotFinalPos], { x: xPivotCurrent + (barW - 10) / 2 }, t + 0.5, 0.5, io);
-  tw(labels[n - 1], { x: xPivotFinal + (barW - 10) / 2 }, t + 0.5, 0.5, io);
+  tw(bars[pivotFinalPos], { x: xPivotCurrent }, t + 1.6, 0.5, io);
+  tw(bars[n - 1], { x: xPivotFinal }, t + 1.6, 0.5, io);
+  tw(labels[pivotFinalPos], { x: xPivotCurrent + (barW - 10) / 2 }, t + 1.6, 0.5, io);
+  tw(labels[n - 1], { x: xPivotFinal + (barW - 10) / 2 }, t + 1.6, 0.5, io);
   
   [bars[pivotFinalPos], bars[n - 1]] = [bars[n - 1], bars[pivotFinalPos]];
   [labels[pivotFinalPos], labels[n - 1]] = [labels[n - 1], labels[pivotFinalPos]];
   
-  tw(bars[pivotFinalPos], { c_fill: SORTED }, t + 1, 0.3);
-  tw(bars[n - 1], { c_fill: SORTED }, t + 1, 0.3);
+  tw(bars[pivotFinalPos], { c_fill: SORTED }, t + 3.2, 0.3);
+  tw(bars[n - 1], { c_fill: SORTED }, t + 3.2, 0.3);
   
   const done = T(p, '分区完成！', {
     x: 800,
@@ -395,7 +395,7 @@ const BEATS = [
     anchor: 'middle',
     o: 0
   });
-  tw(done, { o: 1, s: 1.1 }, t + 2, 0.6, out);
+  tw(done, { o: 1, s: 1.1 }, t + 6.4, 0.6, out);
 }],
 
 ['pivot_choice', 'Pivot 选择策略', () => {

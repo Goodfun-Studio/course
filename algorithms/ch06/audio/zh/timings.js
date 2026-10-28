@@ -20,42 +20,42 @@ window.TIMINGS = {
   "cues": []
  },
  "pivot_choice": {
-  "dur": 25.44,
+  "dur": 121.248,
   "marks": {},
   "cues": []
  },
  "recursion": {
-  "dur": 19.368,
+  "dur": 94.392,
   "marks": {},
   "cues": []
  },
  "best_case": {
-  "dur": 15.864,
+  "dur": 91.248,
   "marks": {},
   "cues": []
  },
  "worst_case": {
-  "dur": 19.944,
+  "dur": 105.024,
   "marks": {},
   "cues": []
  },
  "average_case": {
-  "dur": 20.52,
+  "dur": 95.136,
   "marks": {},
   "cues": []
  },
  "in_place": {
-  "dur": 19.008,
+  "dur": 98.592,
   "marks": {},
   "cues": []
  },
  "stability": {
-  "dur": 14.544,
+  "dur": 116.688,
   "marks": {},
   "cues": []
  },
  "summary": {
-  "dur": 27.216,
+  "dur": 108.12,
   "marks": {},
   "cues": []
  }

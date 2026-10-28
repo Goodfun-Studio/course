@@ -13,7 +13,7 @@
 <script src="audio/zh/timings.js"></script>
 <script>
 'use strict';
-const CHAPTER = { number: 6, title: '快速排序：分治法的杰作', language: 'zh', minutes: 7 };
+const CHAPTER = { number: 6, title: '快速排序：分治法的杰作', language: 'zh', minutes: 18 };
 
 /* ---------- 颜色 ---------- */
 const UNSORTED = '#8a8f98';
@@ -296,7 +296,7 @@ const BEATS = [
   const iLabel = T(p, 'i', { x: 0, y: y0 + 60, size: 24, fill: LESS, anchor: 'middle', weight: 600, o: 0 });
   
   const jArrow = path(p, '', { stroke: COMPARING, 'stroke-width': 3, opacity: 0 });
-  const jLabel = T(p, 'j', { x: 0, y: y0 + 95, size: 24, fill: COMPARING, anchor: 'middle', weight: 600, o: 0 });
+  const jLabel = T(p, 'j', { x: 0, y: y0 + 100, size: 24, fill: COMPARING, anchor: 'middle', weight: 600, o: 0 });
   
   function movePointer(arrow, label, idx, t0) {
     const px = x0 + idx * barW + barW / 2;
@@ -331,9 +331,9 @@ const BEATS = [
         tw(bars[iPos], { c_fill: SWAP }, t + 1.6, 0.2);
         tw(bars[j], { c_fill: SWAP }, t + 1.6, 0.2);
         
-        // 交换位置
-        const xI = st(bars[iPos]).x;
-        const xJ = st(bars[j]).x;
+        // 交换位置（使用索引计算目标位置，不读状态）
+        const xI = x0 + iPos * barW;
+        const xJ = x0 + j * barW;
         tw(bars[iPos], { x: xJ }, t + 1.6, 0.4, io);
         tw(bars[j], { x: xI }, t + 1.6, 0.4, io);
         tw(labels[iPos], { x: xJ + (barW - 10) / 2 }, t + 1.6, 0.4, io);
@@ -351,9 +351,9 @@ const BEATS = [
         tw(bars[j], { c_fill: LESS }, t + 1.6, 0.3);
       }
       
-      t += 1.2;
+      t += 3.84;  // 1.2 × 3.2
     } else {
-      t += 0.8;
+      t += 2.56;  // 0.8 × 3.2
     }
   }
   
@@ -372,9 +372,9 @@ const BEATS = [
   tw(bars[pivotFinalPos], { c_fill: SWAP }, t + 1.6, 0.2);
   tw(bars[n - 1], { c_fill: SWAP }, t + 1.6, 0.2);
   
-  // 交换位置
-  const xPivotFinal = st(bars[pivotFinalPos]).x;
-  const xPivotCurrent = st(bars[n - 1]).x;
+  // 交换位置（使用索引计算目标位置，不读状态）
+  const xPivotFinal = x0 + pivotFinalPos * barW;
+  const xPivotCurrent = x0 + (n - 1) * barW;
   tw(bars[pivotFinalPos], { x: xPivotCurrent }, t + 1.6, 0.5, io);
   tw(bars[n - 1], { x: xPivotFinal }, t + 1.6, 0.5, io);
   tw(labels[pivotFinalPos], { x: xPivotCurrent + (barW - 10) / 2 }, t + 1.6, 0.5, io);

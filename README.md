@@ -21,8 +21,18 @@ course/                      ← 仓根 = 站点根（自定义域 course.goodfu
 
 1. 新建目录，名字用小写英文＋短横线（如 `quant-ml`）——**这个名字就是网址，定了以后不要改**；
 2. 把课程站点文件放进去（不要放源 PDF：版权且没必要）；
-3. 在根 `index.html` 的列表里加一条链接；
-4. 推 `main`，Pages 自动重新发布（首次约 30 秒–2 分钟）。
+3. **首页列表会自动更新**：推上去之后，GitHub Action（`.github/workflows/update-course-list.yml`）扫描顶层目录、把新课程加进 `index.html` 的列表并提交。**不用手工改列表。**
+4. 想给课程指定显示名/简介（不指定就用该课程 `index.html` 的 `<title>`/description），在该课程目录放一个 `course.json`：
+
+```json
+{ "title": "算法动画课 · 递归与经典算法", "desc": "从汉诺塔讲起……", "order": 1 }
+```
+
+`order` 小的排前面（不写按目录名排序）。生成逻辑在 `scripts/gen_courses.py`，也可以本地手动跑：
+
+```sh
+python3 scripts/gen_courses.py
+```
 
 ## 发布设置
 

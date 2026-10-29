@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第十六章 深度优先搜索（DFS）</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#dfs-demo" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 16, title: '深度优先搜索（DFS）', language: 'zh', minutes: 11 };
+
+/* ---------- 颜色方案 ---------- */
+const UNVISITED = '#95a5a6';    // 灰色（未访问）
+const VISITING = '#f39c12';     // 橙色（正在访问）
+const VISITED = '#2ecc71';      // 绿色（已访问）
+const BACKTRACK = '#f1c40f';    // 黄色（回溯）
+const EDGE_ACTIVE = '#e74c3c';  // 红色（正在遍历的边）
+const STACK_BG = '#3498db';     // 蓝色（栈背景）
+const TEXT_COLOR = '#2c3e50';   // 深色文字
+
+/* ---------- 辅助函数 ---------- */
+function drawNode(parent, x, y, label, color = UNVISITED) {
+  const g = G(parent, { x, y, o: 0 });
+  const circle = mk('circle', { cx: 0, cy: 0, r: 35, fill: color, stroke: TEXT_COLOR, 'stroke-width': 3 }, g);
+  const text = T(g, label, { x: 0, y: 0, size: 28, weight: 700, fill: '#fff', anchor: 'middle' });
+  text.setAttribute('dominant-baseline', 'central');
+  return { g, circle, text };
+}
+
+function drawEdge(parent, x1, y1, x2, y2, color = TEXT_COLOR) {
+  const line = mk('line', { 
+    x1, y1, x2, y2, 
+    stroke: color, 
+    'stroke-width': 3,
+    opacity: 0 
+  }, parent);
+  return line;
+}
+
+function drawStack(parent, x, y, width = 120, height = 60) {
+  const g = G(parent, { x, y, o: 0 });
+  const rect = mk('rect', {
+    x: 0, y: 0,
+    width, height,
+    fill: STACK_BG,
+    stroke: TEXT_COLOR,
+    'stroke-width': 3,
+    rx: 8
+  }, g);
+  return { g, rect };
+}
+
+/* ---------- Beats ---------- */
+let BEATS = [
+
+['intro', '问题引入', (panel) => {
+  T(panel(0), '深度优先搜索（DFS）', { x: 400, y: 100, size: 48, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const scenarios = [
+    { icon: '🧩', text: '走迷宫：一条路走到底，不行就回溯', y: 200 },
+    { icon: '📁', text: '文件系统：深入目录树', y: 280 },
+    { icon: '🎮', text: '游戏 AI：探索所有可能的走法', y: 360 },
+    { icon: '🔢', text: '数独求解：尝试每个可能的数字', y: 440 }
+  ];
+  
+  scenarios.forEach(({ icon, text, y }, i) => {
+    const g = G(panel(0), { x: 150, y, o: 0 });
+    T(g, icon, { x: 0, y: 0, size: 40, anchor: 'middle' });
+    T(g, text, { x: 80, y: 0, size: 28, fill: TEXT_COLOR, anchor: 'start' });
+    tw(g, { o: 1 }, 0.5 + i * 0.3);
+  });
+  
+  const question = T(panel(0), '核心问题：如何深入探索图/树的结构？', { 
+    x: 400, y: 550, size: 32, weight: 600, fill: VISITING, anchor: 'middle', o: 0 
+  });
+  tw(question, { o: 1 }, 2.5);
+}],
+
+['concept', 'DFS 基本思想', (panel) => {
+  T(panel(0), 'DFS 基本思想', { x: 400, y: 100, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const concepts = [
+    { title: '深度优先', desc: '沿着一条路径尽可能深入', color: VISITING, y: 200 },
+    { title: '回溯', desc: '走不通了就返回，尝试其他路径', color: BACKTRACK, y: 290 },
+    { title: '后进先出', desc: '使用栈（Stack）或递归', color: STACK_BG, y: 380 }
+  ];
+  
+  concepts.forEach(({ title, desc, color, y }, i) => {
+    const box = mk('rect', { 
+      x: 100, y: y - 30, width: 600, height: 70, 
+      fill: color, opacity: 0.2, rx: 10, o: 0 
+    }, panel(0));
+    tw(box, { o: 1 }, 0.5 + i * 0.5);
+    
+    const titleText = T(panel(0), title, { 
+      x: 120, y: y - 5, size: 32, weight: 700, fill: color, o: 0 
+    });
+    tw(titleText, { o: 1 }, 0.7 + i * 0.5);
+    
+    const descText = T(panel(0), desc, { 
+      x: 120, y: y + 25, size: 24, fill: TEXT_COLOR, o: 0 
+    });
+    tw(descText, { o: 1 }, 0.9 + i * 0.5);
+  });
+  
+  const process = T(panel(0), '过程：从起点开始 → 访问未访问的邻居 → 递归 → 回溯', { 
+    x: 400, y: 500, size: 26, fill: TEXT_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(process, { o: 1 }, 2.5);
+}],
+
+['recursive', '递归实现', (panel) => {
+  T(panel(0), '递归实现', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const code = `def dfs_recursive(graph, node, visited=None):
+    if visited is None:
+        visited = set()
+    
+    visited.add(node)
+    print(node)  # 处理当前节点
+    
+    for neighbor in graph[node]:
+        if neighbor not in visited:
+            dfs_recursive(graph, neighbor, visited)
+    
+    return visited`;
+  
+  const lines = code.split('\n');
+  lines.forEach((line, i) => {
+    const text = T(panel(0), line, { 
+      x: 100, y: 150 + i * 32, size: 20, fill: TEXT_COLOR, family: 'monospace', o: 0 
+    });
+    tw(text, { o: 1 }, 0.3 + i * 0.15);
+  });
+  
+  const note = T(panel(0), '简洁优雅，利用递归栈自动管理回溯', { 
+    x: 400, y: 550, size: 28, weight: 600, fill: VISITING, anchor: 'middle', o: 0 
+  });
+  tw(note, { o: 1 }, 3.0);
+}],
+
+['iterative', '迭代实现', (panel) => {
+  T(panel(0), '迭代实现（显式栈）', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const code = `def dfs_iterative(graph, start):
+    visited = set()
+    stack = [start]
+    result = []
+    
+    while stack:
+        node = stack.pop()  # 出栈
+        
+        if node not in visited:
+            visited.add(node)
+            result.append(node)
+            
+            # 将未访问的邻居入栈
+            for neighbor in reversed(graph[node]):
+                if neighbor not in visited:
+                    stack.append(neighbor)
+    
+    return result`;
+  
+  const lines = code.split('\n');
+  lines.forEach((line, i) => {
+    const text = T(panel(0), line, { 
+      x: 80, y: 140 + i * 26, size: 18, fill: TEXT_COLOR, family: 'monospace', o: 0 
+    });
+    tw(text, { o: 1 }, 0.2 + i * 0.12);
+  });
+  
+  const complexity = T(panel(0), '时间复杂度：O(V + E)    空间复杂度：O(V)', { 
+    x: 400, y: 560, size: 26, weight: 600, fill: EDGE_ACTIVE, anchor: 'middle', o: 0 
+  });
+  tw(complexity, { o: 1 }, 3.5);
+}],
+
+['dfs-demo', 'DFS 遍历演示', (panel) => {
+  T(panel(0), 'DFS 遍历演示', { x: 400, y: 60, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  // 图结构：7个节点
+  const nodes = {
+    A: { x: 400, y: 150 },
+    B: { x: 250, y: 280 },
+    C: { x: 550, y: 280 },
+    D: { x: 150, y: 410 },
+    E: { x: 350, y: 410 },
+    F: { x: 450, y: 410 },
+    G: { x: 650, y: 410 }
+  };
+  
+  const edges = [
+    ['A', 'B'], ['A', 'C'],
+    ['B', 'D'], ['B', 'E'],
+    ['C', 'F'], ['C', 'G']
+  ];
+  
+  // 创建边
+  const edgeElements = {};
+  edges.forEach(([from, to], i) => {
+    const { x: x1, y: y1 } = nodes[from];
+    const { x: x2, y: y2 } = nodes[to];
+    edgeElements[`${from}-${to}`] = drawEdge(panel(0), x1, y1, x2, y2);
+    tw(edgeElements[`${from}-${to}`], { opacity: 0.3 }, 0.5 + i * 0.1);
+  });
+  
+  // 创建节点
+  const nodeElements = {};
+  Object.entries(nodes).forEach(([label, { x, y }], i) => {
+    nodeElements[label] = drawNode(panel(0), x, y, label);
+    tw(nodeElements[label].g, { o: 1 }, 0.8 + i * 0.1);
+  });
+  
+  // 调用栈显示
+  const stackLabel = T(panel(0), '调用栈:', { x: 50, y: 520, size: 24, weight: 600, fill: TEXT_COLOR, o: 0 });
+  tw(stackLabel, { o: 1 }, 1.0);
+  
+  // 遍历顺序显示
+  const orderLabel = T(panel(0), '遍历顺序:', { x: 400, y: 520, size: 24, weight: 600, fill: TEXT_COLOR, o: 0 });
+  tw(orderLabel, { o: 1 }, 1.0);
+  
+  const orderText = T(panel(0), '', { x: 520, y: 520, size: 24, fill: VISITED, o: 0 });
+  tw(orderText, { o: 1 }, 1.0);
+  
+  let order = [];
+  
+  // DFS 遍历动画序列
+  // 访问 A
+  tw(nodeElements['A'].circle, { fill: VISITING }, 2.0);
+  tw(nodeElements['A'].circle, { fill: VISITED }, 2.4);
+  order.push('A');
+  orderText.textContent = 'A';
+  
+  // A 入栈
+  const stackA = drawStack(panel(0), 50, 560);
+  const stackTextA = T(stackA.g, 'A', { x: 60, y: 30, size: 24, weight: 600, fill: '#fff', anchor: 'middle' });
+  stackTextA.setAttribute('dominant-baseline', 'central');
+  tw(stackA.g, { o: 1 }, 2.5);
+  
+  // 高亮边 A-B
+  tw(edgeElements['A-B'], { stroke: EDGE_ACTIVE, 'stroke-width': 5, opacity: 1 }, 3.0);
+  tw(edgeElements['A-B'], { stroke: TEXT_COLOR, 'stroke-width': 3, opacity: 0.5 }, 3.5);
+  
+  // 访问 B
+  tw(nodeElements['B'].circle, { fill: VISITING }, 3.5);
+  tw(nodeElements['B'].circle, { fill: VISITED }, 3.9);
+  order.push('B');
+  orderText.textContent = 'A → B';
+  
+  // B 入栈
+  const stackB = drawStack(panel(0), 50, 545);
+  const stackTextB = T(stackB.g, 'B', { x: 60, y: 30, size: 24, weight: 600, fill: '#fff', anchor: 'middle' });
+  stackTextB.setAttribute('dominant-baseline', 'central');
+  tw(stackB.g, { o: 1 }, 4.0);
+  
+  // 高亮边 B-D
+  tw(edgeElements['B-D'], { stroke: EDGE_ACTIVE, 'stroke-width': 5, opacity: 1 }, 4.5);
+  tw(edgeElements['B-D'], { stroke: TEXT_COLOR, 'stroke-width': 3, opacity: 0.5 }, 5.0);
+  
+  // 访问 D
+  tw(nodeElements['D'].circle, { fill: VISITING }, 5.0);
+  tw(nodeElements['D'].circle, { fill: VISITED }, 5.4);
+  order.push('D');
+  orderText.textContent = 'A → B → D';
+  
+  // D 入栈
+  const stackD = drawStack(panel(0), 50, 530);
+  const stackTextD = T(stackD.g, 'D', { x: 60, y: 30, size: 24, weight: 600, fill: '#fff', anchor: 'middle' });
+  stackTextD.setAttribute('dominant-baseline', 'central');
+  tw(stackD.g, { o: 1 }, 5.5);
+  
+  // D 回溯
+  tw(nodeElements['D'].circle, { fill: BACKTRACK }, 6.0);
+  tw(nodeElements['D'].circle, { fill: VISITED }, 6.3);
+  tw(stackD.g, { o: 0 }, 6.3);
+  
+  // 高亮边 B-E
+  tw(edgeElements['B-E'], { stroke: EDGE_ACTIVE, 'stroke-width': 5, opacity: 1 }, 6.8);
+  tw(edgeElements['B-E'], { stroke: TEXT_COLOR, 'stroke-width': 3, opacity: 0.5 }, 7.3);
+  
+  // 访问 E
+  tw(nodeElements['E'].circle, { fill: VISITING }, 7.3);
+  tw(nodeElements['E'].circle, { fill: VISITED }, 7.7);
+  order.push('E');
+  orderText.textContent = 'A → B → D → E';
+  
+  // E 入栈
+  const stackE = drawStack(panel(0), 50, 530);
+  const stackTextE = T(stackE.g, 'E', { x: 60, y: 30, size: 24, weight: 600, fill: '#fff', anchor: 'middle' });
+  stackTextE.setAttribute('dominant-baseline', 'central');
+  tw(stackE.g, { o: 1 }, 7.8);
+  
+  // E 回溯
+  tw(nodeElements['E'].circle, { fill: BACKTRACK }, 8.3);
+  tw(nodeElements['E'].circle, { fill: VISITED }, 8.6);
+  tw(stackE.g, { o: 0 }, 8.6);
+  
+  // B 回溯
+  tw(nodeElements['B'].circle, { fill: BACKTRACK }, 9.1);
+  tw(nodeElements['B'].circle, { fill: VISITED }, 9.4);
+  tw(stackB.g, { o: 0 }, 9.4);
+  
+  // 高亮边 A-C
+  tw(edgeElements['A-C'], { stroke: EDGE_ACTIVE, 'stroke-width': 5, opacity: 1 }, 9.9);
+  tw(edgeElements['A-C'], { stroke: TEXT_COLOR, 'stroke-width': 3, opacity: 0.5 }, 10.4);
+  
+  // 访问 C
+  tw(nodeElements['C'].circle, { fill: VISITING }, 10.4);
+  tw(nodeElements['C'].circle, { fill: VISITED }, 10.8);
+  order.push('C');
+  orderText.textContent = 'A → B → D → E → C';
+  
+  // C 入栈
+  const stackC = drawStack(panel(0), 50, 545);
+  const stackTextC = T(stackC.g, 'C', { x: 60, y: 30, size: 24, weight: 600, fill: '#fff', anchor: 'middle' });
+  stackTextC.setAttribute('dominant-baseline', 'central');
+  tw(stackC.g, { o: 1 }, 10.9);
+  
+  // 高亮边 C-F
+  tw(edgeElements['C-F'], { stroke: EDGE_ACTIVE, 'stroke-width': 5, opacity: 1 }, 11.4);
+  tw(edgeElements['C-F'], { stroke: TEXT_COLOR, 'stroke-width': 3, opacity: 0.5 }, 11.9);
+  
+  // 访问 F
+  tw(nodeElements['F'].circle, { fill: VISITING }, 11.9);
+  tw(nodeElements['F'].circle, { fill: VISITED }, 12.3);
+  order.push('F');
+  orderText.textContent = 'A → B → D → E → C → F';
+  
+  // F 入栈
+  const stackF = drawStack(panel(0), 50, 530);
+  const stackTextF = T(stackF.g, 'F', { x: 60, y: 30, size: 24, weight: 600, fill: '#fff', anchor: 'middle' });
+  stackTextF.setAttribute('dominant-baseline', 'central');
+  tw(stackF.g, { o: 1 }, 12.4);
+  
+  // F 回溯
+  tw(nodeElements['F'].circle, { fill: BACKTRACK }, 12.9);
+  tw(nodeElements['F'].circle, { fill: VISITED }, 13.2);
+  tw(stackF.g, { o: 0 }, 13.2);
+  
+  // 高亮边 C-G
+  tw(edgeElements['C-G'], { stroke: EDGE_ACTIVE, 'stroke-width': 5, opacity: 1 }, 13.7);
+  tw(edgeElements['C-G'], { stroke: TEXT_COLOR, 'stroke-width': 3, opacity: 0.5 }, 14.2);
+  
+  // 访问 G
+  tw(nodeElements['G'].circle, { fill: VISITING }, 14.2);
+  tw(nodeElements['G'].circle, { fill: VISITED }, 14.6);
+  order.push('G');
+  orderText.textContent = 'A → B → D → E → C → F → G';
+  
+  // G 入栈
+  const stackG = drawStack(panel(0), 50, 530);
+  const stackTextG = T(stackG.g, 'G', { x: 60, y: 30, size: 24, weight: 600, fill: '#fff', anchor: 'middle' });
+  stackTextG.setAttribute('dominant-baseline', 'central');
+  tw(stackG.g, { o: 1 }, 14.7);
+  
+  // G 回溯
+  tw(nodeElements['G'].circle, { fill: BACKTRACK }, 15.2);
+  tw(nodeElements['G'].circle, { fill: VISITED }, 15.5);
+  tw(stackG.g, { o: 0 }, 15.5);
+  
+  // C 回溯
+  tw(nodeElements['C'].circle, { fill: BACKTRACK }, 16.0);
+  tw(nodeElements['C'].circle, { fill: VISITED }, 16.3);
+  tw(stackC.g, { o: 0 }, 16.3);
+  
+  // A 回溯
+  tw(nodeElements['A'].circle, { fill: BACKTRACK }, 16.8);
+  tw(nodeElements['A'].circle, { fill: VISITED }, 17.1);
+  tw(stackA.g, { o: 0 }, 17.1);
+  
+  // 最终状态
+  const finalNote = T(panel(0), '遍历完成！', { x: 400, y: 560, size: 28, weight: 600, fill: VISITED, anchor: 'middle', o: 0 });
+  tw(finalNote, { o: 1 }, 17.5);
+}],
+
+['comparison', 'DFS vs BFS', (panel) => {
+  T(panel(0), 'DFS vs BFS 对比', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const headers = ['特性', 'DFS', 'BFS'];
+  const rows = [
+    ['数据结构', '栈（Stack）或递归', '队列（Queue）'],
+    ['遍历方式', '深度优先', '层级遍历'],
+    ['空间复杂度', 'O(深度)', 'O(宽度)'],
+    ['最短路径', '✗', '✓（无权图）'],
+    ['适用场景', '拓扑排序、环检测、路径搜索', '最短路径、层序遍历']
+  ];
+  
+  const colX = [100, 300, 550];
+  const startY = 160;
+  const rowHeight = 60;
+  
+  headers.forEach((h, i) => {
+    const text = T(panel(0), h, { 
+      x: colX[i], y: startY, size: 28, weight: 700, fill: VISITING, o: 0 
+    });
+    tw(text, { o: 1 }, 0.5 + i * 0.2);
+  });
+  
+  rows.forEach((row, ri) => {
+    row.forEach((cell, ci) => {
+      const text = T(panel(0), cell, { 
+        x: colX[ci], y: startY + (ri + 1) * rowHeight, 
+        size: 22, fill: TEXT_COLOR, o: 0 
+      });
+      tw(text, { o: 1 }, 1.0 + ri * 0.3 + ci * 0.1);
+    });
+  });
+}],
+
+['path-finding', '应用：路径查找', (panel) => {
+  T(panel(0), '应用：路径查找', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const code = `def find_path(graph, start, target, path=None):
+    if path is None:
+        path = []
+    path.append(start)
+    
+    if start == target:
+        return path
+    
+    for neighbor in graph[start]:
+        if neighbor not in path:  # 避免环
+            result = find_path(graph, neighbor, 
+                             target, path.copy())
+            if result:
+                return result
+    
+    return None`;
+  
+  const lines = code.split('\n');
+  lines.forEach((line, i) => {
+    const text = T(panel(0), line, { 
+      x: 80, y: 140 + i * 26, size: 18, fill: TEXT_COLOR, family: 'monospace', o: 0 
+    });
+    tw(text, { o: 1 }, 0.2 + i * 0.1);
+  });
+  
+  const note = T(panel(0), '找到从起点到目标的一条路径（不一定最短）', { 
+    x: 400, y: 540, size: 26, weight: 600, fill: VISITING, anchor: 'middle', o: 0 
+  });
+  tw(note, { o: 1 }, 2.5);
+}],
+
+['cycle-detection', '应用：环检测', (panel) => {
+  T(panel(0), '应用：环检测', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const code = `def has_cycle(graph):
+    visited = set()
+    rec_stack = set()  # 递归栈
+    
+    def dfs(node):
+        visited.add(node)
+        rec_stack.add(node)
+        
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                if dfs(neighbor):
+                    return True
+            elif neighbor in rec_stack:
+                return True  # 发现环
+        
+        rec_stack.remove(node)
+        return False
+    
+    for node in graph:
+        if node not in visited:
+            if dfs(node):
+                return True
+    return False`;
+  
+  const lines = code.split('\n');
+  lines.forEach((line, i) => {
+    const text = T(panel(0), line, { 
+      x: 70, y: 130 + i * 22, size: 17, fill: TEXT_COLOR, family: 'monospace', o: 0 
+    });
+    tw(text, { o: 1 }, 0.15 + i * 0.08);
+  });
+  
+  const note = T(panel(0), '用递归栈检测有向图中的环', { 
+    x: 400, y: 560, size: 26, weight: 600, fill: EDGE_ACTIVE, anchor: 'middle', o: 0 
+  });
+  tw(note, { o: 1 }, 2.8);
+}],
+
+['components', '应用：连通分量', (panel) => {
+  T(panel(0), '应用：连通分量', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const code = `def count_components(graph):
+    visited = set()
+    count = 0
+    
+    def dfs(node):
+        visited.add(node)
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                dfs(neighbor)
+    
+    for node in graph:
+        if node not in visited:
+            dfs(node)
+            count += 1
+    
+    return count`;
+  
+  const lines = code.split('\n');
+  lines.forEach((line, i) => {
+    const text = T(panel(0), line, { 
+      x: 100, y: 150 + i * 28, size: 19, fill: TEXT_COLOR, family: 'monospace', o: 0 
+    });
+    tw(text, { o: 1 }, 0.2 + i * 0.12);
+  });
+  
+  const note = T(panel(0), '统计无向图中有多少个连通分量', { 
+    x: 400, y: 540, size: 26, weight: 600, fill: VISITING, anchor: 'middle', o: 0 
+  });
+  tw(note, { o: 1 }, 2.5);
+}],
+
+['timestamps', 'DFS 时间戳', (panel) => {
+  T(panel(0), 'DFS 的三个时间戳', { x: 400, y: 100, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const concepts = [
+    { 
+      title: '发现时间（Discovery Time）', 
+      desc: '第一次访问节点的时间', 
+      y: 200 
+    },
+    { 
+      title: '完成时间（Finish Time）', 
+      desc: '所有邻居都访问完的时间', 
+      y: 300 
+    },
+    { 
+      title: '用途', 
+      desc: '拓扑排序、强连通分量、边分类', 
+      y: 400 
+    }
+  ];
+  
+  concepts.forEach(({ title, desc, y }, i) => {
+    const titleText = T(panel(0), title, { 
+      x: 120, y, size: 30, weight: 700, fill: VISITING, o: 0 
+    });
+    tw(titleText, { o: 1 }, 0.5 + i * 0.5);
+    
+    const descText = T(panel(0), desc, { 
+      x: 120, y: y + 40, size: 24, fill: TEXT_COLOR, o: 0 
+    });
+    tw(descText, { o: 1 }, 0.7 + i * 0.5);
+  });
+  
+  const note = T(panel(0), '按完成时间降序 = 拓扑排序', { 
+    x: 400, y: 520, size: 28, weight: 600, fill: EDGE_ACTIVE, anchor: 'middle', o: 0 
+  });
+  tw(note, { o: 1 }, 2.5);
+}],
+
+['tree-traversal', '树的遍历', (panel) => {
+  T(panel(0), '树的遍历（DFS 变体）', { x: 400, y: 100, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const traversals = [
+    { name: '前序遍历（Pre-order）', order: '根 → 左 → 右', color: VISITING, y: 210 },
+    { name: '中序遍历（In-order）', order: '左 → 根 → 右', color: STACK_BG, y: 310 },
+    { name: '后序遍历（Post-order）', order: '左 → 右 → 根', color: BACKTRACK, y: 410 }
+  ];
+  
+  traversals.forEach(({ name, order, color, y }, i) => {
+    const box = mk('rect', { 
+      x: 100, y: y - 40, width: 600, height: 80, 
+      fill: color, opacity: 0.2, rx: 10, o: 0 
+    }, panel(0));
+    tw(box, { o: 1 }, 0.5 + i * 0.5);
+    
+    const nameText = T(panel(0), name, { 
+      x: 120, y: y - 10, size: 32, weight: 700, fill: color, o: 0 
+    });
+    tw(nameText, { o: 1 }, 0.7 + i * 0.5);
+    
+    const orderText = T(panel(0), order, { 
+      x: 120, y: y + 20, size: 26, fill: TEXT_COLOR, o: 0 
+    });
+    tw(orderText, { o: 1 }, 0.9 + i * 0.5);
+  });
+  
+  const note = T(panel(0), '后序遍历 = DFS 完成时间顺序', { 
+    x: 400, y: 540, size: 26, weight: 600, fill: EDGE_ACTIVE, anchor: 'middle', o: 0 
+  });
+  tw(note, { o: 1 }, 2.5);
+}],
+
+['techniques', '实现技巧', (panel) => {
+  T(panel(0), '实现技巧', { x: 400, y: 100, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const tips = [
+    '递归 vs 迭代：递归更简洁，迭代更灵活',
+    '避免重复访问：用 visited 集合',
+    '检测环：用递归栈（rec_stack）',
+    '记录路径：传递 path 参数或用 parent 字典',
+    '限制深度：防止栈溢出'
+  ];
+  
+  tips.forEach((tip, i) => {
+    const bullet = T(panel(0), '●', { 
+      x: 100, y: 200 + i * 70, size: 32, fill: VISITING, o: 0 
+    });
+    tw(bullet, { o: 1 }, 0.5 + i * 0.3);
+    
+    const text = T(panel(0), tip, { 
+      x: 140, y: 200 + i * 70, size: 26, fill: TEXT_COLOR, o: 0 
+    });
+    tw(text, { o: 1 }, 0.7 + i * 0.3);
+  });
+}],
+
+['finish', '总结', (panel) => {
+  T(panel(0), '深度优先搜索（DFS）', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const applications = [
+    '🔍 拼写检查：岛屿数量问题',
+    '🧩 数独求解：回溯法（DFS + 剪枝）',
+    '👑 N 皇后：回溯法（见第二章）',
+    '🔗 括号生成：DFS 生成所有有效组合',
+    '📊 拓扑排序：DFS 后序遍历的逆序',
+    '🔄 强连通分量：Kosaraju 算法'
+  ];
+  
+  applications.forEach((app, i) => {
+    const text = T(panel(0), app, { 
+      x: 120, y: 180 + i * 55, size: 26, fill: TEXT_COLOR, o: 0 
+    });
+    tw(text, { o: 1 }, 0.5 + i * 0.25);
+  });
+  
+  const summary = T(panel(0), '核心思想：深入探索 + 回溯 + 记忆化', { 
+    x: 400, y: 520, size: 30, weight: 700, fill: VISITING, anchor: 'middle', o: 0 
+  });
+  tw(summary, { o: 1 }, 3.0);
+  
+  const complexity = T(panel(0), '时间：O(V + E)    空间：O(V)', { 
+    x: 400, y: 570, size: 26, weight: 600, fill: EDGE_ACTIVE, anchor: 'middle', o: 0 
+  });
+  tw(complexity, { o: 1 }, 3.5);
+}]
+
+];
+
+// 标准化 beats
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
+boot();
+if (typeof module !== 'undefined') module.exports = { CHAPTER, BEATS };
+</script>
+</body>
+</html>

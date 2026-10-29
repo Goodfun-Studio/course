@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第二十六章 树状数组（Fenwick Tree）</title>
+<link rel="stylesheet" href="../lib/engine.css">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 26, title: '树状数组（Fenwick Tree）', language: 'zh', minutes: 11 };
+
+/* ---------- 颜色方案 ---------- */
+const PRIMARY_COLOR = '#3498db';      // 蓝色（主色）
+const HIGHLIGHT_COLOR = '#e74c3c';    // 红色（高亮）
+const SUCCESS_COLOR = '#2ecc71';      // 绿色（成功）
+const WARNING_COLOR = '#f39c12';      // 橙色（警告）
+const PURPLE_COLOR = '#9b59b6';       // 紫色（辅助）
+const DARK_COLOR = '#2c3e50';         // 深色（文字）
+const LIGHT_BG = '#ecf0f1';           // 浅灰（背景）
+const PROCESS_COLOR = '#f1c40f';      // 黄色（处理中）
+
+/* ---------- 辅助函数 ---------- */
+function drawBITNode(parent, x, y, index, value, color = PRIMARY_COLOR) {
+  const g = G(parent, { x, y, o: 0 });
+  
+  // 矩形框
+  const rect = mk('rect', {
+    x: -30, y: -25, width: 60, height: 50,
+    fill: color, stroke: DARK_COLOR, 'stroke-width': 2, rx: 5
+  }, g);
+  
+  // 索引
+  const indexText = T(g, `[${index}]`, { 
+    x: 0, y: -8, size: 16, weight: 600, fill: '#fff', anchor: 'middle' 
+  });
+  
+  // 值
+  const valueText = T(g, value.toString(), { 
+    x: 0, y: 12, size: 18, weight: 700, fill: '#fff', anchor: 'middle' 
+  });
+  
+  return { g, rect, indexText, valueText };
+}
+
+function drawArrow(parent, x1, y1, x2, y2, color = DARK_COLOR, label = '') {
+  const g = G(parent, { o: 0 });
+  
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  const ux = dx / len;
+  const uy = dy / len;
+  
+  // 缩短箭头，避免覆盖节点
+  const startX = x1 + ux * 35;
+  const startY = y1 + uy * 35;
+  const endX = x2 - ux * 35;
+  const endY = y2 - uy * 35;
+  
+  // 线
+  const line = mk('line', {
+    x1: startX, y1: startY, x2: endX, y2: endY,
+    stroke: color, 'stroke-width': 3, 'marker-end': 'url(#arrowhead)'
+  }, g);
+  
+  // 标签
+  let text = null;
+  if (label) {
+    const midX = (startX + endX) / 2;
+    const midY = (startY + endY) / 2;
+    text = T(g, label, {
+      x: midX + 15, y: midY - 10, size: 16, weight: 600, fill: color, anchor: 'middle'
+    });
+  }
+  
+  return { g, line, text };
+}
+
+function createArrowMarker(parent) {
+  const defs = mk('defs', {}, parent);
+  const marker = mk('marker', {
+    id: 'arrowhead',
+    markerWidth: 10,
+    markerHeight: 10,
+    refX: 9,
+    refY: 3,
+    orient: 'auto'
+  }, defs);
+  mk('polygon', {
+    points: '0 0, 10 3, 0 6',
+    fill: DARK_COLOR
+  }, marker);
+}
+
+/* ---------- Beats ---------- */
+window.BEATS = [
+
+['intro', '问题引入', () => {
+  const p = panel(0);
+  
+  const title = T(p, '树状数组（Fenwick Tree）', { 
+    x: 400, y: 80, size: 48, weight: 700, fill: DARK_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(title, { o: 1 }, 0.5, 0.8);
+  
+  const subtitle = T(p, 'Binary Indexed Tree', { 
+    x: 400, y: 130, size: 24, weight: 400, fill: PRIMARY_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(subtitle, { o: 1 }, 1.5, 0.6);
+  
+  const scenarios = [
+    { icon: '💡', text: '支持高效动态前缀和查询', y: 210 },
+    { icon: '🔄', text: '单点更新 O(log n)', y: 280 },
+    { icon: '📊', text: '区间求和 O(log n)', y: 350 },
+    { icon: '🚀', text: '代码简洁，常数小', y: 420 }
+  ];
+  
+  scenarios.forEach(({ icon, text, y }, i) => {
+    const g = G(p, { x: 150, y, o: 0 });
+    T(g, icon, { x: 0, y: 0, size: 36, anchor: 'middle' });
+    T(g, text, { x: 70, y: 5, size: 26, fill: DARK_COLOR, anchor: 'start' });
+    tw(g, { o: 1 }, 2.5 + i * 0.4, 0.5);
+  });
+  
+  const author = T(p, 'Peter M. Fenwick, 1994', { 
+    x: 400, y: 520, size: 20, weight: 400, fill: PURPLE_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(author, { o: 1 }, 5, 0.6);
+}],
+
+['problem', '问题场景', () => {
+  const p = panel(0);
+  
+  T(p, '动态区间查询问题', { 
+    x: 400, y: 60, size: 36, weight: 700, fill: DARK_COLOR, anchor: 'middle' 
+  });
+  
+  // 问题描述
+  const problemBox = G(p, { x: 100, y: 130, o: 0 });
+  mk('rect', { x: 0, y: 0, width: 600, height: 100, fill: LIGHT_BG, stroke: PRIMARY_COLOR, 'stroke-width': 2, rx: 8 }, problemBox);
+  T(problemBox, '给定数组，支持两种操作：', { x: 20, y: 30, size: 22, weight: 600, fill: DARK_COLOR });
+  T(problemBox, '1. 单点更新：修改某个位置的值', { x: 40, y: 60, size: 20, fill: DARK_COLOR });
+  T(problemBox, '2. 区间求和：查询任意区间的和', { x: 40, y: 85, size: 20, fill: DARK_COLOR });
+  tw(problemBox, { o: 1 }, 1, 0.8);
+  
+  // 方案对比表
+  const tableY = 280;
+  const headers = ['方案', '更新', '查询'];
+  const rows = [
+    ['普通数组', 'O(1)', 'O(n)'],
+    ['前缀和数组', 'O(n)', 'O(1)'],
+    ['树状数组', 'O(log n)', 'O(log n)']
+  ];
+  
+  const colWidths = [200, 150, 150];
+  const rowHeight = 50;
+  
+  // 表头
+  let x = 150;
+  headers.forEach((header, i) => {
+    const headerG = G(p, { x, y: tableY, o: 0 });
+    mk('rect', { x: 0, y: 0, width: colWidths[i], height: rowHeight, fill: PRIMARY_COLOR, stroke: DARK_COLOR, 'stroke-width': 2 }, headerG);
+    T(headerG, header, { x: colWidths[i] / 2, y: rowHeight / 2 + 5, size: 20, weight: 700, fill: '#fff', anchor: 'middle' });
+    tw(headerG, { o: 1 }, 3 + i * 0.3, 0.4);
+    x += colWidths[i];
+  });
+  
+  // 数据行
+  rows.forEach((row, ri) => {
+    let x = 150;
+    const y = tableY + (ri + 1) * rowHeight;
+    const isLast = ri === rows.length - 1;
+    
+    row.forEach((cell, ci) => {
+      const cellG = G(p, { x, y, o: 0 });
+      mk('rect', { 
+        x: 0, y: 0, width: colWidths[ci], height: rowHeight, 
+        fill: isLast ? SUCCESS_COLOR : '#fff', 
+        stroke: DARK_COLOR, 'stroke-width': 2 
+      }, cellG);
+      T(cellG, cell, { 
+        x: colWidths[ci] / 2, y: rowHeight / 2 + 5, 
+        size: 18, weight: isLast ? 700 : 400, 
+        fill: isLast ? '#fff' : DARK_COLOR, anchor: 'middle' 
+      });
+      tw(cellG, { o: 1 }, 5 + ri * 0.5 + ci * 0.2, 0.4);
+      x += colWidths[ci];
+    });
+  });
+  
+  const conclusion = T(p, '树状数组：两全其美的解决方案！', { 
+    x: 400, y: 530, size: 28, weight: 700, fill: HIGHLIGHT_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(conclusion, { o: 1 }, 8, 0.8);
+}],
+
+['definition', '数据结构定义', () => {
+  const p = panel(0);
+  
+  T(p, '树状数组的核心思想', { 
+    x: 400, y: 50, size: 32, weight: 700, fill: DARK_COLOR, anchor: 'middle' 
+  });
+  
+  const features = [
+    { title: '隐式树结构', desc: '通过索引计算定义父子关系', icon: '🌳', y: 130 },
+    { title: '区间管理', desc: '每个位置管理一段区间的和', icon: '📦', y: 230 },
+    { title: 'lowbit 决定', desc: '区间长度由 lowbit(i) 决定', icon: '🔑', y: 330 },
+    { title: '对数复杂度', desc: '更新和查询都是 O(log n)', icon: '⚡', y: 430 }
+  ];
+  
+  features.forEach(({ title, desc, icon, y }, i) => {
+    const g = G(p, { x: 100, y, o: 0 });
+    
+    mk('rect', { x: 0, y: 0, width: 600, height: 80, fill: LIGHT_BG, stroke: PRIMARY_COLOR, 'stroke-width': 2, rx: 8 }, g);
+    T(g, icon, { x: 40, y: 45, size: 40, anchor: 'middle' });
+    T(g, title, { x: 100, y: 30, size: 24, weight: 700, fill: DARK_COLOR });
+    T(g, desc, { x: 100, y: 58, size: 18, fill: DARK_COLOR });
+    
+    tw(g, { o: 1 }, 1.5 + i * 0.8, 0.6);
+  });
+}],
+
+['lowbit', 'lowbit 函数', () => {
+  const p = panel(0);
+  
+  T(p, 'lowbit 函数：树状数组的灵魂', { 
+    x: 400, y: 50, size: 32, weight: 700, fill: DARK_COLOR, anchor: 'middle' 
+  });
+  
+  // 公式
+  const formulaG = G(p, { x: 400, y: 120, o: 0 });
+  mk('rect', { x: -200, y: -30, width: 400, height: 60, fill: PRIMARY_COLOR, stroke: DARK_COLOR, 'stroke-width': 2, rx: 8 }, formulaG);
+  T(formulaG, 'lowbit(x) = x & (-x)', { x: 0, y: 5, size: 32, weight: 700, fill: '#fff', anchor: 'middle' });
+  tw(formulaG, { o: 1 }, 1, 0.8);
+  
+  // 示例
+  const examples = [
+    { x: 6, binary: '110', result: 2, resultBinary: '010' },
+    { x: 12, binary: '1100', result: 4, resultBinary: '0100' },
+    { x: 5, binary: '101', result: 1, resultBinary: '001' },
+    { x: 8, binary: '1000', result: 8, resultBinary: '1000' }
+  ];
+  
+  T(p, '示例计算：', { x: 100, y: 220, size: 24, weight: 700, fill: DARK_COLOR });
+  
+  examples.forEach((ex, i) => {
+    const y = 270 + i * 70;
+    const g = G(p, { x: 100, y, o: 0 });
+    
+    T(g, `lowbit(${ex.x}) = ${ex.x} & (-${ex.x})`, { x: 0, y: 0, size: 20, weight: 600, fill: DARK_COLOR });
+    T(g, `${ex.binary} & ${ex.resultBinary} = ${ex.result}`, { 
+      x: 0, y: 28, size: 18, fill: PURPLE_COLOR, family: 'Monaco, monospace' 
+    });
+    
+    tw(g, { o: 1 }, 3 + i * 0.6, 0.5);
+  });
+  
+  const hint = T(p, '提取二进制中最低位的 1', { 
+    x: 400, y: 540, size: 24, weight: 600, fill: HIGHLIGHT_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(hint, { o: 1 }, 7, 0.8);
+}],
+
+['structure', '树状数组结构', () => {
+  const p = panel(0);
+  
+  T(p, '树状数组的存储结构', { 
+    x: 400, y: 50, size: 32, weight: 700, fill: DARK_COLOR, anchor: 'middle' 
+  });
+  
+  createArrowMarker(p);
+  
+  // 绘制8个位置的树状数组
+  const positions = [
+    { index: 1, range: '[1,1]', x: 100, y: 450, level: 0 },
+    { index: 2, range: '[1,2]', x: 220, y: 350, level: 1 },
+    { index: 3, range: '[3,3]', x: 340, y: 450, level: 0 },
+    { index: 4, range: '[1,4]', x: 460, y: 250, level: 2 },
+    { index: 5, range: '[5,5]', x: 100, y: 450, level: 0 },
+    { index: 6, range: '[5,6]', x: 220, y: 350, level: 1 },
+    { index: 7, range: '[7,7]', x: 340, y: 450, level: 0 },
+    { index: 8, range: '[1,8]', x: 580, y: 150, level: 3 }
+  ];
+  
+  // 调整位置以适应画布
+  const adjustedPos = [
+    { index: 1, range: '[1,1]', x: 150, y: 400 },
+    { index: 2, range: '[1,2]', x: 250, y: 320 },
+    { index: 3, range: '[3,3]', x: 350, y: 400 },
+    { index: 4, range: '[1,4]', x: 400, y: 220 },
+    { index: 5, range: '[5,5]', x: 500, y: 400 },
+    { index: 6, range: '[5,6]', x: 550, y: 320 },
+    { index: 7, range: '[7,7]', x: 650, y: 400 },
+    { index: 8, range: '[1,8]', x: 500, y: 120 }
+  ];
+  
+  const nodes = [];
+  
+  // 绘制节点
+  adjustedPos.forEach((pos, i) => {
+    const node = drawBITNode(p, pos.x, pos.y, pos.index, pos.range);
+    nodes.push(node);
+    tw(node.g, { o: 1 }, 1 + i * 0.3, 0.4);
+  });
+  
+  // 绘制边（父子关系）
+  const edges = [
+    [0, 1], // 1 -> 2
+    [2, 1], // 3 -> 2
+    [1, 3], // 2 -> 4
+    [4, 5], // 5 -> 6
+    [6, 5], // 7 -> 6
+    [5, 7], // 6 -> 8
+    [3, 7]  // 4 -> 8
+  ];
+  
+  edges.forEach(([from, to], i) => {
+    const arrow = drawArrow(p, adjustedPos[from].x, adjustedPos[from].y, 
+                            adjustedPos[to].x, adjustedPos[to].y, PURPLE_COLOR);
+    tw(arrow.g, { o: 1 }, 4 + i * 0.3, 0.4);
+  });
+  
+  const hint = T(p, '每个节点管理一段区间，lowbit 值决定区间长度', { 
+    x: 400, y: 520, size: 20, weight: 600, fill: HIGHLIGHT_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(hint, { o: 1 }, 7, 0.8);
+}],
+
+['update-demo', '单点更新演示', () => {
+  const p = panel(0);
+  
+  T(p, '单点更新：更新位置 3，增加 +5', { 
+    x: 400, y: 50, size: 32, weight: 700, fill: DARK_COLOR, anchor: 'middle' 
+  });
+  
+  createArrowMarker(p);
+  
+  // 树状数组节点
+  const positions = [
+    { index: 1, x: 150, y: 380 },
+    { index: 2, x: 250, y: 300 },
+    { index: 3, x: 350, y: 380 },
+    { index: 4, x: 400, y: 200 },
+    { index: 5, x: 500, y: 380 },
+    { index: 6, x: 550, y: 300 },
+    { index: 7, x: 650, y: 380 },
+    { index: 8, x: 500, y: 100 }
+  ];
+  
+  const nodes = [];
+  positions.forEach((pos, i) => {
+    const node = drawBITNode(p, pos.x, pos.y, pos.index, '0');
+    nodes.push(node);
+    tw(node.g, { o: 1 }, 0.5, 0.4);
+  });
+  
+  let t = 2;
+  
+  // 步骤1：更新位置3
+  const step1 = T(p, '步骤1：更新 tree[3] += 5', { 
+    x: 100, y: 480, size: 22, weight: 600, fill: PROCESS_COLOR, o: 0 
+  });
+  tw(step1, { o: 1 }, t, 0.4);
+  tw(nodes[2].rect, { fill: PROCESS_COLOR }, t, 0.3);
+  tw(nodes[2].valueText, { o: 0 }, t + 0.3, 0.2);
+  tw(step1, { o: 0 }, t + 2, 0.3);
+  t += 0.6;
+  
+  nodes[2].valueText.textContent = '5';
+  tw(nodes[2].valueText, { o: 1 }, t, 0.3);
+  tw(nodes[2].rect, { fill: SUCCESS_COLOR }, t + 0.3, 0.3);
+  t += 1.2;
+  
+  // 箭头3 -> 4
+  const arrow1 = drawArrow(p, positions[2].x, positions[2].y, positions[3].x, positions[3].y, HIGHLIGHT_COLOR, 'i += lowbit(i)');
+  tw(arrow1.g, { o: 1 }, t, 0.4);
+  t += 0.8;
+  
+  // 步骤2：更新位置4
+  const step2 = T(p, '步骤2：更新 tree[4] += 5', { 
+    x: 100, y: 480, size: 22, weight: 600, fill: PROCESS_COLOR, o: 0 
+  });
+  tw(step2, { o: 1 }, t, 0.4);
+  tw(nodes[3].rect, { fill: PROCESS_COLOR }, t, 0.3);
+  tw(nodes[3].valueText, { o: 0 }, t + 0.3, 0.2);
+  tw(step2, { o: 0 }, t + 2, 0.3);
+  t += 0.6;
+  
+  nodes[3].valueText.textContent = '5';
+  tw(nodes[3].valueText, { o: 1 }, t, 0.3);
+  tw(nodes[3].rect, { fill: SUCCESS_COLOR }, t + 0.3, 0.3);
+  t += 1.2;
+  
+  // 箭头4 -> 8
+  const arrow2 = drawArrow(p, positions[3].x, positions[3].y, positions[7].x, positions[7].y, HIGHLIGHT_COLOR, 'i += lowbit(i)');
+  tw(arrow2.g, { o: 1 }, t, 0.4);
+  t += 0.8;
+  
+  // 步骤3：更新位置8
+  const step3 = T(p, '步骤3：更新 tree[8] += 5', { 
+    x: 100, y: 480, size: 22, weight: 600, fill: PROCESS_COLOR, o: 0 
+  });
+  tw(step3, { o: 1 }, t, 0.4);
+  tw(nodes[7].rect, { fill: PROCESS_COLOR }, t, 0.3);
+  tw(nodes[7].valueText, { o: 0 }, t + 0.3, 0.2);
+  tw(step3, { o: 0 }, t + 2, 0.3);
+  t += 0.6;
+  
+  nodes[7].valueText.textContent = '5';
+  tw(nodes[7].valueText, { o: 1 }, t, 0.3);
+  tw(nodes[7].rect, { fill: SUCCESS_COLOR }, t + 0.3, 0.3);
+  t += 1.2;
+  
+  const done = T(p, '完成：沿树向上更新所有受影响的节点', { 
+    x: 400, y: 520, size: 24, weight: 600, fill: HIGHLIGHT_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(done, { o: 1 }, t, 0.8);
+}],
+
+['update-code', '单点更新代码', () => {
+  const p = panel(0);
+  
+  T(p, '单点更新的代码实现', { 
+    x: 400, y: 50, size: 32, weight: 700, fill: DARK_COLOR, anchor: 'middle' 
+  });
+  
+  const codeLines = [
+    'function update(i, delta) {',
+    '  while (i <= n) {',
+    '    tree[i] += delta;',
+    '    i += lowbit(i);  // 跳到父节点',
+    '  }',
+    '}',
+    '',
+    'function lowbit(x) {',
+    '  return x & (-x);',
+    '}'
+  ];
+  
+  const codeG = G(p, { x: 150, y: 130, o: 0 });
+  mk('rect', { x: -20, y: -20, width: 500, height: 320, fill: '#2d2d2d', stroke: PRIMARY_COLOR, 'stroke-width': 2, rx: 8 }, codeG);
+  
+  codeLines.forEach((line, i) => {
+    const text = T(codeG, line, { 
+      x: 10, y: 10 + i * 30, size: 18, fill: '#f8f8f2', family: 'Monaco, monospace', o: 0 
+    });
+    tw(text, { o: 1 }, 1 + i * 0.3, 0.4);
+  });
+  
+  tw(codeG, { o: 1 }, 0.5, 0.6);
+  
+  const highlights = [
+    { text: '时间复杂度：O(log n)', y: 490, color: SUCCESS_COLOR },
+    { text: '代码简洁：仅需几行', y: 530, color: PRIMARY_COLOR }
+  ];
+  
+  highlights.forEach((h, i) => {
+    const t = T(p, h.text, { 
+      x: 400, y: h.y, size: 24, weight: 600, fill: h.color, anchor: 'middle', o: 0 
+    });
+    tw(t, { o: 1 }, 5 + i * 0.5, 0.6);
+  });
+}],
+
+['query-demo', '区间查询演示', () => {
+  const p = panel(0);
+  
+  T(p, '区间查询：查询 sum(1 到 7)', { 
+    x: 400, y: 50, size: 32, weight: 700, fill: DARK_COLOR, anchor: 'middle' 
+  });
+  
+  createArrowMarker(p);
+  
+  // 树状数组节点（带值）
+  const positions = [
+    { index: 1, value: '1', x: 150, y: 380 },
+    { index: 2, value: '3', x: 250, y: 300 },
+    { index: 3, value: '3', x: 350, y: 380 },
+    { index: 4, value: '10', x: 400, y: 200 },
+    { index: 5, value: '5', x: 500, y: 380 },
+    { index: 6, value: '11', x: 550, y: 300 },
+    { index: 7, value: '7', x: 650, y: 380 },
+    { index: 8, value: '36', x: 500, y: 100 }
+  ];
+  
+  const nodes = [];
+  positions.forEach((pos, i) => {
+    const node = drawBITNode(p, pos.x, pos.y, pos.index, pos.value);
+    nodes.push(node);
+    tw(node.g, { o: 1 }, 0.5, 0.4);
+  });
+  
+  let t = 2;
+  let sum = 0;
+  
+  // 步骤1：访问位置7
+  const step1 = T(p, '步骤1：sum += tree[7] = 7', { 
+    x: 100, y: 480, size: 22, weight: 600, fill: PROCESS_COLOR, o: 0 
+  });
+  tw(step1, { o: 1 }, t, 0.4);
+  tw(nodes[6].rect, { fill: PROCESS_COLOR }, t, 0.3);
+  sum += 7;
+  tw(step1, { o: 0 }, t + 2, 0.3);
+  t += 0.6;
+  
+  tw(nodes[6].rect, { fill: SUCCESS_COLOR }, t, 0.3);
+  t += 1;
+  
+  // 箭头7 -> 6
+  const arrow1 = drawArrow(p, positions[6].x, positions[6].y, positions[5].x, positions[5].y, HIGHLIGHT_COLOR, 'i -= lowbit(i)');
+  tw(arrow1.g, { o: 1 }, t, 0.4);
+  t += 0.8;
+  
+  // 步骤2：访问位置6
+  const step2 = T(p, '步骤2：sum += tree[6] = 7+11', { 
+    x: 100, y: 480, size: 22, weight: 600, fill: PROCESS_COLOR, o: 0 
+  });
+  tw(step2, { o: 1 }, t, 0.4);
+  tw(nodes[5].rect, { fill: PROCESS_COLOR }, t, 0.3);
+  sum += 11;
+  tw(step2, { o: 0 }, t + 2, 0.3);
+  t += 0.6;
+  
+  tw(nodes[5].rect, { fill: SUCCESS_COLOR }, t, 0.3);
+  t += 1;
+  
+  // 箭头6 -> 4
+  const arrow2 = drawArrow(p, positions[5].x, positions[5].y, positions[3].x, positions[3].y, HIGHLIGHT_COLOR, 'i -= lowbit(i)');
+  tw(arrow2.g, { o: 1 }, t, 0.4);
+  t += 0.8;
+  
+  // 步骤3：访问位置4
+  const step3 = T(p, '步骤3：sum += tree[4] = 18+10', { 
+    x: 100, y: 480, size: 22, weight: 600, fill: PROCESS_COLOR, o: 0 
+  });
+  tw(step3, { o: 1 }, t, 0.4);
+  tw(nodes[3].rect, { fill: PROCESS_COLOR }, t, 0.3);
+  sum += 10;
+  tw(step3, { o: 0 }, t + 2, 0.3);
+  t += 0.6;
+  
+  tw(nodes[3].rect, { fill: SUCCESS_COLOR }, t, 0.3);
+  t += 1;
+  
+  const result = T(p, `结果：sum(1 到 7) = ${sum}`, { 
+    x: 400, y: 520, size: 28, weight: 700, fill: HIGHLIGHT_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(result, { o: 1 }, t, 0.8);
+}],
+
+['query-code', '区间查询代码', () => {
+  const p = panel(0);
+  
+  T(p, '区间查询的代码实现', { 
+    x: 400, y: 50, size: 32, weight: 700, fill: DARK_COLOR, anchor: 'middle' 
+  });
+  
+  const codeLines = [
+    'function query(i) {',
+    '  let sum = 0;',
+    '  while (i > 0) {',
+    '    sum += tree[i];',
+    '    i -= lowbit(i);  // 跳到前驱',
+    '  }',
+    '  return sum;',
+    '}',
+    '',
+    '// 区间求和 [left, right]',
+    'function rangeSum(left, right) {',
+    '  return query(right) - query(left - 1);',
+    '}'
+  ];
+  
+  const codeG = G(p, { x: 130, y: 130, o: 0 });
+  mk('rect', { x: -20, y: -20, width: 540, height: 400, fill: '#2d2d2d', stroke: PRIMARY_COLOR, 'stroke-width': 2, rx: 8 }, codeG);
+  
+  codeLines.forEach((line, i) => {
+    const text = T(codeG, line, { 
+      x: 10, y: 10 + i * 30, size: 18, fill: '#f8f8f2', family: 'Monaco, monospace', o: 0 
+    });
+    tw(text, { o: 1 }, 1 + i * 0.3, 0.4);
+  });
+  
+  tw(codeG, { o: 1 }, 0.5, 0.6);
+  
+  const hint = T(p, '前缀和相减得到区间和', { 
+    x: 400, y: 540, size: 24, weight: 600, fill: HIGHLIGHT_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(hint, { o: 1 }, 6, 0.8);
+}],
+
+['complexity', '复杂度分析', () => {
+  const p = panel(0);
+  
+  T(p, '树状数组的时间与空间复杂度', { 
+    x: 400, y: 50, size: 32, weight: 700, fill: DARK_COLOR, anchor: 'middle' 
+  });
+  
+  const items = [
+    { 
+      title: '时间复杂度', 
+      items: [
+        '单点更新：O(log n)',
+        '区间查询：O(log n)',
+        '初始化（逐个update）：O(n log n)',
+        '初始化（优化）：O(n)'
+      ],
+      y: 130,
+      color: SUCCESS_COLOR
+    },
+    { 
+      title: '空间复杂度', 
+      items: [
+        '数组存储：O(n)',
+        '无需额外指针',
+        '内存占用小',
+        '缓存友好'
+      ],
+      y: 340,
+      color: PRIMARY_COLOR
+    }
+  ];
+  
+  items.forEach((section, si) => {
+    const sectionG = G(p, { x: 100, y: section.y, o: 0 });
+    
+    mk('rect', { x: 0, y: 0, width: 600, height: 180, fill: LIGHT_BG, stroke: section.color, 'stroke-width': 3, rx: 8 }, sectionG);
+    T(sectionG, section.title, { x: 20, y: 35, size: 28, weight: 700, fill: section.color });
+    
+    section.items.forEach((item, i) => {
+      T(sectionG, `• ${item}`, { x: 40, y: 75 + i * 28, size: 20, fill: DARK_COLOR });
+    });
+    
+    tw(sectionG, { o: 1 }, 1.5 + si * 2, 0.8);
+  });
+}],
+
+['init', '初始化方法', () => {
+  const p = panel(0);
+  
+  T(p, '树状数组的初始化', { 
+    x: 400, y: 50, size: 32, weight: 700, fill: DARK_COLOR, anchor: 'middle' 
+  });
+  
+  // 方法1
+  const method1G = G(p, { x: 100, y: 130, o: 0 });
+  mk('rect', { x: 0, y: 0, width: 600, height: 160, fill: LIGHT_BG, stroke: PRIMARY_COLOR, 'stroke-width': 2, rx: 8 }, method1G);
+  T(method1G, '方法一：逐个调用 update', { x: 20, y: 30, size: 24, weight: 700, fill: PRIMARY_COLOR });
+  T(method1G, 'for (let i = 1; i <= n; i++) {', { x: 40, y: 70, size: 18, fill: DARK_COLOR, family: 'Monaco, monospace' });
+  T(method1G, '  update(i, arr[i]);', { x: 40, y: 98, size: 18, fill: DARK_COLOR, family: 'Monaco, monospace' });
+  T(method1G, '}', { x: 40, y: 126, size: 18, fill: DARK_COLOR, family: 'Monaco, monospace' });
+  T(method1G, '复杂度：O(n log n)', { x: 400, y: 145, size: 18, weight: 600, fill: WARNING_COLOR });
+  tw(method1G, { o: 1 }, 1.5, 0.8);
+  
+  // 方法2
+  const method2G = G(p, { x: 100, y: 320, o: 0 });
+  mk('rect', { x: 0, y: 0, width: 600, height: 180, fill: LIGHT_BG, stroke: SUCCESS_COLOR, 'stroke-width': 2, rx: 8 }, method2G);
+  T(method2G, '方法二：利用父子关系（优化）', { x: 20, y: 30, size: 24, weight: 700, fill: SUCCESS_COLOR });
+  T(method2G, 'for (let i = 1; i <= n; i++) {', { x: 40, y: 70, size: 18, fill: DARK_COLOR, family: 'Monaco, monospace' });
+  T(method2G, '  tree[i] = arr[i];', { x: 40, y: 98, size: 18, fill: DARK_COLOR, family: 'Monaco, monospace' });
+  T(method2G, '  let j = i + lowbit(i);', { x: 40, y: 126, size: 18, fill: DARK_COLOR, family: 'Monaco, monospace' });
+  T(method2G, '  if (j <= n) tree[j] += tree[i];', { x: 40, y: 154, size: 18, fill: DARK_COLOR, family: 'Monaco, monospace' });
+  T(method2G, '}', { x: 240, y: 154, size: 18, fill: DARK_COLOR, family: 'Monaco, monospace' });
+  T(method2G, '复杂度：O(n) ✓', { x: 440, y: 165, size: 18, weight: 600, fill: SUCCESS_COLOR });
+  tw(method2G, { o: 1 }, 3.5, 0.8);
+}],
+
+['applications', '应用场景', () => {
+  const p = panel(0);
+  
+  T(p, '树状数组的典型应用', { 
+    x: 400, y: 50, size: 32, weight: 700, fill: DARK_COLOR, anchor: 'middle' 
+  });
+  
+  const apps = [
+    { 
+      icon: '🔢', 
+      title: '逆序对统计', 
+      desc: '从左到右扫描，查询+更新', 
+      complexity: 'O(n log n)',
+      y: 140 
+    },
+    { 
+      icon: '📝', 
+      title: '区间修改（配合差分）', 
+      desc: '差分数组 + 树状数组', 
+      complexity: 'O(log n) 修改+查询',
+      y: 240 
+    },
+    { 
+      icon: '🗺️', 
+      title: '二维树状数组', 
+      desc: '矩形区域求和与更新', 
+      complexity: 'O(log² n)',
+      y: 340 
+    },
+    { 
+      icon: '🎯', 
+      title: '动态中位数', 
+      desc: '配合值域树状数组', 
+      complexity: 'O(log n) 查询',
+      y: 440 
+    }
+  ];
+  
+  apps.forEach((app, i) => {
+    const g = G(p, { x: 100, y: app.y, o: 0 });
+    
+    mk('rect', { x: 0, y: 0, width: 600, height: 80, fill: LIGHT_BG, stroke: PRIMARY_COLOR, 'stroke-width': 2, rx: 8 }, g);
+    T(g, app.icon, { x: 40, y: 45, size: 40, anchor: 'middle' });
+    T(g, app.title, { x: 100, y: 25, size: 24, weight: 700, fill: DARK_COLOR });
+    T(g, app.desc, { x: 100, y: 52, size: 18, fill: DARK_COLOR });
+    T(g, app.complexity, { x: 480, y: 45, size: 16, weight: 600, fill: SUCCESS_COLOR, anchor: 'middle' });
+    
+    tw(g, { o: 1 }, 1.5 + i * 0.8, 0.6);
+  });
+}],
+
+['comparison', '树状数组 vs 线段树', () => {
+  const p = panel(0);
+  
+  T(p, '树状数组 vs 线段树对比', { 
+    x: 400, y: 50, size: 32, weight: 700, fill: DARK_COLOR, anchor: 'middle' 
+  });
+  
+  const comparison = [
+    { aspect: '代码长度', bit: '20-30行', segment: '100+行' },
+    { aspect: '空间复杂度', bit: 'O(n)', segment: 'O(4n)' },
+    { aspect: '常数因子', bit: '小', segment: '大' },
+    { aspect: '单点修改', bit: 'O(log n) ✓', segment: 'O(log n) ✓' },
+    { aspect: '区间查询', bit: 'O(log n) ✓', segment: 'O(log n) ✓' },
+    { aspect: '区间修改', bit: '需配合差分', segment: '原生支持（懒标记）' },
+    { aspect: '区间最值', bit: '不支持', segment: '支持 ✓' },
+    { aspect: '适用场景', bit: '单点修改+区间求和', segment: '复杂区间操作' }
+  ];
+  
+  // 表头
+  const headerY = 120;
+  const headers = ['对比维度', '树状数组', '线段树'];
+  const colWidths = [200, 200, 200];
+  
+  let x = 100;
+  headers.forEach((header, i) => {
+    const g = G(p, { x, y: headerY, o: 0 });
+    const color = i === 1 ? SUCCESS_COLOR : i === 2 ? PRIMARY_COLOR : DARK_COLOR;
+    mk('rect', { x: 0, y: 0, width: colWidths[i], height: 45, fill: color, stroke: DARK_COLOR, 'stroke-width': 2 }, g);
+    T(g, header, { x: colWidths[i] / 2, y: 28, size: 20, weight: 700, fill: '#fff', anchor: 'middle' });
+    tw(g, { o: 1 }, 1 + i * 0.3, 0.4);
+    x += colWidths[i];
+  });
+  
+  // 数据行
+  comparison.forEach((row, ri) => {
+    let x = 100;
+    const y = headerY + (ri + 1) * 45;
+    const rowData = [row.aspect, row.bit, row.segment];
+    
+    rowData.forEach((cell, ci) => {
+      const g = G(p, { x, y, o: 0 });
+      mk('rect', { x: 0, y: 0, width: colWidths[ci], height: 45, fill: '#fff', stroke: DARK_COLOR, 'stroke-width': 1 }, g);
+      T(g, cell, { 
+        x: colWidths[ci] / 2, y: 28, 
+        size: ci === 0 ? 16 : 15, weight: ci === 0 ? 600 : 400, 
+        fill: DARK_COLOR, anchor: 'middle' 
+      });
+      tw(g, { o: 1 }, 2.5 + ri * 0.3 + ci * 0.1, 0.3);
+      x += colWidths[ci];
+    });
+  });
+}],
+
+['summary', '总结', () => {
+  const p = panel(0);
+  
+  T(p, '树状数组：简洁而强大', { 
+    x: 400, y: 60, size: 40, weight: 700, fill: DARK_COLOR, anchor: 'middle' 
+  });
+  
+  const points = [
+    { icon: '🔑', text: 'lowbit 函数是核心，利用位运算定义树结构', y: 160 },
+    { icon: '⚡', text: '单点更新和区间查询都是 O(log n)', y: 240 },
+    { icon: '✨', text: '代码简洁优雅，只需几十行', y: 320 },
+    { icon: '🚀', text: '空间占用小，常数因子小，执行效率高', y: 400 },
+    { icon: '💡', text: '适合单点修改+区间求和的场景', y: 480 }
+  ];
+  
+  points.forEach((point, i) => {
+    const g = G(p, { x: 100, y: point.y, o: 0 });
+    T(g, point.icon, { x: 0, y: 5, size: 36, anchor: 'middle' });
+    T(g, point.text, { x: 70, y: 5, size: 24, fill: DARK_COLOR, anchor: 'start' });
+    tw(g, { o: 1 }, 1 + i * 0.6, 0.6);
+  });
+  
+  const thanks = T(p, '感谢观看！', { 
+    x: 400, y: 550, size: 32, weight: 700, fill: HIGHLIGHT_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(thanks, { o: 1 }, 5, 0.8);
+}]
+
+];
+
+boot();
+</script>
+</body>
+</html>

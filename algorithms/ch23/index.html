@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第二十三章 强连通分量（Strongly Connected Components）</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#kosaraju-demo" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 23, title: '强连通分量（Strongly Connected Components）', language: 'zh', minutes: 12 };
+
+/* ---------- 颜色方案 ---------- */
+const NODE_DEFAULT = '#3498db';     // 蓝色（默认节点）
+const NODE_VISITED = '#2ecc71';     // 绿色（已访问）
+const NODE_CURRENT = '#e74c3c';     // 红色（当前节点）
+const NODE_SCC1 = '#9b59b6';        // 紫色（SCC1）
+const NODE_SCC2 = '#f39c12';        // 橙色（SCC2）
+const NODE_SCC3 = '#1abc9c';        // 青色（SCC3）
+const NODE_SCC4 = '#e67e22';        // 深橙色（SCC4）
+const EDGE_DEFAULT = '#7f8c8d';     // 灰色（默认边）
+const EDGE_ACTIVE = '#e74c3c';      // 红色（活跃边）
+const EDGE_BACK = '#f39c12';        // 橙色（回边）
+const TEXT_COLOR = '#2c3e50';       // 深色文字
+const BG_LIGHT = '#ecf0f1';         // 浅灰背景
+const STACK_COLOR = '#34495e';      // 深灰（栈）
+
+/* ---------- 辅助函数 ---------- */
+function drawNode(parent, x, y, label, color = NODE_DEFAULT) {
+  const g = G(parent, { x, y, o: 0 });
+  const circle = mk('circle', { cx: 0, cy: 0, r: 28, fill: color, stroke: TEXT_COLOR, 'stroke-width': 3 }, g);
+  const text = T(g, label, { x: 0, y: 0, size: 24, weight: 700, fill: '#fff', anchor: 'middle' });
+  text.setAttribute('dominant-baseline', 'central');
+  return { g, circle, text };
+}
+
+function drawEdge(parent, x1, y1, x2, y2, color = EDGE_DEFAULT) {
+  const angle = Math.atan2(y2 - y1, x2 - x1);
+  const endX = x2 - 28 * Math.cos(angle);
+  const endY = y2 - 28 * Math.sin(angle);
+  
+  const g = G(parent, { o: 0 });
+  const line = mk('line', { x1, y1, x2: endX, y2: endY, stroke: color, 'stroke-width': 3 }, g);
+  
+  // Arrow head
+  const arrowSize = 10;
+  const arrowX = endX - arrowSize * Math.cos(angle - Math.PI / 6);
+  const arrowY = endY - arrowSize * Math.sin(angle - Math.PI / 6);
+  const arrowX2 = endX - arrowSize * Math.cos(angle + Math.PI / 6);
+  const arrowY2 = endY - arrowSize * Math.sin(angle + Math.PI / 6);
+  
+  const arrow = mk('polygon', { 
+    points: `${endX},${endY} ${arrowX},${arrowY} ${arrowX2},${arrowY2}`, 
+    fill: color 
+  }, g);
+  
+  return { g, line, arrow };
+}
+
+function drawStackBox(parent, x, y, label, color = STACK_COLOR) {
+  const g = G(parent, { x, y, o: 0 });
+  const rect = mk('rect', { x: 0, y: 0, width: 60, height: 40, fill: color, opacity: 0.2, rx: 5, stroke: color, 'stroke-width': 2 }, g);
+  const text = T(g, label, { x: 30, y: 20, size: 20, weight: 700, fill: color, anchor: 'middle' });
+  text.setAttribute('dominant-baseline', 'central');
+  return { g, rect, text };
+}
+
+function drawInfoBox(parent, x, y, label, value) {
+  const g = G(parent, { x, y, o: 0 });
+  const rect = mk('rect', { x: 0, y: 0, width: 140, height: 35, fill: BG_LIGHT, rx: 5, stroke: TEXT_COLOR, 'stroke-width': 2 }, g);
+  const labelText = T(g, label, { x: 10, y: 17, size: 16, weight: 600, fill: TEXT_COLOR, anchor: 'start' });
+  labelText.setAttribute('dominant-baseline', 'central');
+  const valueText = T(g, value, { x: 130, y: 17, size: 18, weight: 700, fill: NODE_CURRENT, anchor: 'end', family: 'monospace' });
+  valueText.setAttribute('dominant-baseline', 'central');
+  return { g, rect, labelText, valueText };
+}
+
+/* ---------- Beats ---------- */
+let BEATS = [
+
+['intro', '问题引入', () => {
+  const p = panel(0);
+
+  T(p, '强连通分量（SCC）', { x: 400, y: 80, size: 48, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const scenarios = [
+    { icon: '🌐', text: '网页链接群组', y: 180 },
+    { icon: '👥', text: '社交网络社区', y: 250 },
+    { icon: '🔄', text: '软件循环依赖', y: 320 },
+    { icon: '⚡', text: '电路反馈环路', y: 390 },
+    { icon: '🗑️', text: '垃圾回收引用', y: 460 }
+  ];
+  
+  scenarios.forEach(({ icon, text, y }, i) => {
+    const g = G(p, { x: 150, y, o: 0 });
+    T(g, icon, { x: 0, y: 0, size: 36, anchor: 'middle' });
+    T(g, text, { x: 70, y: 0, size: 26, fill: TEXT_COLOR, anchor: 'start' });
+    tw(g, { o: 1 }, 0.5 + i * 0.3);
+  });
+  
+  const question = T(p, '如何在线性时间内找出所有强连通分量？', { 
+    x: 400, y: 550, size: 28, weight: 600, fill: NODE_CURRENT, anchor: 'middle', o: 0 
+  });
+  tw(question, { o: 1 }, 2.5);
+}, { audio: 'intro' }],
+
+['definition', '强连通定义', () => {
+  const p = panel(0);
+  
+  T(p, '强连通：任意两点互相可达', { x: 400, y: 80, size: 36, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  // Simple example: 3 nodes in a cycle
+  const nodes = [
+    { x: 250, y: 250, label: 'u' },
+    { x: 550, y: 250, label: 'v' },
+    { x: 400, y: 400, label: 'w' }
+  ];
+  
+  const nodeObjs = nodes.map(n => drawNode(p, n.x, n.y, n.label, NODE_DEFAULT));
+  nodeObjs.forEach((n, i) => tw(n.g, { o: 1 }, 0.5 + i * 0.3));
+  
+  const edges = [
+    { x1: 250, y1: 250, x2: 550, y2: 250 },
+    { x1: 550, y1: 250, x2: 400, y2: 400 },
+    { x1: 400, y1: 400, x2: 250, y2: 250 }
+  ];
+  
+  const edgeObjs = edges.map(e => drawEdge(p, e.x1, e.y1, e.x2, e.y2, EDGE_DEFAULT));
+  edgeObjs.forEach((e, i) => tw(e.g, { o: 1 }, 1.5 + i * 0.4));
+  
+  // Properties
+  const props = [
+    '自反性：v → v',
+    '对称性：u → v ⇔ v → u',
+    '传递性：u → v, v → w ⇒ u → w'
+  ];
+  
+  props.forEach((text, i) => {
+    const t = T(p, text, { x: 400, y: 480 + i * 40, size: 24, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
+    tw(t, { o: 1 }, 3.0 + i * 0.5);
+  });
+}, { audio: 'definition' }],
+
+['scc-concept', 'SCC概念', () => {
+  const p = panel(0);
+  
+  T(p, '强连通分量：极大的强连通子图', { x: 400, y: 70, size: 32, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  // Graph with 4 SCCs
+  const nodes = [
+    { x: 150, y: 200, label: '0', scc: 1 },
+    { x: 250, y: 200, label: '1', scc: 1 },
+    { x: 200, y: 300, label: '2', scc: 1 },
+    { x: 400, y: 200, label: '3', scc: 2 },
+    { x: 500, y: 200, label: '4', scc: 2 },
+    { x: 450, y: 300, label: '5', scc: 2 },
+    { x: 650, y: 250, label: '6', scc: 3 },
+    { x: 650, y: 400, label: '7', scc: 4 }
+  ];
+  
+  const sccColors = [null, NODE_SCC1, NODE_SCC2, NODE_SCC3, NODE_SCC4];
+  
+  const nodeObjs = nodes.map(n => {
+    const obj = drawNode(p, n.x, n.y, n.label, NODE_DEFAULT);
+    tw(obj.g, { o: 1 }, 0.3);
+    return obj;
+  });
+  
+  const edges = [
+    { from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 0 },
+    { from: 1, to: 3 }, { from: 3, to: 4 }, { from: 4, to: 5 }, 
+    { from: 5, to: 3 }, { from: 3, to: 6 }, { from: 6, to: 7 }
+  ];
+  
+  const edgeObjs = edges.map(e => {
+    const n1 = nodes[e.from];
+    const n2 = nodes[e.to];
+    return drawEdge(p, n1.x, n1.y, n2.x, n2.y, EDGE_DEFAULT);
+  });
+  edgeObjs.forEach(e => tw(e.g, { o: 1 }, 0.8));
+  
+  // Highlight SCCs
+  setTimeout(() => {
+    nodeObjs.forEach((obj, i) => {
+      const color = sccColors[nodes[i].scc];
+      tw(obj.circle, { fill: color }, 0.5);
+    });
+  }, 2000);
+  
+  const sccLabels = [
+    'SCC1: {0,1,2}',
+    'SCC2: {3,4,5}',
+    'SCC3: {6}',
+    'SCC4: {7}'
+  ];
+  
+  sccLabels.forEach((text, i) => {
+    const t = T(p, text, { x: 100, y: 400 + i * 35, size: 22, weight: 600, fill: sccColors[i + 1], anchor: 'start', o: 0 });
+    tw(t, { o: 1 }, 2.5 + i * 0.3);
+  });
+}, { audio: 'scc-concept' }],
+
+['kosaraju-overview', 'Kosaraju概述', () => {
+  const p = panel(0);
+  
+  T(p, 'Kosaraju算法', { x: 400, y: 70, size: 40, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  const steps = [
+    { num: '1', text: '原图DFS，记录完成时间', y: 160, color: NODE_SCC1 },
+    { num: '2', text: '构建反向图', y: 260, color: NODE_SCC2 },
+    { num: '3', text: '反向图DFS，按完成时间降序', y: 360, color: NODE_SCC3 }
+  ];
+  
+  steps.forEach((s, i) => {
+    const g = G(p, { x: 150, y: s.y, o: 0 });
+    
+    const circle = mk('circle', { cx: 0, cy: 0, r: 35, fill: s.color, stroke: TEXT_COLOR, 'stroke-width': 3 }, g);
+    const numText = T(g, s.num, { x: 0, y: 0, size: 28, weight: 700, fill: '#fff', anchor: 'middle' });
+    numText.setAttribute('dominant-baseline', 'central');
+    
+    const descText = T(g, s.text, { x: 60, y: 0, size: 26, fill: TEXT_COLOR, anchor: 'start' });
+    descText.setAttribute('dominant-baseline', 'central');
+    
+    tw(g, { o: 1 }, 0.5 + i * 0.8);
+  });
+  
+  const insight = T(p, '关键：反向图保持SCC内部连接性', { 
+    x: 400, y: 480, size: 28, weight: 600, fill: NODE_CURRENT, anchor: 'middle', o: 0 
+  });
+  tw(insight, { o: 1 }, 3.0);
+}, { audio: 'kosaraju-overview' }],
+
+['kosaraju-demo', 'Kosaraju演示', () => {
+  const p = panel(0);
+  
+  T(p, 'Kosaraju算法演示', { x: 400, y: 50, size: 36, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  // Original graph
+  const nodes = [
+    { x: 150, y: 180, label: '0' },
+    { x: 280, y: 180, label: '1' },
+    { x: 215, y: 280, label: '2' },
+    { x: 420, y: 180, label: '3' },
+    { x: 550, y: 180, label: '4' },
+    { x: 485, y: 280, label: '5' },
+    { x: 650, y: 230, label: '6' },
+    { x: 650, y: 350, label: '7' }
+  ];
+  
+  const nodeObjs = nodes.map(n => drawNode(p, n.x, n.y, n.label, NODE_DEFAULT));
+  nodeObjs.forEach(n => tw(n.g, { o: 1 }, 0.3));
+  
+  const edges = [
+    { from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 0 },
+    { from: 1, to: 3 }, { from: 3, to: 4 }, { from: 4, to: 5 }, 
+    { from: 5, to: 3 }, { from: 3, to: 6 }, { from: 6, to: 7 }
+  ];
+  
+  const edgeObjs = edges.map(e => {
+    const n1 = nodes[e.from];
+    const n2 = nodes[e.to];
+    return drawEdge(p, n1.x, n1.y, n2.x, n2.y, EDGE_DEFAULT);
+  });
+  edgeObjs.forEach(e => tw(e.g, { o: 1 }, 0.5));
+  
+  // Finish times
+  const finishTimes = [6, 5, 1, 4, 3, 2, 7, 8];
+  const timeTexts = [];
+  nodes.forEach((n, i) => {
+    const t = T(p, `f=${finishTimes[i]}`, { x: n.x + 35, y: n.y - 35, size: 18, weight: 600, fill: NODE_CURRENT, anchor: 'start', o: 0 });
+    timeTexts.push(t);
+  });
+  
+  // First DFS animation
+  let time = 1.0;
+  [0, 1, 2].forEach((idx, i) => {
+    tw(nodeObjs[idx].circle, { fill: NODE_VISITED }, 0.3, time);
+    time += 0.4;
+  });
+  tw(timeTexts[2], { o: 1 }, 0.3, time);
+  time += 0.5;
+  
+  [3, 4, 5].forEach((idx, i) => {
+    tw(nodeObjs[idx].circle, { fill: NODE_VISITED }, 0.3, time);
+    time += 0.4;
+  });
+  timeTexts.slice(3, 6).reverse().forEach(t => {
+    tw(t, { o: 1 }, 0.3, time);
+    time += 0.4;
+  });
+  
+  [1, 0].forEach((idx, i) => {
+    tw(timeTexts[idx], { o: 1 }, 0.3, time);
+    time += 0.4;
+  });
+  
+  [6, 7].forEach((idx, i) => {
+    tw(nodeObjs[idx].circle, { fill: NODE_VISITED }, 0.3, time);
+    tw(timeTexts[idx], { o: 1 }, 0.3, time);
+    time += 0.5;
+  });
+  
+  // Reverse graph label
+  const reverseLabel = T(p, '→ 反向图', { x: 400, y: 420, size: 28, weight: 700, fill: NODE_SCC2, anchor: 'middle', o: 0 });
+  tw(reverseLabel, { o: 1 }, 0.5, time);
+  time += 1.0;
+  
+  // Second DFS - color SCCs
+  const sccColors = [NODE_SCC1, NODE_SCC1, NODE_SCC1, NODE_SCC2, NODE_SCC2, NODE_SCC2, NODE_SCC3, NODE_SCC4];
+  nodeObjs.forEach((obj, i) => {
+    tw(obj.circle, { fill: sccColors[i] }, 0.4, time + i * 0.3);
+  });
+  
+  const resultLabel = T(p, '找到4个强连通分量！', { x: 400, y: 480, size: 26, weight: 600, fill: NODE_CURRENT, anchor: 'middle', o: 0 });
+  tw(resultLabel, { o: 1 }, 0.5, time + 3.0);
+}, { audio: 'kosaraju-demo' }],
+
+['kosaraju-impl', 'Kosaraju实现', () => {
+  const p = panel(0);
+  
+  T(p, 'Kosaraju实现', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  const code = `function kosaraju(graph) {
+  const stack = [];
+  const visited = new Set();
+  
+  // 第一次DFS：记录完成时间
+  for (let v of graph.vertices) {
+    if (!visited.has(v)) {
+      dfs1(v, graph, visited, stack);
+    }
+  }
+  
+  // 构建反向图
+  const reversed = reverseGraph(graph);
+  
+  // 第二次DFS：识别SCC
+  visited.clear();
+  const sccs = [];
+  while (stack.length > 0) {
+    const v = stack.pop();
+    if (!visited.has(v)) {
+      const scc = [];
+      dfs2(v, reversed, visited, scc);
+      sccs.push(scc);
+    }
+  }
+  return sccs;
+}`;
+  
+  const codeLines = code.split('\n');
+  codeLines.forEach((line, i) => {
+    const t = T(p, line, { x: 50, y: 120 + i * 22, size: 15, fill: TEXT_COLOR, anchor: 'start', family: 'monospace', o: 0 });
+    tw(t, { o: 1 }, 0.1 + i * 0.1);
+  });
+  
+  const complexity = T(p, '时间复杂度：O(V + E)', { x: 400, y: 520, size: 26, weight: 600, fill: NODE_SCC2, anchor: 'middle', o: 0 });
+  tw(complexity, { o: 1 }, 3.0);
+}, { audio: 'kosaraju-impl' }],
+
+['tarjan-overview', 'Tarjan概述', () => {
+  const p = panel(0);
+  
+  T(p, 'Tarjan算法', { x: 400, y: 70, size: 40, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  const features = [
+    { icon: '🎯', text: '只需一次DFS', y: 170 },
+    { icon: '📚', text: '维护DFS栈', y: 240 },
+    { icon: '🔢', text: 'DFS序号 + low值', y: 310 },
+    { icon: '👑', text: 'low = dfn 时找到根', y: 380 },
+    { icon: '⚡', text: '空间更高效', y: 450 }
+  ];
+  
+  features.forEach(({ icon, text, y }, i) => {
+    const g = G(p, { x: 180, y, o: 0 });
+    T(g, icon, { x: 0, y: 0, size: 36, anchor: 'middle' });
+    T(g, text, { x: 70, y: 0, size: 28, fill: TEXT_COLOR, anchor: 'start' });
+    tw(g, { o: 1 }, 0.5 + i * 0.4);
+  });
+  
+  const insight = T(p, '一次DFS完成两次DFS的工作', { 
+    x: 400, y: 530, size: 28, weight: 600, fill: NODE_CURRENT, anchor: 'middle', o: 0 
+  });
+  tw(insight, { o: 1 }, 3.0);
+}, { audio: 'tarjan-overview' }],
+
+['tarjan-demo', 'Tarjan演示', () => {
+  const p = panel(0);
+  
+  T(p, 'Tarjan算法演示', { x: 400, y: 40, size: 36, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  // Graph
+  const nodes = [
+    { x: 150, y: 150, label: '0' },
+    { x: 270, y: 150, label: '1' },
+    { x: 210, y: 250, label: '2' },
+    { x: 400, y: 150, label: '3' },
+    { x: 520, y: 150, label: '4' },
+    { x: 460, y: 250, label: '5' },
+    { x: 640, y: 200, label: '6' },
+    { x: 640, y: 320, label: '7' }
+  ];
+  
+  const nodeObjs = nodes.map(n => drawNode(p, n.x, n.y, n.label, NODE_DEFAULT));
+  nodeObjs.forEach(n => tw(n.g, { o: 1 }, 0.2));
+  
+  const edges = [
+    { from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 0 },
+    { from: 1, to: 3 }, { from: 3, to: 4 }, { from: 4, to: 5 }, 
+    { from: 5, to: 3 }, { from: 3, to: 6 }, { from: 6, to: 7 }
+  ];
+  
+  const edgeObjs = edges.map(e => {
+    const n1 = nodes[e.from];
+    const n2 = nodes[e.to];
+    return drawEdge(p, n1.x, n1.y, n2.x, n2.y, EDGE_DEFAULT);
+  });
+  edgeObjs.forEach(e => tw(e.g, { o: 1 }, 0.4));
+  
+  // DFS numbers and low values
+  const dfnValues = [0, 1, 2, 3, 4, 5, 6, 7];
+  const lowValues = [0, 0, 0, 3, 3, 3, 6, 7];
+  
+  const infoTexts = [];
+  nodes.forEach((n, i) => {
+    const t1 = T(p, `dfn=${dfnValues[i]}`, { x: n.x + 40, y: n.y - 35, size: 16, weight: 600, fill: NODE_SCC2, anchor: 'start', o: 0 });
+    const t2 = T(p, `low=${lowValues[i]}`, { x: n.x + 40, y: n.y - 15, size: 16, weight: 600, fill: NODE_SCC3, anchor: 'start', o: 0 });
+    infoTexts.push({ dfn: t1, low: t2 });
+  });
+  
+  // Stack visualization
+  T(p, '栈', { x: 90, y: 370, size: 22, weight: 700, fill: STACK_COLOR, anchor: 'middle' });
+  const stackBoxes = [];
+  for (let i = 0; i < 6; i++) {
+    const box = drawStackBox(p, 50, 400 + i * 45, '', STACK_COLOR);
+    stackBoxes.push(box);
+  }
+  
+  // Animation
+  let time = 1.0;
+  
+  // Visit 0, 1, 2
+  [0, 1, 2].forEach((idx, i) => {
+    tw(nodeObjs[idx].circle, { fill: NODE_VISITED }, 0.3, time);
+    tw(infoTexts[idx].dfn, { o: 1 }, 0.3, time);
+    tw(infoTexts[idx].low, { o: 1 }, 0.3, time);
+    tw(stackBoxes[i].g, { o: 1 }, 0.3, time);
+    tw(stackBoxes[i].text, { text: idx.toString() }, 0, time);
+    time += 0.5;
+  });
+  
+  // Update low values for 0, 1, 2
+  [2, 1, 0].forEach((idx, i) => {
+    tw(infoTexts[idx].low, { fill: NODE_CURRENT }, 0.3, time);
+    time += 0.4;
+  });
+  
+  // Pop SCC {0,1,2}
+  tw(nodeObjs[0].circle, { fill: NODE_SCC1 }, 0.5, time);
+  tw(nodeObjs[1].circle, { fill: NODE_SCC1 }, 0.5, time);
+  tw(nodeObjs[2].circle, { fill: NODE_SCC1 }, 0.5, time);
+  [0, 1, 2].forEach(i => tw(stackBoxes[i].g, { o: 0 }, 0.3, time));
+  time += 1.0;
+  
+  // Visit 3, 4, 5
+  [3, 4, 5].forEach((idx, i) => {
+    tw(nodeObjs[idx].circle, { fill: NODE_VISITED }, 0.3, time);
+    tw(infoTexts[idx].dfn, { o: 1 }, 0.3, time);
+    tw(infoTexts[idx].low, { o: 1 }, 0.3, time);
+    tw(stackBoxes[i].g, { o: 1 }, 0.3, time);
+    tw(stackBoxes[i].text, { text: idx.toString() }, 0, time);
+    time += 0.5;
+  });
+  
+  // Update low values for 3, 4, 5
+  [5, 4, 3].forEach((idx, i) => {
+    tw(infoTexts[idx].low, { fill: NODE_CURRENT }, 0.3, time);
+    time += 0.4;
+  });
+  
+  // Pop SCC {3,4,5}
+  tw(nodeObjs[3].circle, { fill: NODE_SCC2 }, 0.5, time);
+  tw(nodeObjs[4].circle, { fill: NODE_SCC2 }, 0.5, time);
+  tw(nodeObjs[5].circle, { fill: NODE_SCC2 }, 0.5, time);
+  [0, 1, 2].forEach(i => tw(stackBoxes[i].g, { o: 0 }, 0.3, time));
+  time += 1.0;
+  
+  // Visit 6, 7
+  tw(nodeObjs[6].circle, { fill: NODE_SCC3 }, 0.5, time);
+  tw(infoTexts[6].dfn, { o: 1 }, 0.3, time);
+  tw(infoTexts[6].low, { o: 1 }, 0.3, time);
+  time += 0.8;
+  
+  tw(nodeObjs[7].circle, { fill: NODE_SCC4 }, 0.5, time);
+  tw(infoTexts[7].dfn, { o: 1 }, 0.3, time);
+  tw(infoTexts[7].low, { o: 1 }, 0.3, time);
+  
+  const resultLabel = T(p, 'Tarjan完成！找到4个SCC', { x: 400, y: 570, size: 24, weight: 600, fill: NODE_CURRENT, anchor: 'middle', o: 0 });
+  tw(resultLabel, { o: 1 }, 0.5, time + 1.0);
+}, { audio: 'tarjan-demo' }],
+
+['tarjan-impl', 'Tarjan实现', () => {
+  const p = panel(0);
+  
+  T(p, 'Tarjan实现', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  const code = `function tarjan(graph) {
+  let time = 0;
+  const dfn = {}, low = {}, inStack = {};
+  const stack = [], sccs = [];
+  
+  function dfs(v) {
+    dfn[v] = low[v] = time++;
+    stack.push(v);
+    inStack[v] = true;
+    
+    for (let u of graph.neighbors(v)) {
+      if (!dfn[u]) {
+        dfs(u);
+        low[v] = Math.min(low[v], low[u]);
+      } else if (inStack[u]) {
+        low[v] = Math.min(low[v], dfn[u]);
+      }
+    }
+    
+    if (low[v] === dfn[v]) {
+      const scc = [];
+      let u;
+      do {
+        u = stack.pop();
+        inStack[u] = false;
+        scc.push(u);
+      } while (u !== v);
+      sccs.push(scc);
+    }
+  }
+  
+  for (let v of graph.vertices) {
+    if (!dfn[v]) dfs(v);
+  }
+  return sccs;
+}`;
+  
+  const codeLines = code.split('\n');
+  codeLines.forEach((line, i) => {
+    const t = T(p, line, { x: 30, y: 110 + i * 16, size: 13.5, fill: TEXT_COLOR, anchor: 'start', family: 'monospace', o: 0 });
+    tw(t, { o: 1 }, 0.05 + i * 0.08);
+  });
+  
+  const complexity = T(p, '时间：O(V+E)，空间：O(V)', { x: 400, y: 550, size: 24, weight: 600, fill: NODE_SCC2, anchor: 'middle', o: 0 });
+  tw(complexity, { o: 1 }, 3.0);
+}, { audio: 'tarjan-impl' }],
+
+['comparison', '算法对比', () => {
+  const p = panel(0);
+  
+  T(p, 'Kosaraju vs Tarjan', { x: 400, y: 70, size: 38, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  const headers = ['特性', 'Kosaraju', 'Tarjan'];
+  headers.forEach((h, i) => {
+    const t = T(p, h, { x: 150 + i * 250, y: 140, size: 26, weight: 700, fill: NODE_CURRENT, anchor: 'middle', o: 0 });
+    tw(t, { o: 1 }, 0.5);
+  });
+  
+  const comparisons = [
+    { feature: 'DFS次数', k: '2次', t: '1次', y: 200 },
+    { feature: '反向图', k: '需要', t: '不需要', y: 260 },
+    { feature: '理解难度', k: '简单', t: '中等', y: 320 },
+    { feature: '实现复杂度', k: '低', t: '中', y: 380 },
+    { feature: '空间效率', k: '中', t: '高', y: 440 },
+    { feature: '时间复杂度', k: 'O(V+E)', t: 'O(V+E)', y: 500 }
+  ];
+  
+  comparisons.forEach((c, i) => {
+    const g = G(p, { o: 0 });
+    T(g, c.feature, { x: 150, y: c.y, size: 22, fill: TEXT_COLOR, anchor: 'middle' });
+    T(g, c.k, { x: 400, y: c.y, size: 22, weight: 600, fill: NODE_SCC1, anchor: 'middle' });
+    T(g, c.t, { x: 650, y: c.y, size: 22, weight: 600, fill: NODE_SCC2, anchor: 'middle' });
+    tw(g, { o: 1 }, 1.0 + i * 0.4);
+  });
+}, { audio: 'comparison' }],
+
+['applications', '应用场景', () => {
+  const p = panel(0);
+  
+  T(p, '强连通分量应用', { x: 400, y: 70, size: 38, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  const apps = [
+    { icon: '🔧', title: '编译器优化', desc: '检测循环依赖', y: 160 },
+    { icon: '⚡', title: '电路设计', desc: '识别反馈环路', y: 230 },
+    { icon: '👥', title: '社交网络', desc: '发现紧密社区', y: 300 },
+    { icon: '🌐', title: 'PageRank', desc: '处理陷阱结构', y: 370 },
+    { icon: '🗑️', title: '垃圾回收', desc: '循环引用检测', y: 440 },
+    { icon: '📦', title: '包管理', desc: '依赖环检测', y: 510 }
+  ];
+  
+  apps.forEach((a, i) => {
+    const g = G(p, { x: 120, y: a.y, o: 0 });
+    T(g, a.icon, { x: 0, y: 0, size: 36, anchor: 'middle' });
+    T(g, a.title, { x: 60, y: -8, size: 26, weight: 700, fill: TEXT_COLOR, anchor: 'start' });
+    T(g, a.desc, { x: 60, y: 15, size: 20, fill: EDGE_DEFAULT, anchor: 'start' });
+    tw(g, { o: 1 }, 0.5 + i * 0.3);
+  });
+}, { audio: 'applications' }],
+
+['condensation', '缩点与DAG', () => {
+  const p = panel(0);
+  
+  T(p, '缩点：SCC → DAG', { x: 400, y: 60, size: 38, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  // Original graph with SCCs
+  T(p, '原图', { x: 200, y: 130, size: 24, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  const nodes1 = [
+    { x: 120, y: 200, label: '0', scc: 1 },
+    { x: 200, y: 200, label: '1', scc: 1 },
+    { x: 160, y: 270, label: '2', scc: 1 },
+    { x: 280, y: 235, label: '3', scc: 2 }
+  ];
+  
+  const sccColors = [null, NODE_SCC1, NODE_SCC2];
+  
+  nodes1.forEach(n => {
+    const obj = drawNode(p, n.x, n.y, n.label, sccColors[n.scc]);
+    tw(obj.g, { o: 1 }, 0.5);
+  });
+  
+  const edges1 = [
+    { from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 0 }, { from: 1, to: 3 }
+  ];
+  
+  edges1.forEach(e => {
+    const n1 = nodes1[e.from];
+    const n2 = nodes1[e.to];
+    const obj = drawEdge(p, n1.x, n1.y, n2.x, n2.y, EDGE_DEFAULT);
+    tw(obj.g, { o: 1 }, 0.7);
+  });
+  
+  // Arrow
+  T(p, '→', { x: 350, y: 235, size: 48, weight: 700, fill: NODE_CURRENT, anchor: 'middle', o: 0 });
+  
+  // Condensed DAG
+  T(p, '缩点后（DAG）', { x: 550, y: 130, size: 24, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  const dagNodes = [
+    { x: 480, y: 235, label: 'SCC₁', color: NODE_SCC1 },
+    { x: 620, y: 235, label: 'SCC₂', color: NODE_SCC2 }
+  ];
+  
+  dagNodes.forEach(n => {
+    const g = G(p, { x: n.x, y: n.y, o: 0 });
+    const rect = mk('rect', { x: -40, y: -30, width: 80, height: 60, fill: n.color, rx: 10, stroke: TEXT_COLOR, 'stroke-width': 3 }, g);
+    const text = T(g, n.label, { x: 0, y: 0, size: 22, weight: 700, fill: '#fff', anchor: 'middle' });
+    text.setAttribute('dominant-baseline', 'central');
+    tw(g, { o: 1 }, 1.5);
+  });
+  
+  const dagEdge = drawEdge(p, 520, 235, 580, 235, EDGE_DEFAULT);
+  tw(dagEdge.g, { o: 1 }, 1.8);
+  
+  const properties = [
+    '性质1：缩点后一定是DAG',
+    '性质2：可以拓扑排序',
+    '性质3：无死锁，易于分析'
+  ];
+  
+  properties.forEach((text, i) => {
+    const t = T(p, text, { x: 400, y: 370 + i * 50, size: 24, weight: 600, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
+    tw(t, { o: 1 }, 2.5 + i * 0.5);
+  });
+  
+  const summary = T(p, 'SCC：有向图的基础分析工具', { 
+    x: 400, y: 540, size: 26, weight: 700, fill: NODE_CURRENT, anchor: 'middle', o: 0 
+  });
+  tw(summary, { o: 1 }, 4.5);
+}, { audio: 'condensation' }]
+
+];
+
+/* ---------- Boot ---------- */
+function boot() {
+  const nav = build(BEATS, CHAPTER);
+  requestAnimationFrame(() => panel(800));
+}
+
+// 标准化 beats
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
+boot();
+if (typeof module !== 'undefined') module.exports = { CHAPTER, BEATS };
+</script>
+</body>
+</html>

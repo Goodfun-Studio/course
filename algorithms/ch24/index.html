@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第二十四章 最大流（Ford-Fulkerson）</title>
+<link rel="stylesheet" href="../lib/engine.css">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 24, title: '最大流（Ford-Fulkerson）', language: 'zh', minutes: 13 };
+
+/* ---------- 颜色方案 ---------- */
+const SOURCE = '#e74c3c';          // 红色（源点）
+const SINK = '#2ecc71';            // 绿色（汇点）
+const PATH = '#f39c12';            // 橙色（路径）
+const FLOW = '#3498db';            // 蓝色（流量）
+const CAPACITY = '#9b59b6';        // 紫色（容量）
+const RESIDUAL = '#1abc9c';        // 青色（残余）
+const HIGHLIGHT = '#e67e22';       // 深橙（高亮）
+const BACKGROUND = '#ecf0f1';      // 浅灰（背景）
+const TEXT_COLOR = '#2c3e50';      // 深色文字
+
+/* ---------- 辅助函数 ---------- */
+function drawNode(parent, x, y, label, color = '#fff') {
+  const g = G(parent, { x, y, o: 0 });
+  mk('circle', { cx: 0, cy: 0, r: 30, fill: color, stroke: TEXT_COLOR, 'stroke-width': 3 }, g);
+  const text = T(g, label, { x: 0, y: 0, size: 24, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  text.setAttribute('dominant-baseline', 'central');
+  return g;
+}
+
+function drawEdge(parent, x1, y1, x2, y2, capacity, flow = 0, showArrow = true) {
+  const g = G(parent, { o: 0 });
+  
+  // 计算箭头位置（留出节点半径30）
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  const nx = dx / len;
+  const ny = dy / len;
+  
+  const startX = x1 + nx * 30;
+  const startY = y1 + ny * 30;
+  const endX = x2 - nx * 30;
+  const endY = y2 - ny * 30;
+  
+  // 边
+  const line = mk('line', { 
+    x1: startX, y1: startY, x2: endX, y2: endY,
+    stroke: TEXT_COLOR, 'stroke-width': 3
+  }, g);
+  
+  // 箭头
+  if (showArrow) {
+    const angle = Math.atan2(dy, dx);
+    const arrowSize = 10;
+    const arrowX = endX;
+    const arrowY = endY;
+    const arrow = mk('polygon', {
+      points: `${arrowX},${arrowY} ${arrowX - arrowSize * Math.cos(angle - Math.PI / 6)},${arrowY - arrowSize * Math.sin(angle - Math.PI / 6)} ${arrowX - arrowSize * Math.cos(angle + Math.PI / 6)},${arrowY - arrowSize * Math.sin(angle + Math.PI / 6)}`,
+      fill: TEXT_COLOR
+    }, g);
+  }
+  
+  // 标签位置（中点偏移）
+  const midX = (startX + endX) / 2;
+  const midY = (startY + endY) / 2;
+  const offsetX = -ny * 15;
+  const offsetY = nx * 15;
+  
+  const label = T(g, `${flow}/${capacity}`, { 
+    x: midX + offsetX, 
+    y: midY + offsetY, 
+    size: 18, 
+    weight: 600, 
+    fill: FLOW, 
+    anchor: 'middle' 
+  });
+  
+  return { g, line, label };
+}
+
+function drawNetwork(parent, edges, flows = {}) {
+  const g = G(parent, { o: 0 });
+  
+  // 节点位置
+  const positions = {
+    'S': { x: 100, y: 250 },
+    'A': { x: 250, y: 150 },
+    'B': { x: 250, y: 350 },
+    'C': { x: 450, y: 150 },
+    'D': { x: 450, y: 350 },
+    'T': { x: 600, y: 250 }
+  };
+  
+  // 绘制边
+  const edgeElements = {};
+  edges.forEach(({ from, to, capacity, id }) => {
+    const flow = flows[id] || 0;
+    const p1 = positions[from];
+    const p2 = positions[to];
+    edgeElements[id] = drawEdge(g, p1.x, p1.y, p2.x, p2.y, capacity, flow);
+  });
+  
+  // 绘制节点
+  const nodes = {};
+  nodes['S'] = drawNode(g, positions['S'].x, positions['S'].y, 'S', SOURCE);
+  nodes['A'] = drawNode(g, positions['A'].x, positions['A'].y, 'A', '#fff');
+  nodes['B'] = drawNode(g, positions['B'].x, positions['B'].y, 'B', '#fff');
+  nodes['C'] = drawNode(g, positions['C'].x, positions['C'].y, 'C', '#fff');
+  nodes['D'] = drawNode(g, positions['D'].x, positions['D'].y, 'D', '#fff');
+  nodes['T'] = drawNode(g, positions['T'].x, positions['T'].y, 'T', SINK);
+  
+  return { g, nodes, edges: edgeElements, positions };
+}
+
+function updateEdgeLabel(edge, flow, capacity) {
+  const label = edge.label;
+  tw(label, { o: 0 }, 0.3, () => {
+    label.textContent = `${flow}/${capacity}`;
+    tw(label, { o: 1 }, 0.3);
+  });
+}
+
+function highlightPath(network, path, duration = 0.5) {
+  path.forEach(edgeId => {
+    const edge = network.edges[edgeId];
+    tw(edge.line, { stroke: PATH, 'stroke-width': 5 }, duration);
+  });
+}
+
+function resetPath(network, path, duration = 0.5) {
+  path.forEach(edgeId => {
+    const edge = network.edges[edgeId];
+    tw(edge.line, { stroke: TEXT_COLOR, 'stroke-width': 3 }, duration);
+  });
+}
+
+/* ---------- Beats ---------- */
+let BEATS = [
+
+['intro', '问题引入', () => {
+  const p = panel(0);
+
+  T(p, '最大流（Ford-Fulkerson）', { x: 400, y: 80, size: 48, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const scenarios = [
+    { icon: '💧', text: '水管网络：从源头到终点能流多少水', y: 180 },
+    { icon: '📡', text: '网络传输：最大带宽是多少', y: 250 },
+    { icon: '🚗', text: '交通流量：道路网络的最大通行量', y: 320 },
+    { icon: '⚡', text: '电力网络：最大输电容量', y: 390 },
+    { icon: '📦', text: '物流网络：最大运输量', y: 460 }
+  ];
+  
+  scenarios.forEach(({ icon, text, y }, i) => {
+    const g = G(p, { x: 100, y, o: 0 });
+    T(g, icon, { x: 0, y: 0, size: 32 });
+    T(g, text, { x: 60, y: 0, size: 20, weight: 600, fill: TEXT_COLOR });
+    tw(g, { o: 1 }, 0.5, null, i * 0.15);
+  });
+}],
+
+['network', '流网络定义', () => {
+  const p = panel(0);
+  
+  T(p, '流网络的定义', { x: 400, y: 80, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  // 简单网络示例
+  const g = G(p, { x: 150, y: 180, o: 0 });
+  
+  const nodeA = drawNode(g, 100, 100, 'S', SOURCE);
+  const nodeB = drawNode(g, 300, 100, 'A', '#fff');
+  const nodeC = drawNode(g, 500, 100, 'T', SINK);
+  
+  const edge1 = drawEdge(g, 100, 100, 300, 100, 10, 0);
+  const edge2 = drawEdge(g, 300, 100, 500, 100, 8, 0);
+  
+  tw(g, { o: 1 }, 0.5);
+  
+  // 说明
+  const concepts = [
+    { text: '• 每条边有容量上限 c(u,v)', y: 320, color: CAPACITY },
+    { text: '• 流量 f(u,v) ≤ 容量 c(u,v)', y: 370, color: FLOW },
+    { text: '• 流量守恒：流入 = 流出（除源点和汇点）', y: 420, color: TEXT_COLOR },
+    { text: '• 源点S：只有流出', y: 470, color: SOURCE },
+    { text: '• 汇点T：只有流入', y: 520, color: SINK }
+  ];
+  
+  concepts.forEach(({ text, y, color }, i) => {
+    const t = T(p, text, { x: 100, y, size: 20, weight: 600, fill: color, o: 0 });
+    tw(t, { o: 1 }, 0.5, null, 0.5 + i * 0.2);
+  });
+}],
+
+['maxflow', '最大流问题', () => {
+  const p = panel(0);
+  
+  T(p, '最大流问题', { x: 400, y: 80, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const definition = G(p, { x: 150, y: 180, o: 0 });
+  
+  const box = mk('rect', { x: 0, y: 0, width: 500, height: 200, fill: BACKGROUND, stroke: TEXT_COLOR, 'stroke-width': 3, rx: 10 }, definition);
+  
+  T(definition, '问题：从源点S到汇点T', { x: 250, y: 40, size: 24, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  T(definition, '能够传输的最大流量是多少？', { x: 250, y: 80, size: 24, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  T(definition, '目标：最大化流出源点的总流量', { x: 250, y: 130, size: 20, weight: 600, fill: FLOW, anchor: 'middle' });
+  T(definition, '约束：满足容量和守恒律', { x: 250, y: 170, size: 20, weight: 600, fill: CAPACITY, anchor: 'middle' });
+  
+  tw(definition, { o: 1 }, 0.5);
+  
+  // 示例
+  const example = G(p, { x: 200, y: 420, o: 0 });
+  T(example, '例：水管网络，每个管道有容量限制', { x: 200, y: 0, size: 20, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
+  T(example, '找到从水源到终点的最大输水量', { x: 200, y: 40, size: 20, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
+  tw(example, { o: 1 }, 0.5, null, 0.5);
+}],
+
+['residual', '残余网络', () => {
+  const p = panel(0);
+  
+  T(p, '残余网络（Residual Network）', { x: 400, y: 80, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  // 原始边
+  const original = G(p, { x: 0, y: 180, o: 0 });
+  T(original, '原始边', { x: 250, y: 0, size: 24, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  const origG = G(original, { x: 100, y: 50 });
+  const n1 = drawNode(origG, 100, 50, 'u', '#fff');
+  const n2 = drawNode(origG, 300, 50, 'v', '#fff');
+  const e1 = drawEdge(origG, 100, 50, 300, 50, 10, 7);
+  
+  T(original, 'capacity = 10, flow = 7', { x: 250, y: 120, size: 18, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  tw(original, { o: 1 }, 0.5);
+  
+  // 残余边
+  const residual = G(p, { x: 0, y: 380, o: 0 });
+  T(residual, '残余网络', { x: 250, y: 0, size: 24, weight: 700, fill: RESIDUAL, anchor: 'middle' });
+  
+  const resG = G(residual, { x: 50, y: 50 });
+  const rn1 = drawNode(resG, 100, 50, 'u', '#fff');
+  const rn2 = drawNode(resG, 300, 50, 'v', '#fff');
+  
+  // 前向边（剩余容量）
+  const forward = drawEdge(resG, 100, 35, 300, 35, 3, 0);
+  T(resG, '前向: 10-7=3', { x: 200, y: 0, size: 16, weight: 600, fill: RESIDUAL, anchor: 'middle' });
+  
+  // 反向边（已用流量）
+  const backward = drawEdge(resG, 300, 65, 100, 65, 7, 0);
+  T(resG, '反向: 7（撤销）', { x: 200, y: 100, size: 16, weight: 600, fill: PATH, anchor: 'middle' });
+  
+  tw(residual, { o: 1 }, 0.5, null, 0.5);
+  
+  const note = T(p, '残余网络允许撤销之前的流量决策', { x: 550, y: 500, size: 20, weight: 600, fill: HIGHLIGHT, o: 0, anchor: 'middle' });
+  tw(note, { o: 1 }, 0.5, null, 1);
+}],
+
+['augmenting', '增广路径', () => {
+  const p = panel(0);
+  
+  T(p, '增广路径（Augmenting Path）', { x: 400, y: 80, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const concepts = [
+    { text: '1. 在残余网络中找一条从S到T的路径', y: 180 },
+    { text: '2. 路径上所有边都有剩余容量（> 0）', y: 240 },
+    { text: '3. 找到路径的瓶颈容量（最小剩余容量）', y: 300 },
+    { text: '4. 沿路径增加这么多流量', y: 360 },
+    { text: '5. 更新残余网络', y: 420 },
+    { text: '6. 重复直到找不到增广路径', y: 480 }
+  ];
+  
+  concepts.forEach(({ text, y }, i) => {
+    const t = T(p, text, { x: 100, y, size: 22, weight: 600, fill: TEXT_COLOR, o: 0 });
+    tw(t, { o: 1 }, 0.5, null, i * 0.2);
+  });
+}],
+
+['ford-fulkerson-demo', 'Ford-Fulkerson演示', () => {
+  const p = panel(0);
+  
+  T(p, 'Ford-Fulkerson 算法演示', { x: 400, y: 40, size: 36, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  // 网络定义
+  const edges = [
+    { from: 'S', to: 'A', capacity: 7, id: 'SA' },
+    { from: 'S', to: 'B', capacity: 5, id: 'SB' },
+    { from: 'A', to: 'C', capacity: 4, id: 'AC' },
+    { from: 'A', to: 'D', capacity: 3, id: 'AD' },
+    { from: 'B', to: 'C', capacity: 2, id: 'BC' },
+    { from: 'B', to: 'D', capacity: 4, id: 'BD' },
+    { from: 'C', to: 'T', capacity: 7, id: 'CT' },
+    { from: 'D', to: 'T', capacity: 5, id: 'DT' }
+  ];
+  
+  // 初始流量
+  const flows = {
+    'SA': 0, 'SB': 0, 'AC': 0, 'AD': 0,
+    'BC': 0, 'BD': 0, 'CT': 0, 'DT': 0
+  };
+  
+  const network = drawNetwork(p, edges, flows);
+  tw(network.g, { x: 50, y: 100, o: 1 }, 0.5);
+  
+  // 流量显示
+  const flowText = T(p, '当前流量: 0', { x: 400, y: 550, size: 28, weight: 700, fill: FLOW, o: 0, anchor: 'middle' });
+  tw(flowText, { o: 1 }, 0.5, null, 0.5);
+  
+  let totalFlow = 0;
+  let delay = 1;
+  
+  // 增广路径1: S->A->D->T (瓶颈3)
+  setTimeout(() => {
+    const path1 = ['SA', 'AD', 'DT'];
+    const pathText = T(p, '路径1: S→A→D→T, 瓶颈=3', { x: 400, y: 500, size: 20, weight: 600, fill: PATH, anchor: 'middle' });
+    highlightPath(network, path1, 0.5);
+    
+    setTimeout(() => {
+      flows['SA'] += 3;
+      flows['AD'] += 3;
+      flows['DT'] += 3;
+      totalFlow += 3;
+      
+      updateEdgeLabel(network.edges['SA'], flows['SA'], 7);
+      updateEdgeLabel(network.edges['AD'], flows['AD'], 3);
+      updateEdgeLabel(network.edges['DT'], flows['DT'], 5);
+      
+      tw(flowText, { o: 0 }, 0.3, () => {
+        flowText.textContent = `当前流量: ${totalFlow}`;
+        tw(flowText, { o: 1 }, 0.3);
+      });
+      
+      resetPath(network, path1, 0.5);
+      tw(pathText, { o: 0 }, 0.5, () => pathText.remove());
+    }, 2000);
+  }, delay * 1000);
+  delay += 3;
+  
+  // 增广路径2: S->B->D->T (瓶颈2)
+  setTimeout(() => {
+    const path2 = ['SB', 'BD', 'DT'];
+    const pathText = T(p, '路径2: S→B→D→T, 瓶颈=2', { x: 400, y: 500, size: 20, weight: 600, fill: PATH, anchor: 'middle' });
+    highlightPath(network, path2, 0.5);
+    
+    setTimeout(() => {
+      flows['SB'] += 2;
+      flows['BD'] += 2;
+      flows['DT'] += 2;
+      totalFlow += 2;
+      
+      updateEdgeLabel(network.edges['SB'], flows['SB'], 5);
+      updateEdgeLabel(network.edges['BD'], flows['BD'], 4);
+      updateEdgeLabel(network.edges['DT'], flows['DT'], 5);
+      
+      tw(flowText, { o: 0 }, 0.3, () => {
+        flowText.textContent = `当前流量: ${totalFlow}`;
+        tw(flowText, { o: 1 }, 0.3);
+      });
+      
+      resetPath(network, path2, 0.5);
+      tw(pathText, { o: 0 }, 0.5, () => pathText.remove());
+    }, 2000);
+  }, delay * 1000);
+  delay += 3;
+  
+  // 增广路径3: S->A->C->T (瓶颈4)
+  setTimeout(() => {
+    const path3 = ['SA', 'AC', 'CT'];
+    const pathText = T(p, '路径3: S→A→C→T, 瓶颈=4', { x: 400, y: 500, size: 20, weight: 600, fill: PATH, anchor: 'middle' });
+    highlightPath(network, path3, 0.5);
+    
+    setTimeout(() => {
+      flows['SA'] += 4;
+      flows['AC'] += 4;
+      flows['CT'] += 4;
+      totalFlow += 4;
+      
+      updateEdgeLabel(network.edges['SA'], flows['SA'], 7);
+      updateEdgeLabel(network.edges['AC'], flows['AC'], 4);
+      updateEdgeLabel(network.edges['CT'], flows['CT'], 7);
+      
+      tw(flowText, { o: 0 }, 0.3, () => {
+        flowText.textContent = `当前流量: ${totalFlow}`;
+        tw(flowText, { o: 1 }, 0.3);
+      });
+      
+      resetPath(network, path3, 0.5);
+      tw(pathText, { o: 0 }, 0.5, () => pathText.remove());
+    }, 2000);
+  }, delay * 1000);
+  delay += 3;
+  
+  // 增广路径4: S->B->C->T (瓶颈1)
+  setTimeout(() => {
+    const path4 = ['SB', 'BC', 'CT'];
+    const pathText = T(p, '路径4: S→B→C→T, 瓶颈=1', { x: 400, y: 500, size: 20, weight: 600, fill: PATH, anchor: 'middle' });
+    highlightPath(network, path4, 0.5);
+    
+    setTimeout(() => {
+      flows['SB'] += 1;
+      flows['BC'] += 1;
+      flows['CT'] += 1;
+      totalFlow += 1;
+      
+      updateEdgeLabel(network.edges['SB'], flows['SB'], 5);
+      updateEdgeLabel(network.edges['BC'], flows['BC'], 2);
+      updateEdgeLabel(network.edges['CT'], flows['CT'], 7);
+      
+      tw(flowText, { o: 0 }, 0.3, () => {
+        flowText.textContent = `当前流量: ${totalFlow}`;
+        tw(flowText, { o: 1 }, 0.3);
+      });
+      
+      resetPath(network, path4, 0.5);
+      tw(pathText, { o: 0 }, 0.5, () => pathText.remove());
+    }, 2000);
+  }, delay * 1000);
+  delay += 3;
+  
+  // 完成
+  setTimeout(() => {
+    const done = T(p, '✓ 无法找到更多增广路径，算法结束', { x: 400, y: 500, size: 22, weight: 700, fill: SUCCESS, o: 0, anchor: 'middle' });
+    tw(done, { o: 1 }, 0.5);
+  }, delay * 1000);
+}],
+
+['implementation', '算法实现', () => {
+  const p = panel(0);
+  
+  T(p, 'Edmonds-Karp 实现', { x: 400, y: 60, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const code = `function maxFlow(graph, source, sink) {
+  let totalFlow = 0;
+  
+  while (true) {
+    // BFS查找增广路径
+    const path = bfs(graph, source, sink);
+    if (!path) break;  // 无增广路径
+    
+    // 找瓶颈容量
+    let bottleneck = Infinity;
+    for (let edge of path) {
+      bottleneck = Math.min(bottleneck, 
+                           edge.capacity - edge.flow);
+    }
+    
+    // 更新流量
+    for (let edge of path) {
+      edge.flow += bottleneck;
+      edge.reverse.flow -= bottleneck;
+    }
+    
+    totalFlow += bottleneck;
+  }
+  
+  return totalFlow;
+}`;
+  
+  const codeLines = code.split('\n');
+  let y = 140;
+  codeLines.forEach((line, i) => {
+    const t = T(p, line, { x: 80, y: y, size: 16, weight: 500, fill: TEXT_COLOR, o: 0, family: 'monospace' });
+    tw(t, { o: 1 }, 0.3, null, i * 0.1);
+    y += 22;
+  });
+  
+  const note = T(p, 'BFS保证找到最短增广路径', { x: 400, y: 530, size: 20, weight: 600, fill: HIGHLIGHT, o: 0, anchor: 'middle' });
+  tw(note, { o: 1 }, 0.5, null, 2);
+}],
+
+['complexity', '复杂度分析', () => {
+  const p = panel(0);
+  
+  T(p, '复杂度分析', { x: 400, y: 80, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const analysis = [
+    { label: '增广次数', value: '最多 O(V×E)', y: 180, color: PATH },
+    { label: '每次BFS', value: 'O(E)', y: 250, color: FLOW },
+    { label: '总复杂度', value: 'O(V×E²)', y: 320, color: HIGHLIGHT },
+    { label: '适用范围', value: '整数容量保证多项式时间', y: 390, color: TEXT_COLOR }
+  ];
+  
+  analysis.forEach(({ label, value, y, color }, i) => {
+    const g = G(p, { x: 150, y, o: 0 });
+    T(g, label + ':', { x: 0, y: 0, size: 24, weight: 700, fill: TEXT_COLOR });
+    T(g, value, { x: 220, y: 0, size: 24, weight: 700, fill: color });
+    tw(g, { o: 1 }, 0.5, null, i * 0.3);
+  });
+  
+  const note = G(p, { x: 150, y: 470, o: 0 });
+  T(note, '注意：对于实数容量，可能不收敛', { x: 0, y: 0, size: 20, weight: 600, fill: CAPACITY });
+  T(note, 'Dinic算法可优化到 O(V²×E)', { x: 0, y: 40, size: 20, weight: 600, fill: RESIDUAL });
+  tw(note, { o: 1 }, 0.5, null, 1.2);
+}],
+
+['mincut', '最大流最小割', () => {
+  const p = panel(0);
+  
+  T(p, '最大流-最小割定理', { x: 400, y: 80, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const theorem = G(p, { x: 100, y: 180, o: 0 });
+  const box = mk('rect', { x: 0, y: 0, width: 600, height: 120, fill: BACKGROUND, stroke: HIGHLIGHT, 'stroke-width': 4, rx: 10 }, theorem);
+  
+  T(theorem, '定理：网络的最大流 = 最小割的容量', { x: 300, y: 35, size: 26, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  T(theorem, '割：将图分成包含S和包含T的两部分', { x: 300, y: 75, size: 20, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  tw(theorem, { o: 1 }, 0.5);
+  
+  // 示例
+  const example = G(p, { x: 150, y: 340, o: 0 });
+  
+  T(example, '割的容量 = 跨割边的容量之和', { x: 200, y: 0, size: 22, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  const cutG = G(example, { x: 0, y: 60 });
+  
+  // 简化网络展示割
+  const nodes = [
+    { x: 100, y: 80, label: 'S', color: SOURCE },
+    { x: 200, y: 80, label: 'A', color: SOURCE },
+    { x: 350, y: 80, label: 'B', color: SINK },
+    { x: 450, y: 80, label: 'T', color: SINK }
+  ];
+  
+  nodes.forEach(({ x, y, label, color }) => {
+    drawNode(cutG, x, y, label, color);
+  });
+  
+  // 割线
+  const cutLine = mk('line', { x1: 270, y1: 20, x2: 270, y2: 140, stroke: HIGHLIGHT, 'stroke-width': 5, 'stroke-dasharray': '10,5' }, cutG);
+  T(cutG, '最小割', { x: 275, y: 0, size: 20, weight: 700, fill: HIGHLIGHT });
+  
+  tw(example, { o: 1 }, 0.5, null, 0.5);
+  
+  const note = T(p, '这个定理保证了Ford-Fulkerson算法的正确性', { x: 400, y: 520, size: 20, weight: 600, fill: HIGHLIGHT, o: 0, anchor: 'middle' });
+  tw(note, { o: 1 }, 0.5, null, 1);
+}],
+
+['applications', '应用场景', () => {
+  const p = panel(0);
+  
+  T(p, '最大流的应用', { x: 400, y: 80, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const applications = [
+    { icon: '🌐', title: '网络规划', desc: '带宽分配、流量调度', y: 170 },
+    { icon: '👥', title: '任务分配', desc: '二分匹配、人员调度', y: 250 },
+    { icon: '🖼️', title: '图像分割', desc: '计算机视觉、目标识别', y: 330 },
+    { icon: '📦', title: '供应链', desc: '物流优化、运输规划', y: 410 },
+    { icon: '⚡', title: '资源管理', desc: '项目调度、资源分配', y: 490 }
+  ];
+  
+  applications.forEach(({ icon, title, desc, y }, i) => {
+    const g = G(p, { x: 120, y, o: 0 });
+    T(g, icon, { x: 0, y: 0, size: 36 });
+    T(g, title, { x: 60, y: -5, size: 24, weight: 700, fill: TEXT_COLOR });
+    T(g, desc, { x: 60, y: 25, size: 18, weight: 500, fill: CAPACITY });
+    tw(g, { o: 1 }, 0.5, null, i * 0.2);
+  });
+}],
+
+['variants', '变体问题', () => {
+  const p = panel(0);
+  
+  T(p, '最大流的变体', { x: 400, y: 80, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  // 最小费用最大流
+  const variant1 = G(p, { x: 100, y: 180, o: 0 });
+  const box1 = mk('rect', { x: 0, y: 0, width: 600, height: 120, fill: BACKGROUND, stroke: FLOW, 'stroke-width': 3, rx: 10 }, variant1);
+  
+  T(variant1, '最小费用最大流', { x: 300, y: 30, size: 26, weight: 700, fill: FLOW, anchor: 'middle' });
+  T(variant1, '每条边有费用，在最大流前提下最小化总费用', { x: 300, y: 65, size: 18, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
+  T(variant1, '应用：带成本的运输、物流优化', { x: 300, y: 95, size: 18, weight: 500, fill: CAPACITY, anchor: 'middle' });
+  
+  tw(variant1, { o: 1 }, 0.5);
+  
+  // 多源多汇
+  const variant2 = G(p, { x: 100, y: 330, o: 0 });
+  const box2 = mk('rect', { x: 0, y: 0, width: 600, height: 120, fill: BACKGROUND, stroke: RESIDUAL, 'stroke-width': 3, rx: 10 }, variant2);
+  
+  T(variant2, '多源多汇最大流', { x: 300, y: 30, size: 26, weight: 700, fill: RESIDUAL, anchor: 'middle' });
+  T(variant2, '添加超级源S*连所有源，超级汇T*连所有汇', { x: 300, y: 65, size: 18, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
+  T(variant2, '转化为单源单汇问题', { x: 300, y: 95, size: 18, weight: 500, fill: CAPACITY, anchor: 'middle' });
+  
+  tw(variant2, { o: 1 }, 0.5, null, 0.5);
+  
+  const note = T(p, '变体问题丰富了算法的应用范围', { x: 400, y: 500, size: 20, weight: 600, fill: HIGHLIGHT, o: 0, anchor: 'middle' });
+  tw(note, { o: 1 }, 0.5, null, 1);
+}],
+
+['summary', '总结', () => {
+  const p = panel(0);
+  
+  T(p, '总结', { x: 400, y: 80, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const summary = [
+    { icon: '🎯', text: '最大流问题：从源到汇的最大流量', y: 170 },
+    { icon: '🔄', text: 'Ford-Fulkerson：用增广路径迭代增加流量', y: 240 },
+    { icon: '🔍', text: 'Edmonds-Karp：用BFS找增广路径', y: 310 },
+    { icon: '⏱️', text: '复杂度：O(V×E²)', y: 380 },
+    { icon: '⚖️', text: '最大流-最小割定理：理论基础', y: 450 },
+    { icon: '🌟', text: '应用广泛：网络、匹配、图像、物流', y: 520 }
+  ];
+  
+  summary.forEach(({ icon, text, y }, i) => {
+    const g = G(p, { x: 120, y, o: 0 });
+    T(g, icon, { x: 0, y: 0, size: 32 });
+    T(g, text, { x: 60, y: 0, size: 22, weight: 600, fill: TEXT_COLOR });
+    tw(g, { o: 1 }, 0.5, null, i * 0.2);
+  });
+}]
+
+];
+
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,995 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第二十八章 矩阵链乘法</title>
+<link rel="stylesheet" href="../lib/engine.css">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 28, title: '矩阵链乘法', language: 'zh', minutes: 11 };
+
+/* ---------- 颜色方案 ---------- */
+const PRIMARY = '#3498db';         // 蓝色（主要）
+const SECONDARY = '#e74c3c';       // 红色（强调）
+const SUCCESS = '#2ecc71';         // 绿色（成功）
+const WARNING = '#f39c12';         // 橙色（警告）
+const PURPLE = '#9b59b6';          // 紫色（辅助）
+const DARK = '#2c3e50';            // 深色（文字）
+const LIGHT_BG = '#ecf0f1';        // 浅灰（背景）
+const HIGHLIGHT = '#e67e22';       // 深橙（高亮）
+
+/* ---------- 辅助函数 ---------- */
+function drawMatrix(parent, x, y, rows, cols, label) {
+  const g = G(parent, { x, y, o: 0 });
+  
+  const rect = mk('rect', {
+    x: -30, y: -20, width: 60, height: 40,
+    fill: PRIMARY, stroke: DARK, 'stroke-width': 2, rx: 5
+  }, g);
+  
+  const text = T(g, label, { x: 0, y: 0, size: 20, weight: 700, fill: '#fff', anchor: 'middle' });
+  text.setAttribute('dominant-baseline', 'central');
+  
+  const dim = T(g, `${rows}×${cols}`, { x: 0, y: 28, size: 14, fill: DARK, anchor: 'middle' });
+  
+  return { g, rect, text, dim };
+}
+
+function drawDPCell(parent, x, y, value, isActive = false, isResult = false) {
+  const g = G(parent, { x, y, o: 0 });
+  
+  let fillColor = LIGHT_BG;
+  if (isResult) fillColor = SUCCESS;
+  else if (isActive) fillColor = WARNING;
+  
+  const rect = mk('rect', {
+    x: -25, y: -20, width: 50, height: 40,
+    fill: fillColor, stroke: DARK, 'stroke-width': 2, rx: 3
+  }, g);
+  
+  const text = T(g, value !== undefined ? String(value) : '', { 
+    x: 0, y: 0, size: 16, weight: 600, fill: DARK, anchor: 'middle' 
+  });
+  text.setAttribute('dominant-baseline', 'central');
+  
+  return { g, rect, text };
+}
+
+function drawArrow(parent, x1, y1, x2, y2, color = DARK) {
+  const g = G(parent, { o: 0 });
+  
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const angle = Math.atan2(dy, dx);
+  
+  const line = mk('line', {
+    x1, y1, x2: x2 - 10 * Math.cos(angle), y2: y2 - 10 * Math.sin(angle),
+    stroke: color, 'stroke-width': 2, 'marker-end': 'url(#arrowhead)'
+  }, g);
+  
+  return { g, line };
+}
+
+/* ---------- Beats ---------- */
+window.BEATS = [
+
+['intro', '问题引入', () => {
+  const p = panel(0);
+
+  T(p, '矩阵链乘法', { x: 400, y: 80, size: 48, weight: 700, fill: DARK, o: 0 });
+  
+  // 矩阵链示例
+  const matrices = ['A', 'B', 'C', 'D'];
+  matrices.forEach((name, i) => {
+    const m = drawMatrix(p, 150 + i * 130, 180, 10, 20, name);
+    tw(m.g, { o: 1 }, 0.5 + i * 0.2);
+    
+    if (i < matrices.length - 1) {
+      const times = T(p, '×', { x: 210 + i * 130, y: 180, size: 32, weight: 700, fill: DARK, o: 0 });
+      tw(times, { o: 1 }, 0.7 + i * 0.2);
+    }
+  });
+  
+  // 关键问题
+  const problems = [
+    { text: '结合律：(A×B)×C = A×(B×C)', y: 280, color: PRIMARY },
+    { text: '但计算代价不同！', y: 340, color: SECONDARY },
+    { text: '目标：找到最优括号方案', y: 400, color: SUCCESS }
+  ];
+  
+  problems.forEach(({ text, y, color }, i) => {
+    const t = T(p, text, { x: 400, y, size: 26, weight: 600, fill: color, anchor: 'middle', o: 0 });
+    tw(t, { o: 1 }, 2 + i * 0.4);
+  });
+  
+  const goal = T(p, '最小化乘法次数', { x: 400, y: 500, size: 32, weight: 700, fill: WARNING, anchor: 'middle', o: 0 });
+  tw(goal, { o: 1 }, 3.5);
+}],
+
+['example', '具体示例', () => {
+  const p = panel(0);
+  
+  T(p, '示例：三个矩阵相乘', { x: 400, y: 60, size: 36, weight: 700, fill: DARK });
+  
+  // 矩阵定义
+  const mA = drawMatrix(p, 150, 130, 10, 30, 'A');
+  const mB = drawMatrix(p, 280, 130, 30, 5, 'B');
+  const mC = drawMatrix(p, 410, 130, 5, 60, 'C');
+  
+  tw(mA.g, { o: 1 }, 0.3);
+  tw(mB.g, { o: 1 }, 0.5);
+  tw(mC.g, { o: 1 }, 0.7);
+  
+  T(p, '×', { x: 215, y: 130, size: 28, fill: DARK });
+  T(p, '×', { x: 345, y: 130, size: 28, fill: DARK });
+  
+  // 方案1: (A×B)×C
+  const way1Title = T(p, '方案1: (A×B)×C', { x: 200, y: 220, size: 24, weight: 600, fill: PRIMARY, o: 0 });
+  tw(way1Title, { o: 1 }, 1);
+  
+  const step1_1 = T(p, '① A×B: 10×30×5 = 1500', { x: 200, y: 260, size: 20, fill: DARK, o: 0 });
+  tw(step1_1, { o: 1 }, 1.5);
+  
+  const step1_2 = T(p, '② 结果×C: 10×5×60 = 3000', { x: 200, y: 290, size: 20, fill: DARK, o: 0 });
+  tw(step1_2, { o: 1 }, 2);
+  
+  const total1 = T(p, '总计: 4500 次', { x: 200, y: 330, size: 22, weight: 700, fill: SUCCESS, o: 0 });
+  tw(total1, { o: 1 }, 2.5);
+  
+  // 方案2: A×(B×C)
+  const way2Title = T(p, '方案2: A×(B×C)', { x: 550, y: 220, size: 24, weight: 600, fill: SECONDARY, o: 0 });
+  tw(way2Title, { o: 1 }, 3);
+  
+  const step2_1 = T(p, '① B×C: 30×5×60 = 9000', { x: 550, y: 260, size: 20, fill: DARK, o: 0 });
+  tw(step2_1, { o: 1 }, 3.5);
+  
+  const step2_2 = T(p, '② A×结果: 10×30×60 = 18000', { x: 550, y: 290, size: 20, fill: DARK, o: 0 });
+  tw(step2_2, { o: 1 }, 4);
+  
+  const total2 = T(p, '总计: 27000 次', { x: 550, y: 330, size: 22, weight: 700, fill: SECONDARY, o: 0 });
+  tw(total2, { o: 1 }, 4.5);
+  
+  // 比较
+  const comparison = T(p, '效率差距: 6 倍！', { x: 400, y: 400, size: 32, weight: 700, fill: WARNING, anchor: 'middle', o: 0 });
+  tw(comparison, { o: 1 }, 5.5);
+  
+  const conclusion = T(p, '选对括号方案至关重要', { x: 400, y: 460, size: 26, fill: DARK, anchor: 'middle', o: 0 });
+  tw(conclusion, { o: 1 }, 6);
+}],
+
+['problem-def', '问题定义', () => {
+  const p = panel(0);
+  
+  T(p, '问题定义', { x: 400, y: 60, size: 36, weight: 700, fill: DARK });
+  
+  // 输入
+  const input = T(p, '输入：n 个矩阵 A₁, A₂, ..., Aₙ', { x: 100, y: 140, size: 24, fill: DARK, o: 0 });
+  tw(input, { o: 1 }, 0.5);
+  
+  const dims = T(p, '矩阵 Aᵢ 的维度：pᵢ₋₁ × pᵢ', { x: 100, y: 190, size: 24, fill: DARK, o: 0 });
+  tw(dims, { o: 1 }, 1);
+  
+  const array = T(p, '维度数组：p[0..n]', { x: 100, y: 240, size: 24, fill: PRIMARY, o: 0 });
+  tw(array, { o: 1 }, 1.5);
+  
+  // 示例
+  const exampleTitle = T(p, '示例：p = [10, 30, 5, 60]', { x: 100, y: 310, size: 22, weight: 600, fill: WARNING, o: 0 });
+  tw(exampleTitle, { o: 1 }, 2);
+  
+  const ex1 = T(p, 'A₁: 10×30', { x: 120, y: 350, size: 20, fill: DARK, o: 0 });
+  tw(ex1, { o: 1 }, 2.3);
+  
+  const ex2 = T(p, 'A₂: 30×5', { x: 120, y: 380, size: 20, fill: DARK, o: 0 });
+  tw(ex2, { o: 1 }, 2.6);
+  
+  const ex3 = T(p, 'A₃: 5×60', { x: 120, y: 410, size: 20, fill: DARK, o: 0 });
+  tw(ex3, { o: 1 }, 2.9);
+  
+  // 目标
+  const objective = T(p, '目标：找到最优括号方案', { x: 500, y: 200, size: 26, weight: 600, fill: SUCCESS, o: 0 });
+  tw(objective, { o: 1 }, 3.5);
+  
+  const minimize = T(p, '使总乘法次数最少', { x: 500, y: 250, size: 24, fill: DARK, o: 0 });
+  tw(minimize, { o: 1 }, 4);
+  
+  // 复杂度对比
+  const brute = T(p, '暴力枚举：指数级 O(2ⁿ)', { x: 500, y: 320, size: 22, fill: SECONDARY, o: 0 });
+  tw(brute, { o: 1 }, 4.5);
+  
+  const dp = T(p, '动态规划：O(n³)', { x: 500, y: 360, size: 22, weight: 700, fill: PRIMARY, o: 0 });
+  tw(dp, { o: 1 }, 5);
+}],
+
+['dp-state', 'DP状态定义', () => {
+  const p = panel(0);
+  
+  T(p, 'DP 状态定义', { x: 400, y: 60, size: 36, weight: 700, fill: DARK });
+  
+  // 状态定义
+  const stateDef = T(p, 'dp[i][j] = 计算矩阵 Aᵢ 到 Aⱼ 的最小乘法次数', { 
+    x: 400, y: 150, size: 26, weight: 600, fill: PRIMARY, anchor: 'middle', o: 0 
+  });
+  tw(stateDef, { o: 1 }, 0.5);
+  
+  const range = T(p, '范围：1 ≤ i ≤ j ≤ n', { 
+    x: 400, y: 200, size: 24, fill: DARK, anchor: 'middle', o: 0 
+  });
+  tw(range, { o: 1 }, 1);
+  
+  // 示例
+  const example = T(p, '示例：dp[1][3] = A₁ × A₂ × A₃ 的最小代价', { 
+    x: 400, y: 270, size: 22, fill: WARNING, anchor: 'middle', o: 0 
+  });
+  tw(example, { o: 1 }, 1.8);
+  
+  // 基本情况
+  const base = T(p, '基本情况：dp[i][i] = 0', { 
+    x: 400, y: 340, size: 24, weight: 600, fill: SUCCESS, anchor: 'middle', o: 0 
+  });
+  tw(base, { o: 1 }, 2.5);
+  
+  const baseExp = T(p, '（单个矩阵不需要乘法）', { 
+    x: 400, y: 380, size: 20, fill: DARK, anchor: 'middle', o: 0 
+  });
+  tw(baseExp, { o: 1 }, 3);
+  
+  // 关键问题
+  const question = T(p, '如何计算 dp[i][j]？', { 
+    x: 400, y: 450, size: 28, weight: 700, fill: SECONDARY, anchor: 'middle', o: 0 
+  });
+  tw(question, { o: 1 }, 4);
+  
+  const idea = T(p, '核心思想：枚举最后一次乘法的分割点', { 
+    x: 400, y: 500, size: 24, fill: PURPLE, anchor: 'middle', o: 0 
+  });
+  tw(idea, { o: 1 }, 4.8);
+}],
+
+['dp-transition', '状态转移', () => {
+  const p = panel(0);
+  
+  T(p, '状态转移方程', { x: 400, y: 60, size: 36, weight: 700, fill: DARK });
+  
+  // 枚举分割点
+  const split = T(p, '枚举分割点 k：i ≤ k < j', { 
+    x: 400, y: 140, size: 26, weight: 600, fill: PRIMARY, anchor: 'middle', o: 0 
+  });
+  tw(split, { o: 1 }, 0.5);
+  
+  // 两部分
+  const part1 = T(p, '左部分：(Aᵢ × ... × Aₖ)', { 
+    x: 250, y: 210, size: 22, fill: SUCCESS, anchor: 'middle', o: 0 
+  });
+  tw(part1, { o: 1 }, 1.2);
+  
+  const cost1 = T(p, '代价：dp[i][k]', { 
+    x: 250, y: 245, size: 20, fill: DARK, anchor: 'middle', o: 0 
+  });
+  tw(cost1, { o: 1 }, 1.5);
+  
+  const part2 = T(p, '右部分：(Aₖ₊₁ × ... × Aⱼ)', { 
+    x: 550, y: 210, size: 22, fill: SUCCESS, anchor: 'middle', o: 0 
+  });
+  tw(part2, { o: 1 }, 2);
+  
+  const cost2 = T(p, '代价：dp[k+1][j]', { 
+    x: 550, y: 245, size: 20, fill: DARK, anchor: 'middle', o: 0 
+  });
+  tw(cost2, { o: 1 }, 2.3);
+  
+  // 最后乘法
+  const finalMul = T(p, '最后一次乘法：两个结果矩阵相乘', { 
+    x: 400, y: 310, size: 22, fill: WARNING, anchor: 'middle', o: 0 
+  });
+  tw(finalMul, { o: 1 }, 3);
+  
+  const finalCost = T(p, '代价：p[i-1] × p[k] × p[j]', { 
+    x: 400, y: 345, size: 20, fill: DARK, anchor: 'middle', o: 0 
+  });
+  tw(finalCost, { o: 1 }, 3.5);
+  
+  // 总代价
+  const totalCost = T(p, '总代价 = dp[i][k] + dp[k+1][j] + p[i-1]×p[k]×p[j]', { 
+    x: 400, y: 410, size: 22, weight: 600, fill: SECONDARY, anchor: 'middle', o: 0 
+  });
+  tw(totalCost, { o: 1 }, 4.5);
+  
+  // 状态转移方程
+  const formula = T(p, 'dp[i][j] = min { 总代价 }', { 
+    x: 400, y: 470, size: 26, weight: 700, fill: PRIMARY, anchor: 'middle', o: 0 
+  });
+  tw(formula, { o: 1 }, 5.5);
+  
+  const enumK = T(p, 'k = i, i+1, ..., j-1', { 
+    x: 400, y: 510, size: 22, fill: PURPLE, anchor: 'middle', o: 0 
+  });
+  tw(enumK, { o: 1 }, 6);
+}],
+
+['dp-table', 'DP表格结构', () => {
+  const p = panel(0);
+  
+  T(p, 'DP 表格填充顺序', { x: 400, y: 60, size: 36, weight: 700, fill: DARK });
+  
+  // 示例说明
+  const example = T(p, '示例：4个矩阵，p = [10, 20, 30, 40, 50]', { 
+    x: 400, y: 120, size: 22, fill: PRIMARY, anchor: 'middle', o: 0 
+  });
+  tw(example, { o: 1 }, 0.5);
+  
+  // 绘制表格框架
+  const tableX = 250;
+  const tableY = 180;
+  const cellSize = 60;
+  
+  // 表头
+  for (let i = 1; i <= 4; i++) {
+    const colLabel = T(p, String(i), { 
+      x: tableX + i * cellSize, y: tableY - 20, 
+      size: 18, weight: 600, fill: DARK, anchor: 'middle', o: 0 
+    });
+    tw(colLabel, { o: 1 }, 1 + i * 0.1);
+    
+    const rowLabel = T(p, String(i), { 
+      x: tableX - 20, y: tableY + i * cellSize, 
+      size: 18, weight: 600, fill: DARK, anchor: 'middle', o: 0 
+    });
+    tw(rowLabel, { o: 1 }, 1 + i * 0.1);
+  }
+  
+  // 对角线（基本情况）
+  for (let i = 1; i <= 4; i++) {
+    const cell = drawDPCell(p, tableX + i * cellSize, tableY + i * cellSize, '0');
+    tw(cell.g, { o: 1 }, 1.8 + i * 0.15);
+  }
+  
+  // 填充顺序说明
+  const order = T(p, '填充顺序：按链长度递增', { 
+    x: 550, y: 230, size: 22, weight: 600, fill: WARNING, o: 0 
+  });
+  tw(order, { o: 1 }, 2.5);
+  
+  const len2 = T(p, '长度2：dp[1][2], dp[2][3], dp[3][4]', { 
+    x: 550, y: 280, size: 18, fill: SUCCESS, o: 0 
+  });
+  tw(len2, { o: 1 }, 3);
+  
+  const len3 = T(p, '长度3：dp[1][3], dp[2][4]', { 
+    x: 550, y: 310, size: 18, fill: SUCCESS, o: 0 
+  });
+  tw(len3, { o: 1 }, 3.4);
+  
+  const len4 = T(p, '长度4：dp[1][4]', { 
+    x: 550, y: 340, size: 18, fill: SUCCESS, o: 0 
+  });
+  tw(len4, { o: 1 }, 3.8);
+  
+  // 依赖关系
+  const dependency = T(p, 'dp[i][j] 依赖 dp[i][k] 和 dp[k+1][j]', { 
+    x: 550, y: 400, size: 20, fill: SECONDARY, o: 0 
+  });
+  tw(dependency, { o: 1 }, 4.5);
+  
+  const reason = T(p, '所以必须先填短链，再填长链', { 
+    x: 550, y: 435, size: 20, fill: PURPLE, o: 0 
+  });
+  tw(reason, { o: 1 }, 5);
+}],
+
+['fill-demo', 'DP表格填充演示', () => {
+  const p = panel(0);
+  
+  T(p, 'DP 表格填充演示', { x: 400, y: 40, size: 32, weight: 700, fill: DARK });
+  
+  // 维度数组
+  const pArray = [10, 20, 30, 40, 50];
+  const pText = T(p, 'p = [10, 20, 30, 40, 50]', { 
+    x: 400, y: 80, size: 20, fill: PRIMARY, anchor: 'middle' 
+  });
+  
+  const tableX = 150;
+  const tableY = 140;
+  const cellSize = 55;
+  
+  // 创建表格
+  const cells = {};
+  
+  // 表头
+  for (let i = 1; i <= 4; i++) {
+    T(p, String(i), { 
+      x: tableX + i * cellSize, y: tableY - 15, 
+      size: 16, weight: 600, fill: DARK, anchor: 'middle' 
+    });
+    T(p, String(i), { 
+      x: tableX - 15, y: tableY + i * cellSize, 
+      size: 16, weight: 600, fill: DARK, anchor: 'middle' 
+    });
+  }
+  
+  // 初始化对角线
+  for (let i = 1; i <= 4; i++) {
+    cells[`${i}-${i}`] = drawDPCell(p, 
+      tableX + i * cellSize, tableY + i * cellSize, '0');
+    tw(cells[`${i}-${i}`].g, { o: 1 }, 0.3);
+  }
+  
+  let time = 1;
+  
+  // 信息面板位置
+  const infoX = 500;
+  const infoY = 160;
+  
+  // 长度 2
+  const len2Title = T(p, '长度 2', { 
+    x: infoX, y: infoY, size: 22, weight: 600, fill: WARNING, o: 0 
+  });
+  tw(len2Title, { o: 1 }, time);
+  time += 0.4;
+  
+  // dp[1][2]
+  cells['1-2'] = drawDPCell(p, tableX + cellSize, tableY + 2 * cellSize, '', true);
+  tw(cells['1-2'].g, { o: 1 }, time);
+  
+  const calc12 = T(p, 'dp[1][2], k=1', { x: infoX, y: infoY + 40, size: 18, fill: DARK, o: 0 });
+  tw(calc12, { o: 1 }, time);
+  time += 0.5;
+  
+  const formula12 = T(p, '= 0 + 0 + 10×20×30', { x: infoX, y: infoY + 65, size: 16, fill: DARK, o: 0 });
+  tw(formula12, { o: 1 }, time);
+  time += 0.4;
+  
+  const result12 = T(p, '= 6000', { x: infoX, y: infoY + 88, size: 16, weight: 700, fill: SUCCESS, o: 0 });
+  tw(result12, { o: 1 }, time);
+  time += 0.3;
+  
+  cells['1-2'].text.textContent = '6000';
+  tw(cells['1-2'].rect, { fill: SUCCESS }, time);
+  time += 0.4;
+  
+  // 清除信息
+  tw(calc12, { o: 0 }, time);
+  tw(formula12, { o: 0 }, time);
+  tw(result12, { o: 0 }, time);
+  time += 0.2;
+  
+  // dp[2][3]
+  cells['2-3'] = drawDPCell(p, tableX + 2 * cellSize, tableY + 3 * cellSize, '', true);
+  tw(cells['2-3'].g, { o: 1 }, time);
+  
+  const calc23 = T(p, 'dp[2][3], k=2', { x: infoX, y: infoY + 40, size: 18, fill: DARK, o: 0 });
+  tw(calc23, { o: 1 }, time);
+  time += 0.5;
+  
+  const formula23 = T(p, '= 0 + 0 + 20×30×40', { x: infoX, y: infoY + 65, size: 16, fill: DARK, o: 0 });
+  tw(formula23, { o: 1 }, time);
+  time += 0.4;
+  
+  const result23 = T(p, '= 24000', { x: infoX, y: infoY + 88, size: 16, weight: 700, fill: SUCCESS, o: 0 });
+  tw(result23, { o: 1 }, time);
+  time += 0.3;
+  
+  cells['2-3'].text.textContent = '24000';
+  tw(cells['2-3'].rect, { fill: SUCCESS }, time);
+  time += 0.4;
+  
+  tw(calc23, { o: 0 }, time);
+  tw(formula23, { o: 0 }, time);
+  tw(result23, { o: 0 }, time);
+  time += 0.2;
+  
+  // dp[3][4]
+  cells['3-4'] = drawDPCell(p, tableX + 3 * cellSize, tableY + 4 * cellSize, '', true);
+  tw(cells['3-4'].g, { o: 1 }, time);
+  
+  const calc34 = T(p, 'dp[3][4], k=3', { x: infoX, y: infoY + 40, size: 18, fill: DARK, o: 0 });
+  tw(calc34, { o: 1 }, time);
+  time += 0.5;
+  
+  const formula34 = T(p, '= 0 + 0 + 30×40×50', { x: infoX, y: infoY + 65, size: 16, fill: DARK, o: 0 });
+  tw(formula34, { o: 1 }, time);
+  time += 0.4;
+  
+  const result34 = T(p, '= 60000', { x: infoX, y: infoY + 88, size: 16, weight: 700, fill: SUCCESS, o: 0 });
+  tw(result34, { o: 1 }, time);
+  time += 0.3;
+  
+  cells['3-4'].text.textContent = '60000';
+  tw(cells['3-4'].rect, { fill: SUCCESS }, time);
+  time += 0.4;
+  
+  tw(calc34, { o: 0 }, time);
+  tw(formula34, { o: 0 }, time);
+  tw(result34, { o: 0 }, time);
+  time += 0.3;
+  
+  // 长度 3
+  const len3Title = T(p, '长度 3', { 
+    x: infoX, y: infoY, size: 22, weight: 600, fill: WARNING, o: 0 
+  });
+  tw(len3Title, { o: 1 }, time);
+  tw(len2Title, { o: 0 }, time);
+  time += 0.4;
+  
+  // dp[1][3]
+  cells['1-3'] = drawDPCell(p, tableX + cellSize, tableY + 3 * cellSize, '', true);
+  tw(cells['1-3'].g, { o: 1 }, time);
+  
+  const calc13_title = T(p, 'dp[1][3]', { x: infoX, y: infoY + 40, size: 18, fill: DARK, o: 0 });
+  tw(calc13_title, { o: 1 }, time);
+  time += 0.4;
+  
+  // k=1
+  const k1_13 = T(p, 'k=1: 0+24000+8000=32000', { x: infoX, y: infoY + 65, size: 16, fill: DARK, o: 0 });
+  tw(k1_13, { o: 1 }, time);
+  time += 0.5;
+  
+  // k=2
+  const k2_13 = T(p, 'k=2: 6000+0+12000=18000', { x: infoX, y: infoY + 88, size: 16, fill: DARK, o: 0 });
+  tw(k2_13, { o: 1 }, time);
+  time += 0.5;
+  
+  const min13 = T(p, 'min = 18000 (k=2)', { x: infoX, y: infoY + 113, size: 16, weight: 700, fill: SUCCESS, o: 0 });
+  tw(min13, { o: 1 }, time);
+  time += 0.3;
+  
+  cells['1-3'].text.textContent = '18000';
+  tw(cells['1-3'].rect, { fill: SUCCESS }, time);
+  time += 0.4;
+  
+  tw(calc13_title, { o: 0 }, time);
+  tw(k1_13, { o: 0 }, time);
+  tw(k2_13, { o: 0 }, time);
+  tw(min13, { o: 0 }, time);
+  time += 0.2;
+  
+  // dp[2][4]
+  cells['2-4'] = drawDPCell(p, tableX + 2 * cellSize, tableY + 4 * cellSize, '', true);
+  tw(cells['2-4'].g, { o: 1 }, time);
+  
+  const calc24_title = T(p, 'dp[2][4]', { x: infoX, y: infoY + 40, size: 18, fill: DARK, o: 0 });
+  tw(calc24_title, { o: 1 }, time);
+  time += 0.4;
+  
+  const k2_24 = T(p, 'k=2: 0+60000+30000=90000', { x: infoX, y: infoY + 65, size: 16, fill: DARK, o: 0 });
+  tw(k2_24, { o: 1 }, time);
+  time += 0.5;
+  
+  const k3_24 = T(p, 'k=3: 24000+0+40000=64000', { x: infoX, y: infoY + 88, size: 16, fill: DARK, o: 0 });
+  tw(k3_24, { o: 1 }, time);
+  time += 0.5;
+  
+  const min24 = T(p, 'min = 64000 (k=3)', { x: infoX, y: infoY + 113, size: 16, weight: 700, fill: SUCCESS, o: 0 });
+  tw(min24, { o: 1 }, time);
+  time += 0.3;
+  
+  cells['2-4'].text.textContent = '64000';
+  tw(cells['2-4'].rect, { fill: SUCCESS }, time);
+  time += 0.4;
+  
+  tw(calc24_title, { o: 0 }, time);
+  tw(k2_24, { o: 0 }, time);
+  tw(k3_24, { o: 0 }, time);
+  tw(min24, { o: 0 }, time);
+  time += 0.3;
+  
+  // 长度 4
+  const len4Title = T(p, '长度 4', { 
+    x: infoX, y: infoY, size: 22, weight: 600, fill: WARNING, o: 0 
+  });
+  tw(len4Title, { o: 1 }, time);
+  tw(len3Title, { o: 0 }, time);
+  time += 0.4;
+  
+  // dp[1][4]
+  cells['1-4'] = drawDPCell(p, tableX + cellSize, tableY + 4 * cellSize, '', true);
+  tw(cells['1-4'].g, { o: 1 }, time);
+  
+  const calc14_title = T(p, 'dp[1][4]', { x: infoX, y: infoY + 40, size: 18, fill: DARK, o: 0 });
+  tw(calc14_title, { o: 1 }, time);
+  time += 0.4;
+  
+  const k1_14 = T(p, 'k=1: 0+64000+10000=74000', { x: infoX, y: infoY + 65, size: 15, fill: DARK, o: 0 });
+  tw(k1_14, { o: 1 }, time);
+  time += 0.5;
+  
+  const k2_14 = T(p, 'k=2: 6000+60000+15000=81000', { x: infoX, y: infoY + 88, size: 15, fill: DARK, o: 0 });
+  tw(k2_14, { o: 1 }, time);
+  time += 0.5;
+  
+  const k3_14 = T(p, 'k=3: 18000+0+20000=38000', { x: infoX, y: infoY + 111, size: 15, fill: DARK, o: 0 });
+  tw(k3_14, { o: 1 }, time);
+  time += 0.5;
+  
+  const min14 = T(p, 'min = 38000 (k=3)', { x: infoX, y: infoY + 136, size: 16, weight: 700, fill: SUCCESS, o: 0 });
+  tw(min14, { o: 1 }, time);
+  time += 0.3;
+  
+  cells['1-4'].text.textContent = '38000';
+  tw(cells['1-4'].rect, { fill: SUCCESS }, time);
+  time += 0.5;
+  
+  // 最终答案
+  const answer = T(p, '答案：dp[1][4] = 38000', { 
+    x: 400, y: 500, size: 28, weight: 700, fill: SECONDARY, anchor: 'middle', o: 0 
+  });
+  tw(answer, { o: 1 }, time);
+}],
+
+['implementation', '代码实现', () => {
+  const p = panel(0);
+  
+  T(p, '代码实现', { x: 400, y: 60, size: 36, weight: 700, fill: DARK });
+  
+  const code = `function matrixChainOrder(p) {
+  const n = p.length - 1;
+  const dp = Array(n+1).fill(0)
+    .map(() => Array(n+1).fill(0));
+  const s = Array(n+1).fill(0)
+    .map(() => Array(n+1).fill(0));
+  
+  // 按链长度递增
+  for (let len = 2; len <= n; len++) {
+    for (let i = 1; i <= n-len+1; i++) {
+      const j = i + len - 1;
+      dp[i][j] = Infinity;
+      
+      // 枚举分割点
+      for (let k = i; k < j; k++) {
+        const cost = dp[i][k] + 
+                     dp[k+1][j] + 
+                     p[i-1] * p[k] * p[j];
+        if (cost < dp[i][j]) {
+          dp[i][j] = cost;
+          s[i][j] = k;
+        }
+      }
+    }
+  }
+  
+  return { minCost: dp[1][n], splits: s };
+}`;
+  
+  const codeText = T(p, code, { 
+    x: 50, y: 120, size: 14, fill: DARK, 
+    font: 'Monaco, Courier, monospace', o: 0 
+  });
+  tw(codeText, { o: 1 }, 0.5);
+  
+  // 复杂度分析
+  const complexity = T(p, '时间复杂度：O(n³)', { 
+    x: 550, y: 370, size: 22, weight: 600, fill: PRIMARY, o: 0 
+  });
+  tw(complexity, { o: 1 }, 2);
+  
+  const space = T(p, '空间复杂度：O(n²)', { 
+    x: 550, y: 410, size: 22, weight: 600, fill: SUCCESS, o: 0 
+  });
+  tw(space, { o: 1 }, 2.5);
+  
+  const note = T(p, '三层循环：长度 × 起点 × 分割点', { 
+    x: 550, y: 460, size: 18, fill: DARK, o: 0 
+  });
+  tw(note, { o: 1 }, 3.5);
+}],
+
+['backtrack', '回溯括号方案', () => {
+  const p = panel(0);
+  
+  T(p, '回溯最优括号方案', { x: 400, y: 60, size: 36, weight: 700, fill: DARK });
+  
+  // 回溯函数
+  const code = `function printOptimal(s, i, j) {
+  if (i === j) {
+    return 'A' + i;
+  }
+  
+  const k = s[i][j];
+  const left = printOptimal(s, i, k);
+  const right = printOptimal(s, k+1, j);
+  
+  return '(' + left + '×' + right + ')';
+}`;
+  
+  const codeText = T(p, code, { 
+    x: 100, y: 140, size: 16, fill: DARK, 
+    font: 'Monaco, Courier, monospace', o: 0 
+  });
+  tw(codeText, { o: 1 }, 0.5);
+  
+  // 示例
+  const example = T(p, '示例：s[1][4] = 3', { 
+    x: 500, y: 180, size: 22, weight: 600, fill: PRIMARY, o: 0 
+  });
+  tw(example, { o: 1 }, 1.5);
+  
+  const step1 = T(p, '① 分割点 3 → (左)×(右)', { 
+    x: 500, y: 230, size: 18, fill: DARK, o: 0 
+  });
+  tw(step1, { o: 1 }, 2);
+  
+  const step2 = T(p, '② 左: s[1][3]=2 → (A₁×A₂)×A₃', { 
+    x: 500, y: 265, size: 18, fill: DARK, o: 0 
+  });
+  tw(step2, { o: 1 }, 2.5);
+  
+  const step3 = T(p, '③ 右: A₄', { 
+    x: 500, y: 300, size: 18, fill: DARK, o: 0 
+  });
+  tw(step3, { o: 1 }, 3);
+  
+  const result = T(p, '结果：((A₁×A₂)×A₃)×A₄', { 
+    x: 500, y: 360, size: 22, weight: 700, fill: SUCCESS, o: 0 
+  });
+  tw(result, { o: 1 }, 4);
+  
+  const complexity = T(p, '回溯时间：O(n)', { 
+    x: 500, y: 420, size: 20, fill: WARNING, o: 0 
+  });
+  tw(complexity, { o: 1 }, 5);
+}],
+
+['applications', '实际应用', () => {
+  const p = panel(0);
+  
+  T(p, '实际应用', { x: 400, y: 60, size: 36, weight: 700, fill: DARK });
+  
+  const apps = [
+    { icon: '⚙️', title: '编译器优化', desc: '表达式求值顺序', y: 150, color: PRIMARY },
+    { icon: '🗄️', title: '数据库查询', desc: '多表连接顺序优化', y: 230, color: SUCCESS },
+    { icon: '📊', title: '图计算', desc: '路径矩阵乘法顺序', y: 310, color: SECONDARY },
+    { icon: '🔬', title: '科学计算', desc: '大规模矩阵运算', y: 390, color: PURPLE },
+    { icon: '📐', title: '几何问题', desc: '多边形三角剖分', y: 470, color: WARNING }
+  ];
+  
+  apps.forEach(({ icon, title, desc, y, color }, i) => {
+    const g = G(p, { x: 150, y, o: 0 });
+    
+    T(g, icon, { x: 0, y: 0, size: 32, anchor: 'middle' });
+    T(g, title, { x: 60, y: -10, size: 24, weight: 600, fill: color });
+    T(g, desc, { x: 60, y: 15, size: 18, fill: DARK });
+    
+    tw(g, { o: 1 }, 0.5 + i * 0.4);
+  });
+  
+  const pattern = T(p, '共同特点：区间 DP + 枚举分割点', { 
+    x: 400, y: 540, size: 22, weight: 600, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+  });
+  tw(pattern, { o: 1 }, 3);
+}],
+
+['comparison', '与其他DP对比', () => {
+  const p = panel(0);
+  
+  T(p, 'DP 问题对比', { x: 400, y: 60, size: 36, weight: 700, fill: DARK });
+  
+  const problems = [
+    { 
+      name: '背包问题', 
+      dim: '一维 DP', 
+      decision: '选或不选', 
+      state: 'dp[i]', 
+      y: 150, 
+      color: PRIMARY 
+    },
+    { 
+      name: '最长公共子序列', 
+      dim: '二维 DP', 
+      decision: '字符匹配', 
+      state: 'dp[i][j]', 
+      y: 230, 
+      color: SUCCESS 
+    },
+    { 
+      name: '矩阵链乘法', 
+      dim: '区间 DP', 
+      decision: '枚举分割点', 
+      state: 'dp[i][j]', 
+      y: 310, 
+      color: SECONDARY 
+    }
+  ];
+  
+  problems.forEach(({ name, dim, decision, state, y, color }, i) => {
+    const title = T(p, name, { 
+      x: 120, y: y, size: 24, weight: 600, fill: color, o: 0 
+    });
+    tw(title, { o: 1 }, 0.5 + i * 0.6);
+    
+    const dimText = T(p, dim, { 
+      x: 320, y: y, size: 20, fill: DARK, o: 0 
+    });
+    tw(dimText, { o: 1 }, 0.7 + i * 0.6);
+    
+    const decText = T(p, decision, { 
+      x: 480, y: y, size: 20, fill: DARK, o: 0 
+    });
+    tw(decText, { o: 1 }, 0.9 + i * 0.6);
+    
+    const stateText = T(p, state, { 
+      x: 650, y: y, size: 18, fill: PURPLE, font: 'Monaco', o: 0 
+    });
+    tw(stateText, { o: 1 }, 1.1 + i * 0.6);
+  });
+  
+  // 区间DP特点
+  const title = T(p, '区间 DP 特点', { 
+    x: 400, y: 410, size: 28, weight: 700, fill: WARNING, anchor: 'middle', o: 0 
+  });
+  tw(title, { o: 1 }, 3);
+  
+  const features = [
+    '状态定义：dp[i][j] 表示区间 [i,j] 的答案',
+    '状态转移：枚举分割点 k，递归求解',
+    '填表顺序：按区间长度递增'
+  ];
+  
+  features.forEach((text, i) => {
+    const t = T(p, text, { 
+      x: 400, y: 460 + i * 40, size: 20, fill: DARK, anchor: 'middle', o: 0 
+    });
+    tw(t, { o: 1 }, 3.5 + i * 0.4);
+  });
+}],
+
+['optimization', '优化策略', () => {
+  const p = panel(0);
+  
+  T(p, '优化策略', { x: 400, y: 60, size: 36, weight: 700, fill: DARK });
+  
+  // 时间复杂度
+  const timeTitle = T(p, '时间复杂度', { 
+    x: 150, y: 140, size: 24, weight: 600, fill: PRIMARY, o: 0 
+  });
+  tw(timeTitle, { o: 1 }, 0.5);
+  
+  const timeOpt = T(p, 'O(n³) 已是最优', { 
+    x: 150, y: 175, size: 20, fill: DARK, o: 0 
+  });
+  tw(timeOpt, { o: 1 }, 1);
+  
+  const timeReason = T(p, '需要枚举所有 (i, j, k) 三元组', { 
+    x: 150, y: 205, size: 18, fill: DARK, o: 0 
+  });
+  tw(timeReason, { o: 1 }, 1.3);
+  
+  // 空间复杂度
+  const spaceTitle = T(p, '空间复杂度', { 
+    x: 150, y: 270, size: 24, weight: 600, fill: SUCCESS, o: 0 
+  });
+  tw(spaceTitle, { o: 1 }, 2);
+  
+  const spaceOpt = T(p, 'O(n²) 可优化到 O(n)', { 
+    x: 150, y: 305, size: 20, fill: DARK, o: 0 
+  });
+  tw(spaceOpt, { o: 1 }, 2.5);
+  
+  const spaceNote = T(p, '但需要特殊技巧，不太直观', { 
+    x: 150, y: 335, size: 18, fill: DARK, o: 0 
+  });
+  tw(spaceNote, { o: 1 }, 2.8);
+  
+  // 实用优化
+  const practicalTitle = T(p, '实用优化', { 
+    x: 500, y: 140, size: 24, weight: 600, fill: SECONDARY, o: 0 
+  });
+  tw(practicalTitle, { o: 1 }, 3.5);
+  
+  const opts = [
+    { text: '剪枝：跳过明显不优的分割点', y: 180 },
+    { text: '并行：多个子问题并行计算', y: 220 },
+    { text: '近似：贪心或启发式搜索', y: 260 },
+    { text: '缓存：记忆化避免重复计算', y: 300 }
+  ];
+  
+  opts.forEach(({ text, y }, i) => {
+    const t = T(p, text, { 
+      x: 500, y, size: 18, fill: DARK, o: 0 
+    });
+    tw(t, { o: 1 }, 4 + i * 0.3);
+  });
+  
+  const conclusion = T(p, '超大规模：牺牲最优性换速度', { 
+    x: 400, y: 400, size: 22, weight: 600, fill: WARNING, anchor: 'middle', o: 0 
+  });
+  tw(conclusion, { o: 1 }, 5.5);
+}],
+
+['variants', '问题变体', () => {
+  const p = panel(0);
+  
+  T(p, '问题变体', { x: 400, y: 60, size: 36, weight: 700, fill: DARK });
+  
+  const variants = [
+    { 
+      title: '环形矩阵链', 
+      desc: '首尾相连，枚举断开点',
+      color: PRIMARY,
+      y: 150 
+    },
+    { 
+      title: '带转置的矩阵链', 
+      desc: '矩阵可转置，扩展状态空间',
+      color: SUCCESS,
+      y: 230 
+    },
+    { 
+      title: '非标准代价', 
+      desc: '稀疏矩阵，修改代价函数',
+      color: SECONDARY,
+      y: 310 
+    },
+    { 
+      title: '前k优解', 
+      desc: '维护每个状态的top-k候选',
+      color: PURPLE,
+      y: 390 
+    },
+    { 
+      title: '最优二叉搜索树', 
+      desc: '结构类似，权重不同',
+      color: WARNING,
+      y: 470 
+    }
+  ];
+  
+  variants.forEach(({ title, desc, color, y }, i) => {
+    const titleText = T(p, title, { 
+      x: 150, y, size: 24, weight: 600, fill: color, o: 0 
+    });
+    tw(titleText, { o: 1 }, 0.5 + i * 0.5);
+    
+    const descText = T(p, desc, { 
+      x: 150, y: y + 30, size: 18, fill: DARK, o: 0 
+    });
+    tw(descText, { o: 1 }, 0.7 + i * 0.5);
+  });
+  
+  const flexibility = T(p, 'DP 框架灵活，可适应各种变体', { 
+    x: 400, y: 540, size: 22, weight: 600, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+  });
+  tw(flexibility, { o: 1 }, 4);
+}],
+
+['finish', '总结', () => {
+  const p = panel(0);
+  
+  T(p, '矩阵链乘法', { x: 400, y: 60, size: 40, weight: 700, fill: DARK, o: 0 });
+  
+  const summary = [
+    { text: '区间 DP 经典问题', color: PRIMARY, y: 150 },
+    { text: 'dp[i][j] = 矩阵 i 到 j 的最小代价', color: SUCCESS, y: 210 },
+    { text: '枚举分割点 k 进行状态转移', color: SECONDARY, y: 270 },
+    { text: '按区间长度递增填表', color: PURPLE, y: 330 },
+    { text: 'O(n³) 时间，O(n²) 空间', color: WARNING, y: 390 }
+  ];
+  
+  summary.forEach(({ text, color, y }, i) => {
+    const t = T(p, text, { 
+      x: 400, y, size: 26, weight: 600, fill: color, anchor: 'middle', o: 0 
+    });
+    tw(t, { o: 1 }, 0.5 + i * 0.5);
+  });
+  
+  const keys = T(p, '三个关键：区间状态 · 分割转移 · 长度填表', { 
+    x: 400, y: 470, size: 24, fill: DARK, anchor: 'middle', o: 0 
+  });
+  tw(keys, { o: 1 }, 4);
+  
+  const master = T(p, '掌握区间 DP 的精髓', { 
+    x: 400, y: 520, size: 28, weight: 700, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+  });
+  tw(master, { o: 1 }, 5);
+}]
+
+]; // end BEATS
+
+boot();
+</script>
+</body>
+</html>

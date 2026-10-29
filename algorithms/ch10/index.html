@@ -93,14 +93,14 @@ let BEATS = [
   tw(subtitle, { o: 1 }, 0.5, 0.5);
   
   const question = T(p, '如何保证排序的稳定性和最坏情况性能？', 
-    { x: 800, y: 320, size: 36, weight: 600, anchor: 'middle', o: 0 });
+    { x: 800, y: 300, size: 36, weight: 600, anchor: 'middle', o: 0 });
   tw(question, { o: 1 }, 2.0, 0.6);
   
   const def = T(p, '归并排序：分治思想的经典应用', 
-    { x: 800, y: 450, size: 32, fill: PRIMARY, anchor: 'middle', o: 0 });
+    { x: 800, y: 420, size: 32, fill: PRIMARY, anchor: 'middle', o: 0 });
   tw(def, { o: 1 }, 5.5, 0.7);
   
-  const features = G(p, { x: 800, y: 550, o: 0 });
+  const features = G(p, { x: 800, y: 530, o: 0 });
   T(features, '✓ 稳定排序', { x: -200, y: 0, size: 28, fill: LEFT_COLOR, weight: 600 });
   T(features, '✓ O(n log n) 保证', { x: 0, y: 0, size: 28, fill: RIGHT_COLOR, weight: 600, anchor: 'middle' });
   T(features, '✓ 适合外部排序', { x: 200, y: 0, size: 28, fill: MERGED_COLOR, weight: 600, anchor: 'end' });

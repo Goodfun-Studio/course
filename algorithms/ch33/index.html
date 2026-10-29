@@ -1,0 +1,762 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>后缀数组</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 33, title: '后缀数组', language: 'zh', minutes: 14 };
+
+/* ---------- colours ---------- */
+const SUFFIX_COLOR = '#3498db';     // 蓝色（后缀）
+const ARRAY_COLOR = '#e74c3c';      // 红色（数组）
+const SORT_COLOR = '#f39c12';       // 橙色（排序）
+const LCP_COLOR = '#2ecc71';        // 绿色（LCP）
+const STRING_COLOR = '#9b59b6';     // 紫色（字符串）
+const INDEX_COLOR = '#1abc9c';      // 青色（索引）
+const DIM_COLOR = '#7f8c8d';        // 灰色（辅助）
+
+/* ---------- beats ---------- */
+let BEATS = [
+
+['intro', '问题引入', () => {
+  const p = panel(0);
+  
+  const title = T(p, '后缀数组', { x: 800, y: 100, size: 56, weight: 700, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, 'Suffix Array - 高效的字符串数据结构', { x: 800, y: 170, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 0.8, 0.5);
+  
+  const problem1 = T(p, '问题一：在文本中快速搜索所有模式串', { x: 350, y: 260, size: 30, fill: SUFFIX_COLOR, o: 0 });
+  tw(problem1, { o: 1 }, 3, 0.6);
+  
+  const example1 = T(p, '例：在基因序列 ATCGATCG 中找 TCG', { x: 400, y: 320, size: 26, fill: COL.chalk, o: 0 });
+  tw(example1, { o: 1 }, 4.5, 0.5);
+  
+  const problem2 = T(p, '问题二：找最长重复子串', { x: 350, y: 400, size: 30, fill: ARRAY_COLOR, o: 0 });
+  tw(problem2, { o: 1 }, 7, 0.6);
+  
+  const example2 = T(p, '例：banana 中的 ana 重复出现', { x: 400, y: 460, size: 26, fill: COL.chalk, o: 0 });
+  tw(example2, { o: 1 }, 8.5, 0.5);
+  
+  const problem3 = T(p, '问题三：计算两字符串的最长公共子串', { x: 350, y: 540, size: 30, fill: LCP_COLOR, o: 0 });
+  tw(problem3, { o: 1 }, 11, 0.6);
+  
+  const solution = T(p, '后缀数组：用空间换时间的利器', { x: 800, y: 640, size: 36, fill: STRING_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(solution, { o: 1 }, 14, 0.7);
+  
+  const advantage = T(p, '比后缀树更省空间，查询同样高效', { x: 800, y: 710, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(advantage, { o: 1 }, 16, 0.6);
+}],
+
+['suffix-definition', '后缀的定义', () => {
+  const p = panel(0);
+  
+  const title = T(p, '什么是后缀？', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const definition = T(p, '后缀：从某个位置到字符串末尾的子串', { x: 400, y: 200, size: 32, fill: SUFFIX_COLOR, weight: 600, o: 0 });
+  tw(definition, { o: 1 }, 2, 0.6);
+  
+  const example = T(p, '示例字符串："banana"', { x: 400, y: 280, size: 36, fill: STRING_COLOR, weight: 600, o: 0 });
+  tw(example, { o: 1 }, 4, 0.6);
+  
+  // Display all suffixes
+  const str = "banana";
+  const suffixes = [];
+  for (let i = 0; i < str.length; i++) {
+    suffixes.push({ index: i, text: str.substring(i) });
+  }
+  
+  let suffixY = 360;
+  suffixes.forEach(({ index, text }, i) => {
+    const indexLabel = T(p, `后缀 ${index}:`, { x: 400, y: suffixY, size: 30, fill: INDEX_COLOR, weight: 600, o: 0 });
+    tw(indexLabel, { o: 1 }, 5.5 + i * 0.8, 0.5);
+    
+    const suffixText = T(p, text, { x: 600, y: suffixY, size: 32, fill: SUFFIX_COLOR, family: 'monospace', weight: 600, o: 0 });
+    tw(suffixText, { o: 1 }, 5.5 + i * 0.8 + 0.2, 0.5);
+    
+    // Highlight individual characters
+    const charX = 600;
+    for (let j = 0; j < text.length; j++) {
+      const char = text[j];
+      const box = mk('rect', { 
+        x: charX + j * 40, y: suffixY - 25, 
+        width: 35, height: 45, rx: 4, 
+        fill: 'none', stroke: SUFFIX_COLOR, 'stroke-width': 2, o: 0 
+      }, p);
+      tw(box, { o: 0.6 }, 5.5 + i * 0.8 + 0.3, 0.4);
+    }
+    
+    suffixY += 65;
+  });
+  
+  const count = T(p, `共 ${str.length} 个后缀`, { x: 400, y: suffixY + 20, size: 28, fill: COL.dim, o: 0 });
+  tw(count, { o: 1 }, 11, 0.5);
+}],
+
+['suffix-array-definition', '后缀数组定义', () => {
+  const p = panel(0);
+  
+  const title = T(p, '后缀数组是什么？', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const def1 = T(p, '定义：所有后缀按字典序排序后的索引数组', { x: 400, y: 200, size: 32, fill: ARRAY_COLOR, weight: 600, o: 0 });
+  tw(def1, { o: 1 }, 2, 0.6);
+  
+  const notation = T(p, '记作：SA[i] = 第 i 小的后缀的起始位置', { x: 450, y: 270, size: 28, fill: COL.chalk, o: 0 });
+  tw(notation, { o: 1 }, 4, 0.5);
+  
+  const purpose = T(p, '作用', { x: 400, y: 350, size: 36, fill: STRING_COLOR, weight: 600, o: 0 });
+  tw(purpose, { o: 1 }, 6, 0.5);
+  
+  const use1 = T(p, '• 二分查找：快速定位模式串', { x: 450, y: 420, size: 30, fill: COL.chalk, o: 0 });
+  tw(use1, { o: 1 }, 7.5, 0.5);
+  
+  const use2 = T(p, '• 利用排序性质：相似后缀相邻', { x: 450, y: 490, size: 30, fill: COL.chalk, o: 0 });
+  tw(use2, { o: 1 }, 9, 0.5);
+  
+  const use3 = T(p, '• 结合 LCP：解决各种字符串问题', { x: 450, y: 560, size: 30, fill: COL.chalk, o: 0 });
+  tw(use3, { o: 1 }, 10.5, 0.5);
+  
+  const comparison = T(p, '对比', { x: 400, y: 640, size: 36, fill: LCP_COLOR, weight: 600, o: 0 });
+  tw(comparison, { o: 1 }, 12.5, 0.5);
+  
+  const vs = T(p, '后缀树：功能强大但占用 O(n) 空间', { x: 450, y: 710, size: 26, fill: DIM_COLOR, o: 0 });
+  tw(vs, { o: 1 }, 14, 0.5);
+  
+  const current = T(p, '后缀数组：只需 O(n) 整数，更紧凑', { x: 450, y: 760, size: 26, fill: ARRAY_COLOR, weight: 600, o: 0 });
+  tw(current, { o: 1 }, 15.5, 0.5);
+}],
+
+['banana-example', 'banana 示例', () => {
+  const p = panel(0);
+  
+  const title = T(p, '示例："banana"', { x: 800, y: 80, size: 48, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  // Original string with indices
+  const str = "banana";
+  const indexY = 150;
+  const suffixY = 210;
+  
+  for (let i = 0; i < str.length; i++) {
+    const x = 400 + i * 70;
+    
+    // Index
+    const indexBox = mk('rect', { x: x, y: indexY, width: 60, height: 40, rx: 4, fill: INDEX_COLOR, o: 0 }, p);
+    tw(indexBox, { o: 0.8 }, 1 + i * 0.15, 0.4);
+    
+    const indexText = T(p, i.toString(), { x: x + 30, y: indexY + 28, size: 24, fill: 'white', anchor: 'middle', weight: 700, o: 0 });
+    tw(indexText, { o: 1 }, 1 + i * 0.15, 0.4);
+    
+    // Character
+    const charBox = mk('rect', { x: x, y: suffixY, width: 60, height: 50, rx: 5, fill: STRING_COLOR, o: 0 }, p);
+    tw(charBox, { o: 0.8 }, 2 + i * 0.15, 0.4);
+    
+    const char = T(p, str[i], { x: x + 30, y: suffixY + 35, size: 32, fill: 'white', anchor: 'middle', weight: 700, family: 'monospace', o: 0 });
+    tw(char, { o: 1 }, 2 + i * 0.15, 0.4);
+  }
+  
+  // All suffixes listed
+  const suffixListY = 310;
+  const label = T(p, '所有后缀（未排序）：', { x: 300, y: suffixListY, size: 28, fill: SUFFIX_COLOR, weight: 600, o: 0 });
+  tw(label, { o: 1 }, 4, 0.5);
+  
+  const suffixes = [
+    { i: 0, text: 'banana' },
+    { i: 1, text: 'anana' },
+    { i: 2, text: 'nana' },
+    { i: 3, text: 'ana' },
+    { i: 4, text: 'na' },
+    { i: 5, text: 'a' }
+  ];
+  
+  let listY = suffixListY + 60;
+  suffixes.forEach(({ i, text }, idx) => {
+    const idxText = T(p, `[${i}]`, { x: 350, y: listY, size: 26, fill: INDEX_COLOR, weight: 600, family: 'monospace', o: 0 });
+    tw(idxText, { o: 1 }, 5 + idx * 0.6, 0.4);
+    
+    const suffixText = T(p, text, { x: 450, y: listY, size: 26, fill: COL.chalk, family: 'monospace', o: 0 });
+    tw(suffixText, { o: 1 }, 5 + idx * 0.6 + 0.1, 0.4);
+    
+    listY += 45;
+  });
+  
+  const arrow = T(p, '↓ 按字典序排序', { x: 900, y: 480, size: 32, fill: SORT_COLOR, weight: 700, o: 0 });
+  tw(arrow, { o: 1 }, 9, 0.6);
+}],
+
+['suffix-array-construction', '后缀数组构建动画', () => {
+  const p = panel(0);
+  
+  const title = T(p, '构建后缀数组', { x: 800, y: 70, size: 44, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, 'banana → 排序后的后缀索引', { x: 800, y: 130, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 0.8, 0.5);
+  
+  // Unsorted suffixes on left
+  const leftX = 250;
+  const leftLabel = T(p, '未排序', { x: leftX + 80, y: 180, size: 28, fill: DIM_COLOR, weight: 600, o: 0 });
+  tw(leftLabel, { o: 1 }, 1.5, 0.5);
+  
+  const unsorted = [
+    { i: 0, text: 'banana', sortKey: 'banana' },
+    { i: 1, text: 'anana', sortKey: 'anana' },
+    { i: 2, text: 'nana', sortKey: 'nana' },
+    { i: 3, text: 'ana', sortKey: 'ana' },
+    { i: 4, text: 'na', sortKey: 'na' },
+    { i: 5, text: 'a', sortKey: 'a' }
+  ];
+  
+  let leftY = 230;
+  const leftBoxes = [];
+  unsorted.forEach(({ i, text }, idx) => {
+    const box = mk('rect', { x: leftX, y: leftY, width: 220, height: 50, rx: 5, fill: SUFFIX_COLOR, o: 0 }, p);
+    tw(box, { o: 0.7 }, 2 + idx * 0.3, 0.4);
+    leftBoxes.push({ box, y: leftY, i, text });
+    
+    const indexLabel = T(p, `[${i}]`, { x: leftX + 20, y: leftY + 33, size: 24, fill: 'white', weight: 700, family: 'monospace', o: 0 });
+    tw(indexLabel, { o: 1 }, 2 + idx * 0.3, 0.4);
+    
+    const suffixText = T(p, text, { x: leftX + 80, y: leftY + 33, size: 24, fill: 'white', family: 'monospace', o: 0 });
+    tw(suffixText, { o: 1 }, 2 + idx * 0.3 + 0.1, 0.4);
+    
+    leftY += 65;
+  });
+  
+  // Sorting process arrow
+  const arrowY = 450;
+  const arrow1 = mk('line', { x1: 500, y1: arrowY, x2: 620, y2: arrowY, stroke: SORT_COLOR, 'stroke-width': 4, o: 0 }, p);
+  tw(arrow1, { o: 1 }, 5, 0.5);
+  
+  const arrowHead = mk('polygon', { points: '620,440 650,450 620,460', fill: SORT_COLOR, o: 0 }, p);
+  tw(arrowHead, { o: 1 }, 5, 0.5);
+  
+  const sortLabel = T(p, '字典序排序', { x: 560, y: 430, size: 26, fill: SORT_COLOR, weight: 600, o: 0 });
+  tw(sortLabel, { o: 1 }, 5.2, 0.5);
+  
+  // Sorted suffixes on right
+  const rightX = 680;
+  const rightLabel = T(p, '排序后', { x: rightX + 80, y: 180, size: 28, fill: ARRAY_COLOR, weight: 600, o: 0 });
+  tw(rightLabel, { o: 1 }, 1.5, 0.5);
+  
+  const sorted = [
+    { i: 5, text: 'a', rank: 0 },
+    { i: 3, text: 'ana', rank: 1 },
+    { i: 1, text: 'anana', rank: 2 },
+    { i: 0, text: 'banana', rank: 3 },
+    { i: 4, text: 'na', rank: 4 },
+    { i: 2, text: 'nana', rank: 5 }
+  ];
+  
+  let rightY = 230;
+  sorted.forEach(({ i, text, rank }, idx) => {
+    const startTime = 6 + idx * 1.5;
+    
+    // Highlight in left
+    const leftItem = leftBoxes.find(item => item.i === i);
+    if (leftItem) {
+      tw(leftItem.box, { fill: SORT_COLOR }, startTime, 0.3);
+      tw(leftItem.box, { fill: SUFFIX_COLOR }, startTime + 1.2, 0.3);
+    }
+    
+    // Animated curve from left to right
+    const startX = leftX + 220;
+    const startY = leftItem.y + 25;
+    const endX = rightX;
+    const endY = rightY + 25;
+    
+    const curve = mk('path', {
+      d: `M ${startX},${startY} Q ${(startX+endX)/2},${(startY+endY)/2 - 60} ${endX},${endY}`,
+      stroke: SORT_COLOR, 'stroke-width': 3, fill: 'none', 'stroke-dasharray': '8,4', o: 0
+    }, p);
+    tw(curve, { o: 0.8 }, startTime + 0.2, 0.5);
+    tw(curve, { o: 0 }, startTime + 1, 0.3);
+    
+    // Right box appears
+    const box = mk('rect', { x: rightX, y: rightY, width: 220, height: 50, rx: 5, fill: ARRAY_COLOR, o: 0 }, p);
+    tw(box, { o: 0.8 }, startTime + 0.6, 0.5);
+    
+    const indexLabel = T(p, `[${i}]`, { x: rightX + 20, y: rightY + 33, size: 24, fill: 'white', weight: 700, family: 'monospace', o: 0 });
+    tw(indexLabel, { o: 1 }, startTime + 0.7, 0.4);
+    
+    const suffixText = T(p, text, { x: rightX + 80, y: rightY + 33, size: 24, fill: 'white', family: 'monospace', o: 0 });
+    tw(suffixText, { o: 1 }, startTime + 0.8, 0.4);
+    
+    const rankLabel = T(p, `#${rank}`, { x: rightX + 190, y: rightY + 33, size: 20, fill: '#ffd700', weight: 700, o: 0 });
+    tw(rankLabel, { o: 1 }, startTime + 0.9, 0.4);
+    
+    rightY += 65;
+  });
+  
+  // Final suffix array
+  const saY = 680;
+  const saLabel = T(p, '后缀数组 SA =', { x: 300, y: saY, size: 30, fill: ARRAY_COLOR, weight: 600, o: 0 });
+  tw(saLabel, { o: 1 }, 16, 0.5);
+  
+  const saValues = sorted.map(s => s.i);
+  saValues.forEach((val, idx) => {
+    const x = 550 + idx * 80;
+    const box = mk('rect', { x: x, y: saY - 30, width: 70, height: 55, rx: 5, fill: ARRAY_COLOR, o: 0 }, p);
+    tw(box, { o: 0.8 }, 16.5 + idx * 0.3, 0.4);
+    
+    const valText = T(p, val.toString(), { x: x + 35, y: saY + 5, size: 32, fill: 'white', anchor: 'middle', weight: 700, o: 0 });
+    tw(valText, { o: 1 }, 16.5 + idx * 0.3, 0.4);
+  });
+  
+  const result = T(p, '[5, 3, 1, 0, 4, 2]', { x: 800, y: 760, size: 36, fill: ARRAY_COLOR, anchor: 'middle', weight: 700, family: 'monospace', o: 0 });
+  tw(result, { o: 1 }, 18.5, 0.7);
+  tw(result, { s: 1.15 }, 19, 0.3);
+  tw(result, { s: 1.0 }, 19.3, 0.3);
+}],
+
+['naive-construction', '朴素构建方法', () => {
+  const p = panel(0);
+  
+  const title = T(p, '朴素构建算法', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const method = T(p, '方法：直接排序所有后缀', { x: 400, y: 200, size: 34, fill: SUFFIX_COLOR, weight: 600, o: 0 });
+  tw(method, { o: 1 }, 2, 0.6);
+  
+  const step1 = T(p, '1. 枚举所有 n 个后缀', { x: 450, y: 280, size: 30, fill: COL.chalk, o: 0 });
+  tw(step1, { o: 1 }, 3.5, 0.5);
+  
+  const step2 = T(p, '2. 用字符串比较排序', { x: 450, y: 350, size: 30, fill: COL.chalk, o: 0 });
+  tw(step2, { o: 1 }, 5, 0.5);
+  
+  const step3 = T(p, '3. 记录排序后的索引', { x: 450, y: 420, size: 30, fill: COL.chalk, o: 0 });
+  tw(step3, { o: 1 }, 6.5, 0.5);
+  
+  const complexity = T(p, '时间复杂度分析', { x: 400, y: 510, size: 34, fill: ARRAY_COLOR, weight: 600, o: 0 });
+  tw(complexity, { o: 1 }, 8.5, 0.5);
+  
+  const comp1 = T(p, '• 排序：O(n log n) 次比较', { x: 450, y: 580, size: 28, fill: COL.chalk, o: 0 });
+  tw(comp1, { o: 1 }, 10, 0.5);
+  
+  const comp2 = T(p, '• 每次比较：O(n) 时间', { x: 450, y: 640, size: 28, fill: COL.chalk, o: 0 });
+  tw(comp2, { o: 1 }, 11.5, 0.5);
+  
+  const total = T(p, '总时间：O(n² log n)', { x: 450, y: 700, size: 32, fill: ARRAY_COLOR, weight: 600, o: 0 });
+  tw(total, { o: 1 }, 13.5, 0.6);
+  
+  const slow = T(p, '对于长文本，太慢了！', { x: 800, y: 770, size: 30, fill: DIM_COLOR, anchor: 'middle', o: 0 });
+  tw(slow, { o: 1 }, 15.5, 0.6);
+}],
+
+['doubling-algorithm', '倍增算法优化', () => {
+  const p = panel(0);
+  
+  const title = T(p, '倍增算法', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, 'Doubling Algorithm', { x: 800, y: 165, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 0.8, 0.5);
+  
+  const idea = T(p, '核心思想：利用已排序的结果', { x: 400, y: 240, size: 34, fill: SORT_COLOR, weight: 600, o: 0 });
+  tw(idea, { o: 1 }, 2.5, 0.6);
+  
+  const process = T(p, '倍增过程', { x: 400, y: 320, size: 32, fill: INDEX_COLOR, weight: 600, o: 0 });
+  tw(process, { o: 1 }, 4, 0.5);
+  
+  const round1 = T(p, '第 1 轮：按前 1 个字符排序', { x: 450, y: 390, size: 28, fill: COL.chalk, o: 0 });
+  tw(round1, { o: 1 }, 5.5, 0.5);
+  
+  const round2 = T(p, '第 2 轮：按前 2 个字符排序', { x: 450, y: 450, size: 28, fill: COL.chalk, o: 0 });
+  tw(round2, { o: 1 }, 7, 0.5);
+  
+  const round3 = T(p, '第 3 轮：按前 4 个字符排序', { x: 450, y: 510, size: 28, fill: COL.chalk, o: 0 });
+  tw(round3, { o: 1 }, 8.5, 0.5);
+  
+  const pattern = T(p, '...每次长度翻倍，log n 轮完成', { x: 450, y: 570, size: 28, fill: SORT_COLOR, weight: 600, o: 0 });
+  tw(pattern, { o: 1 }, 10, 0.6);
+  
+  const trick = T(p, '技巧：用整数比较代替字符串比较', { x: 400, y: 650, size: 30, fill: STRING_COLOR, weight: 600, o: 0 });
+  tw(trick, { o: 1 }, 12, 0.6);
+  
+  const explain = T(p, '已排序的前 k 个字符 → rank 值 → O(1) 比较', { x: 450, y: 710, size: 26, fill: COL.chalk, o: 0 });
+  tw(explain, { o: 1 }, 13.5, 0.5);
+  
+  const finalComp = T(p, '时间复杂度：O(n log² n)', { x: 800, y: 780, size: 32, fill: ARRAY_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(finalComp, { o: 1 }, 15.5, 0.7);
+}],
+
+['lcp-definition', 'LCP 数组定义', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'LCP 数组', { x: 800, y: 100, size: 56, weight: 700, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, 'Longest Common Prefix', { x: 800, y: 170, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 0.8, 0.5);
+  
+  const definition = T(p, '定义：相邻排序后缀的最长公共前缀', { x: 400, y: 250, size: 32, fill: LCP_COLOR, weight: 600, o: 0 });
+  tw(definition, { o: 1 }, 2.5, 0.6);
+  
+  const notation = T(p, 'LCP[i] = lcp(suffix[SA[i-1]], suffix[SA[i]])', { x: 450, y: 330, size: 28, fill: STRING_COLOR, family: 'monospace', o: 0 });
+  tw(notation, { o: 1 }, 4.5, 0.6);
+  
+  const meaning = T(p, '意义：衡量相邻后缀的相似度', { x: 400, y: 410, size: 30, fill: COL.chalk, weight: 600, o: 0 });
+  tw(meaning, { o: 1 }, 6.5, 0.5);
+  
+  const example = T(p, '示例（banana）', { x: 400, y: 490, size: 34, fill: INDEX_COLOR, weight: 600, o: 0 });
+  tw(example, { o: 1 }, 8, 0.5);
+  
+  const cases = [
+    { pair: 'a, ana', lcp: 1 },
+    { pair: 'ana, anana', lcp: 3 },
+    { pair: 'anana, banana', lcp: 0 },
+    { pair: 'banana, na', lcp: 0 },
+    { pair: 'na, nana', lcp: 2 }
+  ];
+  
+  let caseY = 560;
+  cases.forEach(({ pair, lcp }, idx) => {
+    const pairText = T(p, pair, { x: 500, y: caseY, size: 26, fill: COL.chalk, family: 'monospace', o: 0 });
+    tw(pairText, { o: 1 }, 9.5 + idx * 0.8, 0.4);
+    
+    const arrow = T(p, '→', { x: 800, y: caseY, size: 26, fill: DIM_COLOR, o: 0 });
+    tw(arrow, { o: 1 }, 9.5 + idx * 0.8 + 0.2, 0.3);
+    
+    const lcpText = T(p, `LCP = ${lcp}`, { x: 900, y: caseY, size: 26, fill: LCP_COLOR, weight: 600, o: 0 });
+    tw(lcpText, { o: 1 }, 9.5 + idx * 0.8 + 0.3, 0.4);
+    
+    caseY += 40;
+  });
+  
+  const result = T(p, 'LCP = [-, 1, 3, 0, 0, 2]', { x: 800, y: 770, size: 32, fill: LCP_COLOR, anchor: 'middle', weight: 600, family: 'monospace', o: 0 });
+  tw(result, { o: 1 }, 14, 0.7);
+}],
+
+['lcp-computation', 'LCP 计算动画', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'LCP 计算演示', { x: 800, y: 70, size: 44, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, 'banana 的后缀数组与 LCP', { x: 800, y: 125, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 0.8, 0.5);
+  
+  // Table header
+  const headerY = 180;
+  const headers = ['排名', '起始', '后缀', 'LCP'];
+  const headerX = [300, 450, 620, 1100];
+  
+  headers.forEach((header, i) => {
+    const text = T(p, header, { x: headerX[i], y: headerY, size: 26, fill: COL.dim, weight: 600, o: 0 });
+    tw(text, { o: 1 }, 1.5, 0.5);
+  });
+  
+  // Sorted suffixes with LCP
+  const data = [
+    { rank: 0, index: 5, suffix: 'a', lcp: '-', prev: null },
+    { rank: 1, index: 3, suffix: 'ana', lcp: 1, prev: 'a', common: 'a' },
+    { rank: 2, index: 1, suffix: 'anana', lcp: 3, prev: 'ana', common: 'ana' },
+    { rank: 3, index: 0, suffix: 'banana', lcp: 0, prev: 'anana', common: '' },
+    { rank: 4, index: 4, suffix: 'na', lcp: 0, prev: 'banana', common: '' },
+    { rank: 5, index: 2, suffix: 'nana', lcp: 2, prev: 'na', common: 'na' }
+  ];
+  
+  let rowY = 230;
+  data.forEach(({ rank, index, suffix, lcp, prev, common }, i) => {
+    const startTime = 2.5 + i * 2;
+    
+    // Rank
+    const rankText = T(p, rank.toString(), { x: 320, y: rowY, size: 28, fill: INDEX_COLOR, weight: 600, o: 0 });
+    tw(rankText, { o: 1 }, startTime, 0.4);
+    
+    // Index
+    const indexBox = mk('rect', { x: 445, y: rowY - 25, width: 50, height: 40, rx: 5, fill: ARRAY_COLOR, o: 0 }, p);
+    tw(indexBox, { o: 0.7 }, startTime + 0.2, 0.4);
+    
+    const indexText = T(p, index.toString(), { x: 470, y: rowY + 5, size: 26, fill: 'white', anchor: 'middle', weight: 700, o: 0 });
+    tw(indexText, { o: 1 }, startTime + 0.2, 0.4);
+    
+    // Suffix with character boxes
+    const suffixX = 620;
+    for (let j = 0; j < suffix.length; j++) {
+      const charBox = mk('rect', { 
+        x: suffixX + j * 38, y: rowY - 25, 
+        width: 35, height: 40, rx: 4, 
+        fill: common && j < common.length ? LCP_COLOR : SUFFIX_COLOR, 
+        o: 0 
+      }, p);
+      tw(charBox, { o: 0.8 }, startTime + 0.4 + j * 0.08, 0.3);
+      
+      const char = T(p, suffix[j], { 
+        x: suffixX + j * 38 + 17, y: rowY + 5, 
+        size: 24, fill: 'white', anchor: 'middle', 
+        weight: common && j < common.length ? 700 : 400,
+        family: 'monospace', o: 0 
+      });
+      tw(char, { o: 1 }, startTime + 0.4 + j * 0.08, 0.3);
+    }
+    
+    // Previous suffix comparison (if not first)
+    if (prev) {
+      const prevLabel = T(p, `前：${prev}`, { x: 900, y: rowY, size: 22, fill: DIM_COLOR, o: 0 });
+      tw(prevLabel, { o: 1 }, startTime + 0.7, 0.4);
+      tw(prevLabel, { o: 0 }, startTime + 1.5, 0.3);
+    }
+    
+    // LCP value
+    const lcpBox = mk('rect', { x: 1095, y: rowY - 25, width: 60, height: 40, rx: 5, fill: LCP_COLOR, o: 0 }, p);
+    tw(lcpBox, { o: 0.8 }, startTime + 1, 0.5);
+    
+    const lcpText = T(p, lcp.toString(), { x: 1125, y: rowY + 5, size: 28, fill: 'white', anchor: 'middle', weight: 700, o: 0 });
+    tw(lcpText, { o: 1 }, startTime + 1.2, 0.5);
+    
+    // Highlight common prefix
+    if (common && common.length > 0) {
+      const highlight = mk('rect', {
+        x: suffixX - 5, y: rowY - 30,
+        width: common.length * 38, height: 50, rx: 6,
+        fill: 'none', stroke: LCP_COLOR, 'stroke-width': 3, o: 0
+      }, p);
+      tw(highlight, { o: 0.8 }, startTime + 0.9, 0.4);
+      tw(highlight, { o: 0 }, startTime + 1.6, 0.3);
+    }
+    
+    rowY += 60;
+  });
+  
+  // Summary
+  const summaryY = 710;
+  const summaryBox = mk('rect', { x: 250, y: summaryY, width: 1100, height: 70, rx: 10, fill: LCP_COLOR, o: 0 }, p);
+  tw(summaryBox, { o: 0.15 }, 16, 0.6);
+  
+  const summaryText = T(p, 'LCP 数组：[-, 1, 3, 0, 0, 2]', { x: 800, y: summaryY + 45, size: 32, fill: COL.chalk, anchor: 'middle', weight: 600, family: 'monospace', o: 0 });
+  tw(summaryText, { o: 1 }, 16.5, 0.6);
+}],
+
+['lcp-algorithm', 'LCP 高效算法', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'Kasai 算法', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, '线性时间计算 LCP 数组', { x: 800, y: 170, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 1, 0.5);
+  
+  const naive = T(p, '朴素方法：逐对比较', { x: 400, y: 250, size: 32, fill: DIM_COLOR, o: 0 });
+  tw(naive, { o: 1 }, 2.5, 0.5);
+  
+  const naiveComp = T(p, '时间：O(n²) - 太慢', { x: 450, y: 310, size: 28, fill: DIM_COLOR, o: 0 });
+  tw(naiveComp, { o: 1 }, 3.5, 0.5);
+  
+  const smart = T(p, 'Kasai 算法：利用性质优化', { x: 400, y: 400, size: 32, fill: LCP_COLOR, weight: 600, o: 0 });
+  tw(smart, { o: 1 }, 5.5, 0.6);
+  
+  const property = T(p, '关键性质', { x: 450, y: 470, size: 30, fill: STRING_COLOR, weight: 600, o: 0 });
+  tw(property, { o: 1 }, 7, 0.5);
+  
+  const prop1 = T(p, '若 LCP[rank[i]] = h', { x: 500, y: 530, size: 26, fill: COL.chalk, o: 0 });
+  tw(prop1, { o: 1 }, 8.5, 0.5);
+  
+  const prop2 = T(p, '则 LCP[rank[i+1]] ≥ h - 1', { x: 500, y: 580, size: 26, fill: COL.chalk, o: 0 });
+  tw(prop2, { o: 1 }, 10, 0.5);
+  
+  const explain = T(p, '→ 删除首字符，公共前缀最多减 1', { x: 500, y: 630, size: 26, fill: LCP_COLOR, weight: 600, o: 0 });
+  tw(explain, { o: 1 }, 11.5, 0.6);
+  
+  const benefit = T(p, '好处：避免重复比较', { x: 450, y: 700, size: 28, fill: ARRAY_COLOR, weight: 600, o: 0 });
+  tw(benefit, { o: 1 }, 13.5, 0.6);
+  
+  const complexity = T(p, '时间复杂度：O(n)', { x: 800, y: 770, size: 34, fill: LCP_COLOR, anchor: 'middle', weight: 700, o: 0 });
+  tw(complexity, { o: 1 }, 15.5, 0.7);
+}],
+
+['applications', '应用场景', () => {
+  const p = panel(0);
+  
+  const title = T(p, '后缀数组的应用', { x: 800, y: 90, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const apps = [
+    { 
+      name: '字符串搜索', 
+      desc: '二分查找模式串，O(m log n)', 
+      icon: '🔍', 
+      color: SUFFIX_COLOR, 
+      t: 2 
+    },
+    { 
+      name: '最长重复子串', 
+      desc: 'max(LCP) 对应的后缀', 
+      icon: '🔁', 
+      color: ARRAY_COLOR, 
+      t: 4.5 
+    },
+    { 
+      name: '最长公共子串', 
+      desc: '拼接两串 + 分析 LCP', 
+      icon: '🔗', 
+      color: LCP_COLOR, 
+      t: 7 
+    },
+    { 
+      name: '不同子串计数', 
+      desc: 'n(n+1)/2 - sum(LCP)', 
+      icon: '🔢', 
+      color: INDEX_COLOR, 
+      t: 9.5 
+    },
+    { 
+      name: 'DNA 序列分析', 
+      desc: '基因组重复模式识别', 
+      icon: '🧬', 
+      color: STRING_COLOR, 
+      t: 12 
+    },
+    { 
+      name: '全文索引', 
+      desc: '构建高效搜索引擎', 
+      icon: '📚', 
+      color: SORT_COLOR, 
+      t: 14.5 
+    }
+  ];
+  
+  let appY = 200;
+  apps.forEach(({ name, desc, icon, color, t }) => {
+    const iconText = T(p, icon, { x: 320, y: appY, size: 42, o: 0 });
+    tw(iconText, { o: 1 }, t, 0.4);
+    
+    const nameText = T(p, name, { x: 420, y: appY, size: 32, fill: color, weight: 600, o: 0 });
+    tw(nameText, { o: 1 }, t + 0.2, 0.5);
+    
+    const descText = T(p, desc, { x: 700, y: appY, size: 26, fill: COL.chalk, o: 0 });
+    tw(descText, { o: 1 }, t + 0.4, 0.5);
+    
+    appY += 85;
+  });
+  
+  const powerful = T(p, '强大而通用的字符串工具', { x: 800, y: 745, size: 32, fill: STRING_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(powerful, { o: 1 }, 17, 0.7);
+}],
+
+['suffix-tree-comparison', '与后缀树对比', () => {
+  const p = panel(0);
+  
+  const title = T(p, '后缀数组 vs 后缀树', { x: 800, y: 100, size: 48, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  // Suffix Tree column
+  const treeX = 350;
+  const treeLabel = T(p, '后缀树', { x: treeX + 50, y: 190, size: 34, fill: STRING_COLOR, weight: 600, o: 0 });
+  tw(treeLabel, { o: 1 }, 2, 0.5);
+  
+  const treeProps = [
+    { label: '空间', value: 'O(n)', good: false },
+    { label: '构建', value: 'O(n)', good: true },
+    { label: '查询', value: 'O(m)', good: true },
+    { label: '实现', value: '复杂', good: false },
+    { label: '常数', value: '大（10-20n）', good: false }
+  ];
+  
+  let treeY = 260;
+  treeProps.forEach(({ label, value, good }, i) => {
+    const labelText = T(p, `${label}:`, { x: treeX, y: treeY, size: 28, fill: COL.dim, o: 0 });
+    tw(labelText, { o: 1 }, 3 + i * 0.8, 0.4);
+    
+    const valueText = T(p, value, { x: treeX + 120, y: treeY, size: 28, fill: good ? LCP_COLOR : ARRAY_COLOR, weight: 600, o: 0 });
+    tw(valueText, { o: 1 }, 3 + i * 0.8 + 0.2, 0.4);
+    
+    treeY += 60;
+  });
+  
+  // Suffix Array column
+  const arrayX = 850;
+  const arrayLabel = T(p, '后缀数组', { x: arrayX + 50, y: 190, size: 34, fill: ARRAY_COLOR, weight: 600, o: 0 });
+  tw(arrayLabel, { o: 1 }, 2, 0.5);
+  
+  const arrayProps = [
+    { label: '空间', value: 'O(n)', good: true },
+    { label: '构建', value: 'O(n log²n)', good: false },
+    { label: '查询', value: 'O(m log n)', good: false },
+    { label: '实现', value: '简单', good: true },
+    { label: '常数', value: '小（4-8n）', good: true }
+  ];
+  
+  let arrayY = 260;
+  arrayProps.forEach(({ label, value, good }, i) => {
+    const labelText = T(p, `${label}:`, { x: arrayX, y: arrayY, size: 28, fill: COL.dim, o: 0 });
+    tw(labelText, { o: 1 }, 3 + i * 0.8, 0.4);
+    
+    const valueText = T(p, value, { x: arrayX + 120, y: arrayY, size: 28, fill: good ? LCP_COLOR : ARRAY_COLOR, weight: 600, o: 0 });
+    tw(valueText, { o: 1 }, 3 + i * 0.8 + 0.2, 0.4);
+    
+    arrayY += 60;
+  });
+  
+  // Conclusion
+  const conclusionY = 580;
+  const box = mk('rect', { x: 250, y: conclusionY, width: 1100, height: 160, rx: 10, fill: INDEX_COLOR, o: 0 }, p);
+  tw(box, { o: 0.12 }, 8, 0.6);
+  
+  const concTitle = T(p, '选择建议', { x: 800, y: conclusionY + 50, size: 32, fill: COL.chalk, anchor: 'middle', weight: 600, o: 0 });
+  tw(concTitle, { o: 1 }, 8.5, 0.5);
+  
+  const suggest1 = T(p, '• 在线算法、频繁查询 → 后缀树', { x: 350, y: conclusionY + 100, size: 26, fill: COL.chalk, o: 0 });
+  tw(suggest1, { o: 1 }, 10, 0.5);
+  
+  const suggest2 = T(p, '• 离线处理、内存受限 → 后缀数组', { x: 350, y: conclusionY + 140, size: 26, fill: COL.chalk, o: 0 });
+  tw(suggest2, { o: 1 }, 11.5, 0.5);
+  
+  const modern = T(p, '现代实践：后缀数组更常用', { x: 800, y: 770, size: 30, fill: ARRAY_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(modern, { o: 1 }, 13.5, 0.7);
+}],
+
+['summary', '总结', () => {
+  const p = panel(0);
+  
+  const title = T(p, '总结', { x: 800, y: 90, size: 56, weight: 700, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const points = [
+    { text: '后缀数组：排序后的后缀索引', color: ARRAY_COLOR, t: 2 },
+    { text: 'LCP 数组：相邻后缀公共前缀', color: LCP_COLOR, t: 4 },
+    { text: '朴素构建：O(n² log n)', color: DIM_COLOR, t: 6 },
+    { text: '倍增优化：O(n log² n)', color: SORT_COLOR, t: 8 },
+    { text: 'Kasai 算法：O(n) 计算 LCP', color: LCP_COLOR, t: 10 },
+    { text: '应用广泛：搜索、重复串、索引', color: SUFFIX_COLOR, t: 12 }
+  ];
+  
+  let pointY = 210;
+  points.forEach(({ text, color, t }) => {
+    const bullet = T(p, '•', { x: 330, y: pointY, size: 40, fill: color, o: 0 });
+    tw(bullet, { o: 1 }, t, 0.4);
+    
+    const textEl = T(p, text, { x: 400, y: pointY, size: 32, fill: COL.chalk, o: 0 });
+    tw(textEl, { o: 1 }, t + 0.2, 0.5);
+    
+    pointY += 80;
+  });
+  
+  const vs = T(p, '比后缀树更省空间，实现更简单', { x: 800, y: 700, size: 30, fill: INDEX_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(vs, { o: 1 }, 14.5, 0.6);
+  
+  const mastery = T(p, '字符串算法的核心工具，必须掌握！', { x: 800, y: 760, size: 32, fill: STRING_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(mastery, { o: 1 }, 16.5, 0.7);
+}]
+
+];
+
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
+boot();
+if (typeof module !== 'undefined') module.exports = { CHAPTER, BEATS };
+</script>
+</body>
+</html>

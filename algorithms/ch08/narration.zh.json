@@ -1,0 +1,15 @@
+{
+  "intro": "Dijkstra算法很强大，但有个致命缺陷：不能处理负权边。[[limitation]] 如果图里有条路「倒贴油费」，算法就会失效。[[negative]] Bellman-Ford算法应运而生，专门解决这个问题。[[solution]] 它不仅能处理负权边，还能检测负权环。",
+  "negative_weight": "负权边在现实中真的存在吗？[[exist]] 当然！外汇套利就是经典例子。[[forex]] 把汇率取对数变成加法，套利机会就是负权环。[[arbitrage]] 还有化学反应、时间旅行悖论，都能建模成负权图。[[examples]] Dijkstra的贪心策略在这里完全失效。",
+  "why_dijkstra_fails": "为什么Dijkstra不行？[[why]] 看这个例子：A到B直达距离是5，但通过C绕一圈只要-2。[[example]] Dijkstra的贪心会先确定B为5，之后就不再更新。[[greedy_stuck]] 但通过负权边，还有更短的路径！[[better_path]] 贪心策略的前提是「越走越远」，负权边打破了这个假设。",
+  "bellman_ford_idea": "Bellman-Ford的核心思想：反复松弛所有边。[[relax_all]] 不管三七二十一，把每条边都试一遍。[[try_all]] 重复n减1次，n是节点数。[[n_minus_1]] 为什么是n减1次？因为最短简单路径最多经过n减1条边。",
+  "relaxation": "松弛操作和Dijkstra一样：[[same]] 如果通过u到v更近，就更新dist[v]。[[formula]] 公式是：dist[v] = min(dist[v], dist[u] + w(u,v))。[[equation]] 区别在于，Dijkstra只松弛已确定节点的邻居，[[dijkstra_selective]] Bellman-Ford对所有边无差别松弛。",
+  "iteration_logic": "为什么要重复n减1轮？[[why_n_minus_1]] 每轮松弛最多让路径延长一条边。[[extend_one]] 第一轮：找到1条边的最短路径。[[round_1]] 第二轮：找到2条边的最短路径。[[round_2]] n减1轮后：找到n减1条边的最短路径，这就是最长简单路径。[[final]] 简单路径不重复经过节点。",
+  "demo_setup": "来看实际演示！[[demo]] 6个节点的有向图，包含负权边。[[graph]] 起点A的距离初始化为0，其他节点为无穷大。[[init]] 一共要跑4轮松弛，每轮检查所有的边。[[rounds]] 看看距离标签怎么一步步更新。",
+  "demo_iteration": "第一轮开始！[[round_1_start]] 检查A到B的边，权重4，更新B为4。[[update_b]] 检查A到C的边，权重2，更新C为2。[[update_c]] 检查C到D的边，-5是负数！C是2，2加-5等于-3，D从无穷变成-3。[[negative_edge]] 第一轮结束，已经有三个节点被更新。",
+  "demo_convergence": "第二轮：通过B更新E，通过D更新F。[[round_2]] 第三轮：距离继续优化。[[round_3]] 第四轮：所有距离都不再变化，算法收敛！[[converge]] 绿色标记的是最终确定的最短距离。[[final_result]] 负权边没有破坏算法。",
+  "negative_cycle": "如果存在负权环怎么办？[[cycle]] 负权环就是总权重为负的环路。[[definition]] 在环上绕一圈，距离反而减少。[[paradox]] Bellman-Ford用第n轮松弛检测：如果还能更新距离，说明有负权环。[[detection]] 这时候根本不存在最短路径，可以无限减小。",
+  "complexity": "时间复杂度：O(VE)，V是节点数，E是边数。[[time]] 每轮O(E)，重复V减1轮。[[calculation]] 空间复杂度：O(V)，只需存储距离数组。[[space]] 比Dijkstra的O((V+E)logV)慢很多，但能处理负权边。[[tradeoff]] 选择哪个算法，取决于图的性质。",
+  "comparison": "对比一下两个算法。[[compare]] Dijkstra：贪心策略，需要优先队列，不支持负权边，更快。[[dijkstra_summary]] Bellman-Ford：动态规划，暴力松弛，支持负权边，能检测负权环，更慢。[[bellman_summary]] 如果确定没有负权边，优先用Dijkstra。[[choice]] 需要处理负权边或检测套利机会，用Bellman-Ford。",
+  "summary": "总结Bellman-Ford算法：[[summary]] 初始化：起点0，其他无穷大。[[init_summary]] 重复n减1轮：对所有边执行松弛操作。[[relax_summary]] 第n轮检测：如果还能更新，说明有负权环。[[cycle_summary]] 简单但强大，负权图的标准解法！"
+}

@@ -1,0 +1,787 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第八章 Bellman-Ford 负权边最短路径</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#table" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 8, title: 'Bellman-Ford 负权边最短路径', language: 'zh', minutes: 10 };
+
+/* ---------- 颜色方案 ---------- */
+const PRIMARY = '#667eea';
+const SECONDARY = '#764ba2';
+const UNVISITED = '#95a5a6';
+const VISITED = '#2ecc71';
+const EDGE_DEFAULT = '#7f8c8d';
+const EDGE_TRYING = '#f39c12';
+const EDGE_SELECTED = '#2ecc71';
+const EDGE_NEGATIVE = '#e74c3c';
+const INF_COLOR = '#c0392b';
+
+/* ---------- 辅助函数：绘制有向图 ---------- */
+// 节点位置（6个节点）
+const NODES = {
+  A: { x: 300, y: 400, label: 'A' },
+  B: { x: 550, y: 250, label: 'B' },
+  C: { x: 550, y: 550, label: 'C' },
+  D: { x: 800, y: 400, label: 'D' },
+  E: { x: 1050, y: 300, label: 'E' },
+  F: { x: 1050, y: 500, label: 'F' }
+};
+
+// 有向边（包含负权边）
+const EDGES = [
+  { from: 'A', to: 'B', weight: 4 },
+  { from: 'A', to: 'C', weight: 2 },
+  { from: 'B', to: 'D', weight: 3 },
+  { from: 'C', to: 'D', weight: -5 },  // 负权边
+  { from: 'B', to: 'E', weight: 2 },
+  { from: 'D', to: 'E', weight: 1 },
+  { from: 'D', to: 'F', weight: 4 },
+  { from: 'E', to: 'F', weight: -1 }   // 负权边
+];
+
+function drawArrow(parent, x1, y1, x2, y2, color = EDGE_DEFAULT) {
+  // 箭头终点缩短，避免覆盖节点
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  const ratio = (len - 40) / len;
+  const ex = x1 + dx * ratio;
+  const ey = y1 + dy * ratio;
+  
+  const line = mk('line', {
+    x1, y1, x2: ex, y2: ey,
+    stroke: color,
+    'stroke-width': 3,
+    'marker-end': 'url(#arrowhead)',
+    opacity: 0.7
+  }, parent);
+  
+  return line;
+}
+
+function drawGraph(parent, options = {}) {
+  const g = G(parent, { o: 0 });
+  
+  // 定义箭头标记
+  const defs = mk('defs', {}, g);
+  const marker = mk('marker', {
+    id: 'arrowhead',
+    markerWidth: 10,
+    markerHeight: 10,
+    refX: 9,
+    refY: 3,
+    orient: 'auto',
+    markerUnits: 'strokeWidth'
+  }, defs);
+  mk('path', {
+    d: 'M0,0 L0,6 L9,3 z',
+    fill: EDGE_DEFAULT
+  }, marker);
+  
+  // 先画边
+  const edgeGroup = G(g);
+  const edgeElements = {};
+  
+  EDGES.forEach((edge, idx) => {
+    const from = NODES[edge.from];
+    const to = NODES[edge.to];
+    
+    const arrow = drawArrow(edgeGroup, from.x, from.y, to.x, to.y);
+    arrow.dataset.from = edge.from;
+    arrow.dataset.to = edge.to;
+    arrow.dataset.weight = edge.weight;
+    
+    edgeElements[`${edge.from}-${edge.to}`] = arrow;
+    
+    // 权重标签
+    const mx = (from.x + to.x) / 2;
+    const my = (from.y + to.y) / 2;
+    
+    const labelColor = edge.weight < 0 ? EDGE_NEGATIVE : '#34495e';
+    const labelBg = G(edgeGroup, { x: mx, y: my });
+    mk('circle', { r: 18, fill: '#ecf0f1', stroke: '#bdc3c7', 'stroke-width': 2 }, labelBg);
+    T(labelBg, String(edge.weight), {
+      x: 0, y: 5,
+      size: 18,
+      fill: labelColor,
+      weight: 700,
+      anchor: 'middle'
+    });
+  });
+  
+  // 再画节点
+  const nodeGroup = G(g);
+  Object.entries(NODES).forEach(([key, node]) => {
+    const nodeG = G(nodeGroup, { x: node.x, y: node.y });
+    nodeG.dataset.node = key;
+    
+    mk('circle', {
+      r: 35,
+      fill: UNVISITED,
+      stroke: '#2c3e50',
+      'stroke-width': 3
+    }, nodeG);
+    
+    T(nodeG, node.label, {
+      x: 0, y: 5,
+      size: 28,
+      fill: '#fff',
+      weight: 700,
+      anchor: 'middle'
+    });
+  });
+  
+  g._edges = edgeGroup;
+  g._edgeElements = edgeElements;
+  g._nodes = nodeGroup;
+  
+  return g;
+}
+
+function drawDistanceLabels(parent) {
+  const g = G(parent, { o: 0 });
+  
+  Object.entries(NODES).forEach(([key, node]) => {
+    const label = G(g, { x: node.x, y: node.y - 70 });
+    label.dataset.node = key;
+    
+    mk('rect', {
+      x: -35, y: -18,
+      width: 70, height: 36,
+      fill: '#ecf0f1',
+      stroke: '#bdc3c7',
+      'stroke-width': 2,
+      rx: 5
+    }, label);
+    
+    const text = T(label, '∞', {
+      x: 0, y: 6,
+      size: 22,
+      fill: INF_COLOR,
+      weight: 600,
+      anchor: 'middle'
+    });
+    
+    label._text = text;
+  });
+  
+  return g;
+}
+
+function updateDistance(labelGroup, nodeKey, distance, t0) {
+  const label = labelGroup.querySelector(`[data-node="${nodeKey}"]`);
+  if (label && label._text) {
+    const text = label._text;
+    const displayText = distance === Infinity ? '∞' : String(distance);
+    const color = distance === Infinity ? INF_COLOR : PRIMARY;
+    
+    prog(q => {
+      if (q >= 1) {
+        text.textContent = displayText;
+        text.setAttribute('fill', color);
+      }
+    }, t0, 0.001);
+    
+    tw(text, { s: 1.4 }, t0, 0.2, out);
+    tw(text, { s: 1 }, t0 + 0.2, 0.3, io);
+  }
+}
+
+function highlightEdge(edgeElements, fromKey, toKey, color, t0, duration = 0.4) {
+  const key = `${fromKey}-${toKey}`;
+  const edge = edgeElements[key];
+  if (edge) {
+    tw(edge, { stroke: color, 'stroke-width': 5, opacity: 1 }, t0, duration, out);
+  }
+}
+
+function resetEdge(edgeElements, fromKey, toKey, t0) {
+  const key = `${fromKey}-${toKey}`;
+  const edge = edgeElements[key];
+  if (edge) {
+    tw(edge, { stroke: EDGE_DEFAULT, 'stroke-width': 3, opacity: 0.7 }, t0, 0.3);
+  }
+}
+
+/* ---------- Beats ---------- */
+let BEATS = [
+
+// beat 0: intro
+['intro', 'Bellman-Ford 算法简介', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, 'Bellman-Ford 算法', { x: 800, y: 130, size: 56, weight: 700, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, '处理负权边的最短路径算法', 
+    { x: 800, y: 210, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 0.5, 0.5);
+  
+  const dijkstra = T(p, 'Dijkstra', 
+    { x: 500, y: 350, size: 36, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(dijkstra, { o: 1 }, 3.0, 0.5);
+  
+  const vs = T(p, '❌ 负权边', 
+    { x: 700, y: 350, size: 32, fill: EDGE_NEGATIVE, anchor: 'middle', o: 0, weight: 600 });
+  tw(vs, { o: 1 }, 5.0, 0.6);
+  
+  const bellman = T(p, 'Bellman-Ford', 
+    { x: 500, y: 450, size: 36, fill: VISITED, anchor: 'middle', o: 0, weight: 600 });
+  tw(bellman, { o: 1 }, 8.0, 0.5);
+  
+  const support = T(p, '✅ 支持负权边 + 检测负权环', 
+    { x: 850, y: 450, size: 28, fill: VISITED, anchor: 'middle', o: 0, weight: 500 });
+  tw(support, { o: 1 }, 10.0, 0.7);
+  
+  const inventors = T(p, 'Richard Bellman & Lester Ford (1950s)', 
+    { x: 800, y: 600, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(inventors, { o: 1 }, 14.0, 0.6);
+}],
+
+// beat 1: negative_weight
+['negative_weight', '负权边的现实意义', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '负权边真的存在吗？', { x: 800, y: 100, size: 48, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const examples = [
+    { icon: '💱', name: '外汇套利', desc: '汇率链中的获利机会', y: 250, t: 5.0 },
+    { icon: '⚗️', name: '化学反应', desc: '放热反应（负能量）', y: 370, t: 9.0 },
+    { icon: '⏰', name: '时间旅行', desc: '逆向时间流动', y: 490, t: 12.0 }
+  ];
+  
+  examples.forEach(ex => {
+    const g = G(p, { x: 400, y: ex.y, o: 0 });
+    T(g, ex.icon, { x: 0, y: 0, size: 56, anchor: 'middle' });
+    tw(g, { o: 1 }, ex.t, 0.5);
+    
+    const name = T(p, ex.name, 
+      { x: 500, y: ex.y - 10, size: 32, fill: PRIMARY, o: 0, weight: 600 });
+    tw(name, { o: 1 }, ex.t + 0.3, 0.5);
+    
+    const desc = T(p, ex.desc, 
+      { x: 500, y: ex.y + 30, size: 24, fill: COL.dim, o: 0 });
+    tw(desc, { o: 1 }, ex.t + 0.5, 0.5);
+  });
+  
+  const note = T(p, 'Dijkstra 的贪心策略会失效！', 
+    { x: 800, y: 650, size: 32, fill: EDGE_NEGATIVE, anchor: 'middle', o: 0, weight: 700 });
+  tw(note, { o: 1 }, 16.0, 0.7);
+}],
+
+// beat 2: why_dijkstra_fails
+['why_dijkstra_fails', '为什么 Dijkstra 失效', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, 'Dijkstra 的困境', { x: 800, y: 80, size: 44, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  // 简单示例图
+  const exG = G(p, { o: 0 });
+  const nodeA = G(exG, { x: 300, y: 350 });
+  mk('circle', { r: 30, fill: VISITED, stroke: '#2c3e50', 'stroke-width': 3 }, nodeA);
+  T(nodeA, 'A', { x: 0, y: 5, size: 24, fill: '#fff', weight: 700, anchor: 'middle' });
+  
+  const nodeB = G(exG, { x: 600, y: 250 });
+  mk('circle', { r: 30, fill: UNVISITED, stroke: '#2c3e50', 'stroke-width': 3 }, nodeB);
+  T(nodeB, 'B', { x: 0, y: 5, size: 24, fill: '#fff', weight: 700, anchor: 'middle' });
+  
+  const nodeC = G(exG, { x: 600, y: 450 });
+  mk('circle', { r: 30, fill: UNVISITED, stroke: '#2c3e50', 'stroke-width': 3 }, nodeC);
+  T(nodeC, 'C', { x: 0, y: 5, size: 24, fill: '#fff', weight: 700, anchor: 'middle' });
+  
+  drawArrow(exG, 300, 350, 570, 250, PRIMARY);
+  T(exG, '5', { x: 450, y: 280, size: 20, fill: PRIMARY, anchor: 'middle', weight: 600 });
+  
+  drawArrow(exG, 300, 350, 570, 450, SECONDARY);
+  T(exG, '8', { x: 450, y: 420, size: 20, fill: SECONDARY, anchor: 'middle', weight: 600 });
+  
+  drawArrow(exG, 600, 450, 600, 280, EDGE_NEGATIVE);
+  T(exG, '-10', { x: 680, y: 350, size: 20, fill: EDGE_NEGATIVE, anchor: 'middle', weight: 700 });
+  
+  tw(exG, { o: 1 }, 3.0, 0.7);
+  
+  const issue = T(p, 'Dijkstra：B = 5，确定！', 
+    { x: 950, y: 300, size: 28, fill: PRIMARY, o: 0, weight: 600 });
+  tw(issue, { o: 1 }, 7.0, 0.6);
+  
+  const better = T(p, '实际：A → C → B = -2', 
+    { x: 950, y: 360, size: 28, fill: EDGE_NEGATIVE, o: 0, weight: 600 });
+  tw(better, { o: 1 }, 10.0, 0.7);
+  
+  const conclusion = T(p, '贪心策略假设「越走越远」', 
+    { x: 800, y: 550, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(conclusion, { o: 1 }, 13.0, 0.6);
+  
+  const broken = T(p, '负权边打破了这个假设！', 
+    { x: 800, y: 610, size: 32, fill: EDGE_NEGATIVE, anchor: 'middle', o: 0, weight: 700 });
+  tw(broken, { o: 1 }, 15.0, 0.7);
+}],
+
+// beat 3: bellman_ford_idea
+['bellman_ford_idea', 'Bellman-Ford 核心思想', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '核心思想', { x: 800, y: 100, size: 48, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const idea = T(p, '反复松弛所有边', 
+    { x: 800, y: 230, size: 40, fill: PRIMARY, anchor: 'middle', o: 0, weight: 700 });
+  tw(idea, { o: 1 }, 3.0, 0.7);
+  
+  const step1 = T(p, '1️⃣  遍历每条边', 
+    { x: 300, y: 350, size: 32, fill: SECONDARY, o: 0, weight: 600 });
+  tw(step1, { o: 1 }, 6.0, 0.5);
+  
+  const step2 = T(p, '2️⃣  尝试松弛', 
+    { x: 300, y: 420, size: 32, fill: SECONDARY, o: 0, weight: 600 });
+  tw(step2, { o: 1 }, 8.0, 0.5);
+  
+  const step3 = T(p, '3️⃣  重复 n-1 轮', 
+    { x: 300, y: 490, size: 32, fill: SECONDARY, o: 0, weight: 600 });
+  tw(step3, { o: 1 }, 10.0, 0.5);
+  
+  const why = T(p, '为什么 n-1 轮？', 
+    { x: 800, y: 350, size: 30, fill: COL.dim, anchor: 'middle', o: 0, weight: 600 });
+  tw(why, { o: 1 }, 13.0, 0.5);
+  
+  const reason = T(p, '最短简单路径最多 n-1 条边', 
+    { x: 800, y: 410, size: 28, fill: VISITED, anchor: 'middle', o: 0, weight: 600 });
+  tw(reason, { o: 1 }, 15.0, 0.7);
+  
+  const visual = T(p, 'n 个节点 → 最多 n-1 条边连接', 
+    { x: 800, y: 470, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(visual, { o: 1 }, 17.0, 0.6);
+}],
+
+// beat 4: relaxation
+['relaxation', '松弛操作', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '松弛 (Relaxation)', { x: 800, y: 100, size: 48, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const same = T(p, '和 Dijkstra 一样', 
+    { x: 800, y: 200, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(same, { o: 1 }, 3.0, 0.5);
+  
+  const formula = T(p, 'if  dist[u] + w(u,v) < dist[v]:', 
+    { x: 450, y: 310, size: 28, fill: PRIMARY, o: 0, weight: 500, font: 'monospace' });
+  tw(formula, { o: 1 }, 6.0, 0.6);
+  
+  const update = T(p, '    dist[v] = dist[u] + w(u,v)', 
+    { x: 450, y: 360, size: 28, fill: VISITED, o: 0, weight: 500, font: 'monospace' });
+  tw(update, { o: 1 }, 8.0, 0.6);
+  
+  const diff = T(p, '区别', 
+    { x: 800, y: 470, size: 32, fill: SECONDARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(diff, { o: 1 }, 12.0, 0.5);
+  
+  const dijkstra = T(p, 'Dijkstra：只松弛已确定节点的邻居', 
+    { x: 800, y: 540, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(dijkstra, { o: 1 }, 14.0, 0.5);
+  
+  const bellman = T(p, 'Bellman-Ford：无差别松弛所有边', 
+    { x: 800, y: 590, size: 26, fill: VISITED, anchor: 'middle', o: 0, weight: 600 });
+  tw(bellman, { o: 1 }, 16.0, 0.7);
+}],
+
+// beat 5: iteration_logic
+['iteration_logic', '迭代逻辑', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '为什么重复 n-1 轮？', { x: 800, y: 100, size: 44, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const logic = T(p, '每轮松弛最多让路径延长 1 条边', 
+    { x: 800, y: 220, size: 32, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(logic, { o: 1 }, 3.0, 0.7);
+  
+  const rounds = [
+    { round: '第 1 轮', result: '找到 1 条边的最短路径', t: 7.0 },
+    { round: '第 2 轮', result: '找到 2 条边的最短路径', t: 10.0 },
+    { round: '...', result: '...', t: 13.0 },
+    { round: '第 n-1 轮', result: '找到 n-1 条边的最短路径', t: 15.0 }
+  ];
+  
+  rounds.forEach((r, i) => {
+    const y = 340 + i * 70;
+    const roundText = T(p, r.round, 
+      { x: 400, y: y, size: 28, fill: SECONDARY, o: 0, weight: 600 });
+    tw(roundText, { o: 1 }, r.t, 0.5);
+    
+    const arrow = T(p, '→', 
+      { x: 600, y: y, size: 28, fill: COL.dim, o: 0, anchor: 'middle' });
+    tw(arrow, { o: 1 }, r.t + 0.2, 0.3);
+    
+    const result = T(p, r.result, 
+      { x: 700, y: y, size: 26, fill: COL.dim, o: 0 });
+    tw(result, { o: 1 }, r.t + 0.4, 0.5);
+  });
+  
+  const final = T(p, '简单路径不重复经过节点', 
+    { x: 800, y: 680, size: 28, fill: VISITED, anchor: 'middle', o: 0, weight: 600 });
+  tw(final, { o: 1 }, 18.0, 0.7);
+}],
+
+// beat 6: demo_setup
+['demo_setup', '演示：初始化', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, 'Bellman-Ford 演示', { x: 800, y: 60, size: 40, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const graph = drawGraph(p);
+  tw(graph, { o: 1 }, 3.0, 0.8);
+  
+  const labels = drawDistanceLabels(p);
+  tw(labels, { o: 1 }, 3.5, 0.6);
+  
+  // 初始化距离
+  updateDistance(labels, 'A', 0, 6.0);
+  
+  const initNote = T(p, '起点 A = 0，其他节点 = ∞', 
+    { x: 800, y: 750, size: 26, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(initNote, { o: 1 }, 8.0, 0.6);
+  
+  const roundNote = T(p, '共需 4 轮松弛（n-1 = 5）', 
+    { x: 800, y: 790, size: 24, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(roundNote, { o: 1 }, 12.0, 0.5);
+}],
+
+// beat 7: demo_iteration (动画演示 - 必须通过质量检测)
+['demo_iteration', '演示：松弛迭代', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '第 1 轮松弛', { x: 800, y: 60, size: 38, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const graph = drawGraph(p);
+  tw(graph, { o: 1 }, 0.3, 0.3);
+  
+  const labels = drawDistanceLabels(p);
+  tw(labels, { o: 1 }, 0.3, 0.3);
+  
+  // 初始状态
+  updateDistance(labels, 'A', 0, 0.5);
+  
+  const edgeEls = graph._edgeElements;
+  
+  // 第一轮松弛演示（遍历所有边）
+  let t = 3.0;
+  
+  // 边1: A -> B (权重4)
+  highlightEdge(edgeEls, 'A', 'B', EDGE_TRYING, t, 0.4);
+  updateDistance(labels, 'B', 4, t + 0.5);
+  highlightEdge(edgeEls, 'A', 'B', EDGE_SELECTED, t + 0.9, 0.3);
+  t += 1.4;
+  
+  // 边2: A -> C (权重2)
+  highlightEdge(edgeEls, 'A', 'C', EDGE_TRYING, t, 0.4);
+  updateDistance(labels, 'C', 2, t + 0.5);
+  highlightEdge(edgeEls, 'A', 'C', EDGE_SELECTED, t + 0.9, 0.3);
+  t += 1.4;
+  
+  // 边3: B -> D (权重3，但B还是无穷，不更新)
+  highlightEdge(edgeEls, 'B', 'D', EDGE_TRYING, t, 0.4);
+  resetEdge(edgeEls, 'B', 'D', t + 0.6);
+  t += 1.0;
+  
+  // 边4: C -> D (权重-5，负权边！)
+  highlightEdge(edgeEls, 'C', 'D', EDGE_TRYING, t, 0.4);
+  updateDistance(labels, 'D', -3, t + 0.5);
+  highlightEdge(edgeEls, 'C', 'D', EDGE_SELECTED, t + 0.9, 0.3);
+  t += 1.5;
+  
+  // 边5: B -> E
+  highlightEdge(edgeEls, 'B', 'E', EDGE_TRYING, t, 0.4);
+  resetEdge(edgeEls, 'B', 'E', t + 0.6);
+  t += 1.0;
+  
+  // 边6: D -> E
+  highlightEdge(edgeEls, 'D', 'E', EDGE_TRYING, t, 0.4);
+  updateDistance(labels, 'E', -2, t + 0.5);
+  highlightEdge(edgeEls, 'D', 'E', EDGE_SELECTED, t + 0.9, 0.3);
+  t += 1.4;
+  
+  // 边7: D -> F
+  highlightEdge(edgeEls, 'D', 'F', EDGE_TRYING, t, 0.4);
+  updateDistance(labels, 'F', 1, t + 0.5);
+  highlightEdge(edgeEls, 'D', 'F', EDGE_SELECTED, t + 0.9, 0.3);
+  t += 1.4;
+  
+  // 边8: E -> F (权重-1)
+  highlightEdge(edgeEls, 'E', 'F', EDGE_TRYING, t, 0.4);
+  updateDistance(labels, 'F', -3, t + 0.5);
+  highlightEdge(edgeEls, 'E', 'F', EDGE_SELECTED, t + 0.9, 0.3);
+  t += 1.4;
+  
+  const roundEnd = T(p, '第 1 轮结束，3 个节点被更新', 
+    { x: 800, y: 750, size: 26, fill: VISITED, anchor: 'middle', o: 0, weight: 600 });
+  tw(roundEnd, { o: 1 }, t + 0.5, 0.7);
+}],
+
+// beat 8: demo_convergence
+['demo_convergence', '演示：收敛', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '继续迭代', { x: 800, y: 60, size: 40, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const graph = drawGraph(p);
+  tw(graph, { o: 1 }, 0.3, 0.3);
+  
+  const labels = drawDistanceLabels(p);
+  tw(labels, { o: 1 }, 0.3, 0.3);
+  
+  // 显示第1轮后的状态
+  updateDistance(labels, 'A', 0, 0.5);
+  updateDistance(labels, 'B', 4, 0.5);
+  updateDistance(labels, 'C', 2, 0.5);
+  updateDistance(labels, 'D', -3, 0.5);
+  updateDistance(labels, 'E', -2, 0.5);
+  updateDistance(labels, 'F', -3, 0.5);
+  
+  const round2 = T(p, '第 2 轮：继续优化', 
+    { x: 800, y: 680, size: 28, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(round2, { o: 1 }, 5.0, 0.6);
+  
+  const round3 = T(p, '第 3 轮：距离继续优化', 
+    { x: 800, y: 730, size: 28, fill: SECONDARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(round3, { o: 1 }, 9.0, 0.6);
+  
+  const converge = T(p, '第 4 轮：距离不再变化！', 
+    { x: 800, y: 780, size: 30, fill: VISITED, anchor: 'middle', o: 0, weight: 700 });
+  tw(converge, { o: 1 }, 13.0, 0.7);
+  
+  clockRun(t => {
+    if (t > 10) {
+      const phase = Math.sin(t * 0.8) * 0.04 + 1;
+      put(converge, { s: phase });
+    }
+  }, dur, { tail: true });
+}],
+
+// beat 9: negative_cycle
+['negative_cycle', '负权环检测', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '负权环', { x: 800, y: 100, size: 48, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const def = T(p, '总权重为负的环路', 
+    { x: 800, y: 200, size: 32, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(def, { o: 1 }, 3.0, 0.6);
+  
+  // 示例负权环
+  const cycleG = G(p, { o: 0 });
+  const n1 = G(cycleG, { x: 600, y: 400 });
+  mk('circle', { r: 25, fill: UNVISITED, stroke: '#2c3e50', 'stroke-width': 2 }, n1);
+  T(n1, 'X', { x: 0, y: 5, size: 20, fill: '#fff', weight: 600, anchor: 'middle' });
+  
+  const n2 = G(cycleG, { x: 800, y: 350 });
+  mk('circle', { r: 25, fill: UNVISITED, stroke: '#2c3e50', 'stroke-width': 2 }, n2);
+  T(n2, 'Y', { x: 0, y: 5, size: 20, fill: '#fff', weight: 600, anchor: 'middle' });
+  
+  const n3 = G(cycleG, { x: 800, y: 450 });
+  mk('circle', { r: 25, fill: UNVISITED, stroke: '#2c3e50', 'stroke-width': 2 }, n3);
+  T(n3, 'Z', { x: 0, y: 5, size: 20, fill: '#fff', weight: 600, anchor: 'middle' });
+  
+  drawArrow(cycleG, 600, 400, 775, 350, EDGE_DEFAULT);
+  T(cycleG, '3', { x: 700, y: 360, size: 18, fill: '#34495e', anchor: 'middle', weight: 600 });
+  
+  drawArrow(cycleG, 800, 375, 800, 425, EDGE_DEFAULT);
+  T(cycleG, '2', { x: 850, y: 400, size: 18, fill: '#34495e', anchor: 'middle', weight: 600 });
+  
+  drawArrow(cycleG, 775, 450, 625, 400, EDGE_NEGATIVE);
+  T(cycleG, '-6', { x: 700, y: 470, size: 18, fill: EDGE_NEGATIVE, anchor: 'middle', weight: 700 });
+  
+  tw(cycleG, { o: 1 }, 6.0, 0.7);
+  
+  const sum = T(p, '总权重 = 3 + 2 - 6 = -1', 
+    { x: 1000, y: 400, size: 26, fill: EDGE_NEGATIVE, o: 0, weight: 600 });
+  tw(sum, { o: 1 }, 8.0, 0.6);
+  
+  const paradox = T(p, '绕一圈，距离反而减少！', 
+    { x: 800, y: 570, size: 30, fill: SECONDARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(paradox, { o: 1 }, 11.0, 0.7);
+  
+  const detection = T(p, '第 n 轮松弛：如果还能更新 → 负权环', 
+    { x: 800, y: 650, size: 28, fill: VISITED, anchor: 'middle', o: 0, weight: 600 });
+  tw(detection, { o: 1 }, 15.0, 0.7);
+  
+  const noPath = T(p, '此时不存在最短路径（可无限减小）', 
+    { x: 800, y: 710, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(noPath, { o: 1 }, 18.0, 0.6);
+}],
+
+// beat 10: complexity
+['complexity', '复杂度分析', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, '算法复杂度', { x: 800, y: 100, size: 48, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  const timeTitle = T(p, '时间复杂度', 
+    { x: 800, y: 220, size: 36, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(timeTitle, { o: 1 }, 3.0, 0.5);
+  
+  const timeFormula = T(p, 'O(V × E)', 
+    { x: 800, y: 280, size: 44, fill: SECONDARY, anchor: 'middle', o: 0, weight: 700 });
+  tw(timeFormula, { o: 1 }, 5.0, 0.6);
+  
+  const timeExplain = T(p, 'V = 节点数，E = 边数', 
+    { x: 800, y: 340, size: 24, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(timeExplain, { o: 1 }, 7.0, 0.5);
+  
+  const calculation = T(p, '每轮 O(E)，重复 V-1 轮', 
+    { x: 800, y: 390, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(calculation, { o: 1 }, 9.0, 0.5);
+  
+  const spaceTitle = T(p, '空间复杂度', 
+    { x: 800, y: 480, size: 36, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(spaceTitle, { o: 1 }, 12.0, 0.5);
+  
+  const spaceFormula = T(p, 'O(V)', 
+    { x: 800, y: 540, size: 44, fill: SECONDARY, anchor: 'middle', o: 0, weight: 700 });
+  tw(spaceFormula, { o: 1 }, 14.0, 0.6);
+  
+  const tradeoff = T(p, '比 Dijkstra 的 O((V+E)logV) 慢', 
+    { x: 800, y: 640, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(tradeoff, { o: 1 }, 17.0, 0.5);
+  
+  const benefit = T(p, '但能处理负权边！', 
+    { x: 800, y: 690, size: 30, fill: VISITED, anchor: 'middle', o: 0, weight: 700 });
+  tw(benefit, { o: 1 }, 19.0, 0.7);
+}],
+
+// beat 11: comparison
+['comparison', '算法对比', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, 'Dijkstra vs Bellman-Ford', { x: 800, y: 90, size: 44, weight: 600, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.5);
+  
+  // Dijkstra
+  const dijkstraTitle = T(p, 'Dijkstra', 
+    { x: 400, y: 200, size: 36, fill: PRIMARY, anchor: 'middle', o: 0, weight: 700 });
+  tw(dijkstraTitle, { o: 1 }, 3.0, 0.5);
+  
+  const dijkstraFeatures = [
+    '✓ 贪心策略',
+    '✓ 优先队列',
+    '✗ 不支持负权边',
+    '✓ O((V+E)logV)'
+  ];
+  
+  let t = 5.0;
+  dijkstraFeatures.forEach((f, i) => {
+    const text = T(p, f, 
+      { x: 400, y: 260 + i * 50, size: 24, fill: COL.dim, anchor: 'middle', o: 0 });
+    tw(text, { o: 1 }, t, 0.4);
+    t += 1.5;
+  });
+  
+  // Bellman-Ford
+  const bellmanTitle = T(p, 'Bellman-Ford', 
+    { x: 1100, y: 200, size: 36, fill: VISITED, anchor: 'middle', o: 0, weight: 700 });
+  tw(bellmanTitle, { o: 1 }, 12.0, 0.5);
+  
+  const bellmanFeatures = [
+    '✓ 动态规划',
+    '✓ 暴力松弛',
+    '✓ 支持负权边',
+    '✓ 检测负权环',
+    '✗ O(VE)'
+  ];
+  
+  t = 14.0;
+  bellmanFeatures.forEach((f, i) => {
+    const text = T(p, f, 
+      { x: 1100, y: 260 + i * 45, size: 24, fill: COL.dim, anchor: 'middle', o: 0 });
+    tw(text, { o: 1 }, t, 0.4);
+    t += 1.2;
+  });
+  
+  const choice = T(p, '选择取决于图的性质', 
+    { x: 800, y: 650, size: 30, fill: SECONDARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(choice, { o: 1 }, 22.0, 0.7);
+  
+  const recommendation = T(p, '无负权边 → Dijkstra  |  有负权边 → Bellman-Ford', 
+    { x: 800, y: 710, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(recommendation, { o: 1 }, 24.0, 0.7);
+}],
+
+// beat 12: summary
+['summary', '总结', (m, dur) => {
+  const p = panel(0);
+  
+  const title = T(p, 'Bellman-Ford 总结', { x: 800, y: 120, size: 48, weight: 700, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const steps = [
+    '1️⃣  初始化：起点 0，其他 ∞',
+    '2️⃣  重复 n-1 轮：松弛所有边',
+    '3️⃣  第 n 轮检测：有更新 → 负权环'
+  ];
+  
+  let t = 5.0;
+  steps.forEach((step, i) => {
+    const text = T(p, step, 
+      { x: 350, y: 280 + i * 80, size: 32, fill: PRIMARY, o: 0, weight: 600 });
+    tw(text, { o: 1 }, t, 0.7);
+    t += 4.0;
+  });
+  
+  const power = T(p, '简单但强大，负权图的标准解法！', 
+    { x: 800, y: 600, size: 34, fill: VISITED, anchor: 'middle', o: 0, weight: 700 });
+  tw(power, { o: 1 }, 17.0, 0.8);
+  
+  const emoji = T(p, '🎯', { x: 800, y: 700, size: 64, anchor: 'middle', o: 0 });
+  tw(emoji, { o: 1 }, 19.0, 0.6);
+  
+  clockRun(t => {
+    if (t > 15) {
+      const phase = Math.sin(t * 0.5) * 0.05 + 1;
+      put(title, { s: phase });
+    }
+  }, dur, { tail: true });
+}]
+
+];
+
+// 练习题
+let QUIZ = [
+  {
+    q: 'Bellman-Ford 算法的时间复杂度是？',
+    a: ['O(V×E)', 'O((V+E)logV)', 'O(V²)', 'O(E²)']
+  },
+  {
+    q: 'Bellman-Ford 需要重复多少轮松弛操作？',
+    a: ['V-1 轮', 'V 轮', 'E 轮', 'logV 轮']
+  },
+  {
+    q: 'Bellman-Ford 如何检测负权环？',
+    a: ['第 V 轮松弛时仍有距离更新', '检查是否有负权边', '使用 DFS 搜索环', '计算所有边权重之和']
+  }
+];
+
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
+boot();
+
+if (typeof module !== 'undefined') module.exports = { CHAPTER, BEATS, QUIZ };
+</script>
+</body>
+</html>

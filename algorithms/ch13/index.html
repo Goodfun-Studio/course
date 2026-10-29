@@ -379,7 +379,7 @@ let BEATS = [
 
 { audio: 'kahn-example' }],
 
-['kahn-demo-animation', 'Kahn 算法完整演示', () => {
+['kahn-demo', 'Kahn 算法完整演示', () => {
   const p = panel(0);
   
   // 定义检测脚本认可的颜色常量
@@ -901,10 +901,14 @@ const EXERCISES = [
   }
 ];
 
-// 引擎初始化
-window.addEventListener('load', () => {
-  initEngine(CHAPTER, BEATS, EXERCISES);
-});
+// Normalize BEATS structure
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
+
+// Initialize the player
+boot();
+
+if (typeof module !== 'undefined') module.exports = { CHAPTER, BEATS };
 
 </script>
 </body>

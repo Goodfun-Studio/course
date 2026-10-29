@@ -1,54 +1,45 @@
 #!/usr/bin/env python3
+"""
+提取音频时长，生成 timings.js
+"""
 import json
-import subprocess
 from pathlib import Path
+from mutagen.mp3 import MP3
 
-def get_audio_duration(audio_file):
-    """Get audio duration in seconds using afinfo"""
-    try:
-        result = subprocess.run(
-            ['afinfo', str(audio_file)],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        for line in result.stdout.split('\n'):
-            if 'estimated duration' in line.lower():
-                duration_str = line.split(':')[1].strip().split()[0]
-                return float(duration_str)
-    except Exception as e:
-        print(f"Error getting duration for {audio_file}: {e}")
-        return 0
-    return 0
+AUDIO_DIR = Path(__file__).parent / "audio" / "zh"
+OUTPUT_FILE = AUDIO_DIR / "timings.js"
 
-def generate_timings():
-    script_dir = Path(__file__).parent
-    audio_dir = script_dir / 'audio' / 'zh'
-    narration_file = script_dir / 'narration.zh.json'
-    output_file = audio_dir / 'timings.js'
-    
-    with open(narration_file, 'r', encoding='utf-8') as f:
-        narration = json.load(f)
-    
-    marks = []
-    
-    for beat_id in narration.keys():
-        audio_file = audio_dir / f'{beat_id}.mp3'
-        if audio_file.exists():
-            duration = get_audio_duration(audio_file)
-            marks.append(f"  {{ audio: '{beat_id}' }}")
-        else:
-            print(f"Warning: {audio_file} not found")
-    
-    # 手动构建字符串，避免f-string转义问题
-    js_content = "const marks = [\n"
-    js_content += ",\n".join(marks)
-    js_content += "\n];\n"
-    
-    with open(output_file, 'w', encoding='utf-8') as f:
-        f.write(js_content)
-    
-    print(f'Generated {output_file}')
+def get_audio_duration(mp3_file: Path) -> float:
+    """获取 MP3 文件时长（秒）"""
+    audio = MP3(str(mp3_file))
+    return audio.info.length
 
-if __name__ == '__main__':
-    generate_timings()
+def main():
+    timings = {}
+    
+    # 遍历所有 MP3 文件
+    for mp3_file in sorted(AUDIO_DIR.glob("*.mp3")):
+        beat_id = mp3_file.stem
+        duration = get_audio_duration(mp3_file)
+        
+        # 使用正确的格式：对象而非单个数字
+        timings[beat_id] = {
+            "dur": round(duration, 2),
+            "marks": {},
+            "cues": []
+        }
+        
+        print(f"{beat_id}: {duration:.2f}s")
+    
+    # 生成 timings.js
+    with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
+        f.write("window.TIMINGS = ")
+        f.write(json.dumps(timings, indent=2, ensure_ascii=False))
+        f.write(";\n")
+    
+    total_duration = sum(t["dur"] for t in timings.values())
+    print(f"\n✅ 生成 timings.js")
+    print(f"总时长: {total_duration / 60:.1f} 分钟")
+
+if __name__ == "__main__":
+    main()

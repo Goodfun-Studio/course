@@ -615,6 +615,9 @@ let BEATS = [
 
 ];
 
+// 标准化 beats
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
 boot();
 </script>
 </body>

@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>双向BFS：Bidirectional BFS</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 29, title: '双向BFS：Bidirectional BFS', language: 'zh', minutes: 12 };
+
+/* ---------- colours ---------- */
+const FORWARD = '#3498db';      // 蓝色（前向搜索）
+const BACKWARD = '#e74c3c';     // 红色（后向搜索）
+const MEETING = '#2ecc71';      // 绿色（相遇点）
+const UNVISITED = '#95a5a6';    // 灰色（未访问）
+const PATH = '#f39c12';         // 橙色（路径）
+const START = '#9b59b6';        // 紫色（起点终点）
+const TEXT = '#ecf0f1';         // 浅色文字
+
+/* ---------- beats ---------- */
+let BEATS = [
+
+['intro', '问题引入', () => {
+  const p = panel(0);
+  
+  const title = T(p, '双向广度优先搜索', { x: 800, y: 100, size: 64, weight: 700, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, 'Bidirectional BFS', { x: 800, y: 170, size: 32, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 0.8, 0.5);
+  
+  const desc = T(p, '从两端同时搜索，在中间相遇', { x: 800, y: 230, size: 28, fill: TEXT, anchor: 'middle', o: 0 });
+  tw(desc, { o: 1 }, 2, 0.6);
+  
+  const scenario1 = T(p, '地图导航：从北京到上海', { x: 400, y: 320, size: 30, fill: COL.chalk, o: 0 });
+  tw(scenario1, { o: 1 }, 4, 0.5);
+  
+  const scenario2 = T(p, '社交网络：找两个陌生人的关系链', { x: 400, y: 390, size: 30, fill: COL.chalk, o: 0 });
+  tw(scenario2, { o: 1 }, 6, 0.5);
+  
+  const scenario3 = T(p, '游戏AI：从起点到终点寻路', { x: 400, y: 460, size: 30, fill: COL.chalk, o: 0 });
+  tw(scenario3, { o: 1 }, 8, 0.5);
+  
+  // Simple illustration
+  const startCircle = mk('circle', { cx: 500, cy: 600, r: 20, fill: FORWARD, o: 0 }, p);
+  tw(startCircle, { o: 1 }, 10, 0.5);
+  const startLabel = T(p, 'A', { x: 500, y: 610, size: 24, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(startLabel, { o: 1 }, 10, 0.5);
+  
+  const endCircle = mk('circle', { cx: 1100, cy: 600, r: 20, fill: BACKWARD, o: 0 }, p);
+  tw(endCircle, { o: 1 }, 10, 0.5);
+  const endLabel = T(p, 'B', { x: 1100, y: 610, size: 24, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(endLabel, { o: 1 }, 10, 0.5);
+  
+  const arrow1 = mk('path', { 
+    d: `M 520 600 L 780 600`, 
+    stroke: FORWARD, 'stroke-width': 3, fill: 'none', 'marker-end': 'url(#arrow)', o: 0 
+  }, p);
+  tw(arrow1, { o: 1 }, 11, 0.5);
+  
+  const arrow2 = mk('path', { 
+    d: `M 1080 600 L 820 600`, 
+    stroke: BACKWARD, 'stroke-width': 3, fill: 'none', 'marker-end': 'url(#arrow)', o: 0 
+  }, p);
+  tw(arrow2, { o: 1 }, 11, 0.5);
+  
+  const meetLabel = T(p, '在中间相遇', { x: 800, y: 680, size: 32, fill: MEETING, anchor: 'middle', o: 0 });
+  tw(meetLabel, { o: 1 }, 12, 0.7);
+}],
+
+['complexity-problem', '单向BFS的瓶颈', () => {
+  const p = panel(0);
+  
+  const title = T(p, '单向BFS的性能瓶颈', { x: 800, y: 100, size: 56, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const formula = T(p, '时间复杂度：O(b^d)', { x: 800, y: 200, size: 40, fill: PATH, anchor: 'middle', o: 0 });
+  tw(formula, { o: 1 }, 1, 0.6);
+  
+  const bLabel = T(p, 'b = 分支因子（每个节点的邻居数）', { x: 400, y: 280, size: 28, fill: TEXT, o: 0 });
+  tw(bLabel, { o: 1 }, 2, 0.5);
+  
+  const dLabel = T(p, 'd = 深度（起点到终点的距离）', { x: 400, y: 350, size: 28, fill: TEXT, o: 0 });
+  tw(dLabel, { o: 1 }, 3, 0.5);
+  
+  const example = T(p, '示例：b = 10, d = 6', { x: 800, y: 440, size: 36, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(example, { o: 1 }, 5, 0.6);
+  
+  const calc = T(p, '10^6 = 1,000,000 个节点', { x: 800, y: 510, size: 40, fill: BACKWARD, anchor: 'middle', o: 0 });
+  tw(calc, { o: 1 }, 6, 0.7);
+  
+  // Visual representation
+  const center = { x: 800, y: 650 };
+  const searchLabel = T(p, '搜索空间呈圆形扩散', { x: 800, y: 600, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(searchLabel, { o: 1 }, 8, 0.5);
+  
+  for (let i = 0; i < 5; i++) {
+    const circle = mk('circle', { 
+      cx: center.x, cy: center.y, r: 30 + i * 25, 
+      fill: 'none', stroke: FORWARD, 'stroke-width': 2, o: 0 
+    }, p);
+    tw(circle, { o: 0.4 - i * 0.05 }, 9 + i * 0.3, 0.5);
+  }
+  
+  const start = mk('circle', { cx: center.x, cy: center.y, r: 8, fill: START, o: 0 }, p);
+  tw(start, { o: 1 }, 9, 0.5);
+}],
+
+['bidirectional-idea', '双向搜索思想', () => {
+  const p = panel(0);
+  
+  const title = T(p, '双向搜索的核心思想', { x: 800, y: 100, size: 56, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const idea = T(p, '从A和B同时开始搜索', { x: 800, y: 200, size: 36, fill: TEXT, anchor: 'middle', o: 0 });
+  tw(idea, { o: 1 }, 2, 0.6);
+  
+  // Left search (forward)
+  const leftStart = mk('circle', { cx: 400, cy: 400, r: 15, fill: FORWARD, o: 0 }, p);
+  tw(leftStart, { o: 1 }, 3, 0.5);
+  const labelA = T(p, 'A', { x: 400, y: 410, size: 24, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(labelA, { o: 1 }, 3, 0.5);
+  
+  // Right search (backward)
+  const rightStart = mk('circle', { cx: 1200, cy: 400, r: 15, fill: BACKWARD, o: 0 }, p);
+  tw(rightStart, { o: 1 }, 3, 0.5);
+  const labelB = T(p, 'B', { x: 1200, y: 410, size: 24, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(labelB, { o: 1 }, 3, 0.5);
+  
+  // Forward waves
+  for (let i = 1; i <= 3; i++) {
+    const wave = mk('circle', { 
+      cx: 400, cy: 400, r: 50 * i, 
+      fill: 'none', stroke: FORWARD, 'stroke-width': 2, o: 0 
+    }, p);
+    tw(wave, { o: 0.5 }, 5 + i * 0.4, 0.4);
+  }
+  
+  // Backward waves
+  for (let i = 1; i <= 3; i++) {
+    const wave = mk('circle', { 
+      cx: 1200, cy: 400, r: 50 * i, 
+      fill: 'none', stroke: BACKWARD, 'stroke-width': 2, o: 0 
+    }, p);
+    tw(wave, { o: 0.5 }, 5 + i * 0.4, 0.4);
+  }
+  
+  const meetText = T(p, '在中间相遇！', { x: 800, y: 400, size: 36, fill: MEETING, anchor: 'middle', o: 0 });
+  tw(meetText, { o: 1 }, 8, 0.7);
+  
+  const meetPoint = mk('circle', { cx: 800, cy: 450, r: 12, fill: MEETING, o: 0 }, p);
+  tw(meetPoint, { o: 1 }, 8, 0.5);
+  
+  const benefit = T(p, '搜索空间大大减少', { x: 800, y: 550, size: 32, fill: PATH, anchor: 'middle', o: 0 });
+  tw(benefit, { o: 1 }, 10, 0.7);
+  
+  const halfLabel = T(p, '每个方向只需搜索一半距离', { x: 800, y: 620, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(halfLabel, { o: 1 }, 12, 0.6);
+}],
+
+['complexity-optimization', '复杂度优化', () => {
+  const p = panel(0);
+  
+  const title = T(p, '复杂度优化', { x: 800, y: 100, size: 56, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const formula = T(p, '双向BFS：O(2 × b^(d/2))', { x: 800, y: 200, size: 40, fill: MEETING, anchor: 'middle', o: 0 });
+  tw(formula, { o: 1 }, 1, 0.6);
+  
+  const split = T(p, '两个方向，每个搜索深度 d/2', { x: 800, y: 270, size: 28, fill: TEXT, anchor: 'middle', o: 0 });
+  tw(split, { o: 1 }, 2.5, 0.5);
+  
+  const compareTitle = T(p, '对比示例：b = 10, d = 6', { x: 800, y: 360, size: 36, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(compareTitle, { o: 1 }, 4, 0.6);
+  
+  const single = T(p, '单向BFS：10^6 = 1,000,000', { x: 400, y: 450, size: 32, fill: FORWARD, o: 0 });
+  tw(single, { o: 1 }, 5, 0.6);
+  
+  const bi = T(p, '双向BFS：2 × 10^3 = 2,000', { x: 400, y: 520, size: 32, fill: BACKWARD, o: 0 });
+  tw(bi, { o: 1 }, 6.5, 0.6);
+  
+  const diff = T(p, '性能提升：500倍！', { x: 800, y: 600, size: 48, fill: PATH, anchor: 'middle', weight: 700, o: 0 });
+  tw(diff, { o: 1 }, 8, 0.8);
+  
+  // Visual comparison
+  const singleBar = mk('rect', { x: 300, y: 660, width: 400, height: 30, fill: FORWARD, o: 0 }, p);
+  tw(singleBar, { o: 1 }, 10, 0.5);
+  const singleLabel = T(p, '单向', { x: 250, y: 680, size: 24, fill: TEXT, o: 0 });
+  tw(singleLabel, { o: 1 }, 10, 0.5);
+  
+  const biBar = mk('rect', { x: 300, y: 710, width: 2, height: 30, fill: BACKWARD, o: 0 }, p);
+  tw(biBar, { width: 4 }, 11, 0.5);
+  const biLabel = T(p, '双向', { x: 250, y: 730, size: 24, fill: TEXT, o: 0 });
+  tw(biLabel, { o: 1 }, 11, 0.5);
+}],
+
+['bidirectional-animation', '双向BFS动画', () => {
+  const p = panel(0);
+  
+  const title = T(p, '双向BFS演示', { x: 800, y: 60, size: 48, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  // Grid setup
+  const gridSize = 8;
+  const cellSize = 50;
+  const startX = 400;
+  const startY = 150;
+  
+  const gridCells = [];
+  const visited = new Set();
+  
+  // Create grid
+  for (let i = 0; i < gridSize; i++) {
+    for (let j = 0; j < gridSize; j++) {
+      const x = startX + j * cellSize;
+      const y = startY + i * cellSize;
+      const cell = mk('rect', { 
+        x: x, y: y, width: cellSize - 2, height: cellSize - 2, 
+        fill: UNVISITED, stroke: '#2c3e50', 'stroke-width': 1, o: 0 
+      }, p);
+      tw(cell, { o: 0.3 }, 0.5 + (i + j) * 0.02, 0.3);
+      gridCells.push({ cell, i, j, x: x + cellSize/2, y: y + cellSize/2 });
+    }
+  }
+  
+  const gridLabel = T(p, '网格地图', { x: 800, y: 120, size: 24, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(gridLabel, { o: 1 }, 2, 0.4);
+  
+  // Start point (top-left)
+  const startPoint = mk('circle', { cx: startX + cellSize/2, cy: startY + cellSize/2, r: 15, fill: START, o: 0 }, p);
+  tw(startPoint, { o: 1 }, 2.5, 0.5);
+  const startLabel = T(p, 'A', { x: startX + cellSize/2, y: startY + cellSize/2 + 5, size: 20, fill: '#fff', anchor: 'middle', weight: 700, o: 0 });
+  tw(startLabel, { o: 1 }, 2.5, 0.5);
+  
+  // End point (bottom-right)
+  const endX = startX + (gridSize - 1) * cellSize + cellSize/2;
+  const endY = startY + (gridSize - 1) * cellSize + cellSize/2;
+  const endPoint = mk('circle', { cx: endX, cy: endY, r: 15, fill: START, o: 0 }, p);
+  tw(endPoint, { o: 1 }, 2.5, 0.5);
+  const endLabel = T(p, 'B', { x: endX, y: endY + 5, size: 20, fill: '#fff', anchor: 'middle', weight: 700, o: 0 });
+  tw(endLabel, { o: 1 }, 2.5, 0.5);
+  
+  let time = 3.5;
+  
+  // Forward wave 1
+  const forwardLabel = T(p, '蓝色：从A搜索', { x: 300, y: 620, size: 26, fill: FORWARD, o: 0 });
+  tw(forwardLabel, { o: 1 }, time, 0.4);
+  
+  const wave1Cells = [[0,1], [1,0], [1,1]];
+  wave1Cells.forEach(([i, j], idx) => {
+    const cellData = gridCells.find(c => c.i === i && c.j === j);
+    if (cellData) {
+      tw(cellData.cell, { fill: FORWARD, o: 0.7 }, time + 0.5 + idx * 0.15, 0.3);
+    }
+  });
+  time += 2;
+  
+  // Backward wave 1
+  const backwardLabel = T(p, '红色：从B搜索', { x: 300, y: 670, size: 26, fill: BACKWARD, o: 0 });
+  tw(backwardLabel, { o: 1 }, time, 0.4);
+  
+  const wave1Back = [[7,6], [6,7], [6,6]];
+  wave1Back.forEach(([i, j], idx) => {
+    const cellData = gridCells.find(c => c.i === i && c.j === j);
+    if (cellData) {
+      tw(cellData.cell, { fill: BACKWARD, o: 0.7 }, time + 0.5 + idx * 0.15, 0.3);
+    }
+  });
+  time += 2;
+  
+  // Forward wave 2
+  const wave2Cells = [[0,2], [1,2], [2,0], [2,1], [2,2]];
+  wave2Cells.forEach(([i, j], idx) => {
+    const cellData = gridCells.find(c => c.i === i && c.j === j);
+    if (cellData) {
+      tw(cellData.cell, { fill: FORWARD, o: 0.7 }, time + idx * 0.12, 0.3);
+    }
+  });
+  time += 1.5;
+  
+  // Backward wave 2
+  const wave2Back = [[7,5], [6,5], [5,7], [5,6], [5,5]];
+  wave2Back.forEach(([i, j], idx) => {
+    const cellData = gridCells.find(c => c.i === i && c.j === j);
+    if (cellData) {
+      tw(cellData.cell, { fill: BACKWARD, o: 0.7 }, time + idx * 0.12, 0.3);
+    }
+  });
+  time += 1.5;
+  
+  // Forward wave 3
+  const wave3Cells = [[0,3], [1,3], [2,3], [3,0], [3,1], [3,2], [3,3]];
+  wave3Cells.forEach(([i, j], idx) => {
+    const cellData = gridCells.find(c => c.i === i && c.j === j);
+    if (cellData) {
+      tw(cellData.cell, { fill: FORWARD, o: 0.7 }, time + idx * 0.1, 0.3);
+    }
+  });
+  time += 1.5;
+  
+  // Backward wave 3
+  const wave3Back = [[7,4], [6,4], [5,4], [4,7], [4,6], [4,5], [4,4]];
+  wave3Back.forEach(([i, j], idx) => {
+    const cellData = gridCells.find(c => c.i === i && c.j === j);
+    if (cellData) {
+      tw(cellData.cell, { fill: BACKWARD, o: 0.7 }, time + idx * 0.1, 0.3);
+    }
+  });
+  time += 1.5;
+  
+  // Meeting point
+  const meetLabel = T(p, '相遇！', { x: 800, y: 620, size: 36, fill: MEETING, anchor: 'middle', weight: 700, o: 0 });
+  tw(meetLabel, { o: 1 }, time, 0.6);
+  
+  const meetCells = [[3,4], [4,3]];
+  meetCells.forEach(([i, j], idx) => {
+    const cellData = gridCells.find(c => c.i === i && c.j === j);
+    if (cellData) {
+      tw(cellData.cell, { fill: MEETING, o: 1 }, time + 0.5 + idx * 0.2, 0.4);
+      const star = mk('circle', { cx: cellData.x, cy: cellData.y, r: 8, fill: '#fff', o: 0 }, p);
+      tw(star, { o: 1 }, time + 0.8 + idx * 0.2, 0.3);
+    }
+  });
+  time += 1.5;
+  
+  // Path highlight
+  const pathLabel = T(p, '找到最短路径', { x: 800, y: 670, size: 32, fill: PATH, anchor: 'middle', o: 0 });
+  tw(pathLabel, { o: 1 }, time, 0.6);
+}],
+
+['algorithm-implementation', '算法实现', () => {
+  const p = panel(0);
+  
+  const title = T(p, '双向BFS实现步骤', { x: 800, y: 100, size: 56, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const step1 = T(p, '1. 维护两个队列：前向和后向', { x: 300, y: 200, size: 30, fill: TEXT, o: 0 });
+  tw(step1, { o: 1 }, 1, 0.5);
+  
+  const step2 = T(p, '2. 维护两个已访问集合', { x: 300, y: 270, size: 30, fill: TEXT, o: 0 });
+  tw(step2, { o: 1 }, 2.5, 0.5);
+  
+  const step3 = T(p, '3. 初始化：起点→前向，终点→后向', { x: 300, y: 340, size: 30, fill: TEXT, o: 0 });
+  tw(step3, { o: 1 }, 4, 0.5);
+  
+  const step4 = T(p, '4. 交替扩展：选择较小的队列', { x: 300, y: 410, size: 30, fill: TEXT, o: 0 });
+  tw(step4, { o: 1 }, 6, 0.5);
+  
+  const step5 = T(p, '5. 访问邻居节点', { x: 300, y: 480, size: 30, fill: TEXT, o: 0 });
+  tw(step5, { o: 1 }, 8, 0.5);
+  
+  const step6 = T(p, '6. 检查是否在自己的集合中', { x: 300, y: 550, size: 30, fill: TEXT, o: 0 });
+  tw(step6, { o: 1 }, 10, 0.5);
+  
+  const keyStep = T(p, '关键：检查是否在对方集合中', { x: 800, y: 640, size: 36, fill: MEETING, anchor: 'middle', weight: 700, o: 0 });
+  tw(keyStep, { o: 1 }, 12, 0.8);
+  
+  const found = T(p, '如果在 → 相遇 → 找到路径！', { x: 800, y: 710, size: 32, fill: PATH, anchor: 'middle', o: 0 });
+  tw(found, { o: 1 }, 14, 0.6);
+}],
+
+['meet-detection', '相遇检测', () => {
+  const p = panel(0);
+  
+  const title = T(p, '相遇检测', { x: 800, y: 100, size: 56, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const sets = T(p, '两个已访问集合', { x: 800, y: 200, size: 36, fill: TEXT, anchor: 'middle', o: 0 });
+  tw(sets, { o: 1 }, 1, 0.5);
+  
+  // Forward set
+  const forwardBox = mk('rect', { x: 300, y: 260, width: 350, height: 120, fill: 'none', stroke: FORWARD, 'stroke-width': 3, rx: 10, o: 0 }, p);
+  tw(forwardBox, { o: 1 }, 2, 0.5);
+  const forwardTitle = T(p, 'forward_visited', { x: 475, y: 290, size: 28, fill: FORWARD, anchor: 'middle', weight: 600, o: 0 });
+  tw(forwardTitle, { o: 1 }, 2, 0.5);
+  const forwardNodes = T(p, '{A, C, D, F, ...}', { x: 475, y: 340, size: 24, fill: TEXT, anchor: 'middle', o: 0 });
+  tw(forwardNodes, { o: 1 }, 2.5, 0.5);
+  
+  // Backward set
+  const backwardBox = mk('rect', { x: 950, y: 260, width: 350, height: 120, fill: 'none', stroke: BACKWARD, 'stroke-width': 3, rx: 10, o: 0 }, p);
+  tw(backwardBox, { o: 1 }, 2, 0.5);
+  const backwardTitle = T(p, 'backward_visited', { x: 1125, y: 290, size: 28, fill: BACKWARD, anchor: 'middle', weight: 600, o: 0 });
+  tw(backwardTitle, { o: 1 }, 2, 0.5);
+  const backwardNodes = T(p, '{B, E, G, H, ...}', { x: 1125, y: 340, size: 24, fill: TEXT, anchor: 'middle', o: 0 });
+  tw(backwardNodes, { o: 1 }, 2.5, 0.5);
+  
+  const when = T(p, '什么时候相遇？', { x: 800, y: 440, size: 36, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(when, { o: 1 }, 4, 0.6);
+  
+  const condition = T(p, '当前向访问到的节点 ∈ 后向集合', { x: 800, y: 510, size: 32, fill: TEXT, anchor: 'middle', o: 0 });
+  tw(condition, { o: 1 }, 6, 0.6);
+  
+  const or = T(p, '或', { x: 800, y: 570, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(or, { o: 1 }, 7, 0.3);
+  
+  const condition2 = T(p, '后向访问到的节点 ∈ 前向集合', { x: 800, y: 620, size: 32, fill: TEXT, anchor: 'middle', o: 0 });
+  tw(condition2, { o: 1 }, 8, 0.6);
+  
+  const meetNode = T(p, '这个节点就是相遇点', { x: 800, y: 700, size: 36, fill: MEETING, anchor: 'middle', weight: 700, o: 0 });
+  tw(meetNode, { o: 1 }, 10, 0.7);
+}],
+
+['path-reconstruction', '路径重建', () => {
+  const p = panel(0);
+  
+  const title = T(p, '路径重建', { x: 800, y: 100, size: 56, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const twoParts = T(p, '路径分为两部分', { x: 800, y: 200, size: 36, fill: TEXT, anchor: 'middle', o: 0 });
+  tw(twoParts, { o: 1 }, 1, 0.6);
+  
+  // Forward path
+  const forwardPath = T(p, '前半段：起点 → 相遇点', { x: 400, y: 280, size: 32, fill: FORWARD, o: 0 });
+  tw(forwardPath, { o: 1 }, 2.5, 0.5);
+  
+  const forwardDemo = T(p, 'A → C → F → M', { x: 500, y: 340, size: 28, fill: TEXT, o: 0 });
+  tw(forwardDemo, { o: 1 }, 3.5, 0.5);
+  
+  // Backward path
+  const backwardPath = T(p, '后半段：相遇点 → 终点', { x: 400, y: 420, size: 32, fill: BACKWARD, o: 0 });
+  tw(backwardPath, { o: 1 }, 5, 0.5);
+  
+  const backwardDemo = T(p, 'M → H → E → B', { x: 500, y: 480, size: 28, fill: TEXT, o: 0 });
+  tw(backwardDemo, { o: 1 }, 6, 0.5);
+  
+  // Parent arrays
+  const parentLabel = T(p, '使用parent数组记录路径', { x: 800, y: 560, size: 32, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(parentLabel, { o: 1 }, 8, 0.6);
+  
+  const forward_parent = T(p, 'forward_parent: 前向搜索的父节点', { x: 400, y: 630, size: 26, fill: TEXT, o: 0 });
+  tw(forward_parent, { o: 1 }, 9, 0.5);
+  
+  const backward_parent = T(p, 'backward_parent: 后向搜索的父节点', { x: 400, y: 690, size: 26, fill: TEXT, o: 0 });
+  tw(backward_parent, { o: 1 }, 10, 0.5);
+  
+  // Final path
+  const combine = T(p, '连接两段路径', { x: 800, y: 760, size: 36, fill: MEETING, anchor: 'middle', weight: 700, o: 0 });
+  tw(combine, { o: 1 }, 12, 0.6);
+  
+  const finalPath = T(p, 'A → C → F → M → H → E → B', { x: 800, y: 820, size: 32, fill: PATH, anchor: 'middle', o: 0 });
+  tw(finalPath, { o: 1 }, 13, 0.7);
+}],
+
+['optimization-smaller', '优化技巧', () => {
+  const p = panel(0);
+  
+  const title = T(p, '优化技巧', { x: 800, y: 100, size: 56, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const tip = T(p, '总是扩展较小的一边', { x: 800, y: 200, size: 40, fill: PATH, anchor: 'middle', weight: 700, o: 0 });
+  tw(tip, { o: 1 }, 1, 0.7);
+  
+  const why = T(p, '为什么？', { x: 800, y: 280, size: 36, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(why, { o: 1 }, 3, 0.5);
+  
+  const reason = T(p, '保持两个搜索的平衡', { x: 800, y: 350, size: 32, fill: TEXT, anchor: 'middle', o: 0 });
+  tw(reason, { o: 1 }, 4, 0.6);
+  
+  // Visualization
+  const unbalanced = T(p, '不平衡：失去优势', { x: 400, y: 450, size: 28, fill: BACKWARD, o: 0 });
+  tw(unbalanced, { o: 1 }, 6, 0.5);
+  
+  const bigCircle = mk('circle', { cx: 500, cy: 550, r: 80, fill: 'none', stroke: FORWARD, 'stroke-width': 2, o: 0 }, p);
+  tw(bigCircle, { o: 0.6 }, 7, 0.4);
+  const smallCircle = mk('circle', { cx: 650, cy: 550, r: 20, fill: 'none', stroke: BACKWARD, 'stroke-width': 2, o: 0 }, p);
+  tw(smallCircle, { o: 0.6 }, 7, 0.4);
+  
+  const balanced = T(p, '平衡：在中间相遇', { x: 900, y: 450, size: 28, fill: MEETING, o: 0 });
+  tw(balanced, { o: 1 }, 9, 0.5);
+  
+  const circle1 = mk('circle', { cx: 1050, cy: 550, r: 50, fill: 'none', stroke: FORWARD, 'stroke-width': 2, o: 0 }, p);
+  tw(circle1, { o: 0.6 }, 10, 0.4);
+  const circle2 = mk('circle', { cx: 1150, cy: 550, r: 50, fill: 'none', stroke: BACKWARD, 'stroke-width': 2, o: 0 }, p);
+  tw(circle2, { o: 0.6 }, 10, 0.4);
+  const meetDot = mk('circle', { cx: 1100, cy: 550, r: 8, fill: MEETING, o: 0 }, p);
+  tw(meetDot, { o: 1 }, 10.5, 0.4);
+  
+  const how = T(p, '实现：每次扩展前比较队列大小', { x: 800, y: 660, size: 30, fill: TEXT, anchor: 'middle', o: 0 });
+  tw(how, { o: 1 }, 12, 0.6);
+  
+  const simple = T(p, '简单但效果显著', { x: 800, y: 730, size: 32, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(simple, { o: 1 }, 14, 0.5);
+}],
+
+['applications', '应用场景', () => {
+  const p = panel(0);
+  
+  const title = T(p, '应用场景', { x: 800, y: 100, size: 56, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const app1 = T(p, '1. 地图导航', { x: 300, y: 200, size: 32, fill: TEXT, o: 0 });
+  tw(app1, { o: 1 }, 1, 0.5);
+  const app1Desc = T(p, '   在大规模路网中查找最短路径', { x: 300, y: 250, size: 26, fill: COL.dim, o: 0 });
+  tw(app1Desc, { o: 1 }, 1.5, 0.5);
+  
+  const app2 = T(p, '2. 社交网络', { x: 300, y: 320, size: 32, fill: TEXT, o: 0 });
+  tw(app2, { o: 1 }, 3, 0.5);
+  const app2Desc = T(p, '   计算两个用户的最短关系链', { x: 300, y: 370, size: 26, fill: COL.dim, o: 0 });
+  tw(app2Desc, { o: 1 }, 3.5, 0.5);
+  
+  const app3 = T(p, '3. 游戏AI寻路', { x: 300, y: 440, size: 32, fill: TEXT, o: 0 });
+  tw(app3, { o: 1 }, 5, 0.5);
+  const app3Desc = T(p, '   角色从当前位置到目标位置', { x: 300, y: 490, size: 26, fill: COL.dim, o: 0 });
+  tw(app3Desc, { o: 1 }, 5.5, 0.5);
+  
+  const app4 = T(p, '4. 益智游戏求解', { x: 300, y: 560, size: 32, fill: TEXT, o: 0 });
+  tw(app4, { o: 1 }, 7, 0.5);
+  const app4Desc = T(p, '   数字华容道、魔方等', { x: 300, y: 610, size: 26, fill: COL.dim, o: 0 });
+  tw(app4Desc, { o: 1 }, 7.5, 0.5);
+  
+  const app5 = T(p, '5. 编译器优化', { x: 300, y: 680, size: 32, fill: TEXT, o: 0 });
+  tw(app5, { o: 1 }, 9, 0.5);
+  const app5Desc = T(p, '   前向和后向数据流分析', { x: 300, y: 730, size: 26, fill: COL.dim, o: 0 });
+  tw(app5Desc, { o: 1 }, 9.5, 0.5);
+  
+  const icon = mk('circle', { cx: 1100, cy: 400, r: 120, fill: 'none', stroke: MEETING, 'stroke-width': 4, o: 0 }, p);
+  tw(icon, { o: 0.5 }, 11, 0.5);
+  const iconInner = mk('circle', { cx: 1100, cy: 400, r: 80, fill: 'none', stroke: FORWARD, 'stroke-width': 3, o: 0 }, p);
+  tw(iconInner, { o: 0.5 }, 11.3, 0.5);
+  const iconInner2 = mk('circle', { cx: 1100, cy: 400, r: 40, fill: 'none', stroke: BACKWARD, 'stroke-width': 3, o: 0 }, p);
+  tw(iconInner2, { o: 0.5 }, 11.6, 0.5);
+}],
+
+['comparison', '对比分析', () => {
+  const p = panel(0);
+  
+  const title = T(p, '双向 vs 单向 BFS', { x: 800, y: 100, size: 56, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const timeAdv = T(p, '时间：快几百到几千倍', { x: 400, y: 200, size: 32, fill: MEETING, o: 0 });
+  tw(timeAdv, { o: 1 }, 1, 0.6);
+  
+  const spaceAdv = T(p, '空间：需要两倍存储', { x: 400, y: 280, size: 32, fill: TEXT, o: 0 });
+  tw(spaceAdv, { o: 1 }, 3, 0.6);
+  
+  const codeAdv = T(p, '代码：稍微复杂一些', { x: 400, y: 360, size: 32, fill: TEXT, o: 0 });
+  tw(codeAdv, { o: 1 }, 5, 0.6);
+  
+  const whenUse = T(p, '何时使用双向BFS？', { x: 800, y: 460, size: 36, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(whenUse, { o: 1 }, 7, 0.6);
+  
+  const use1 = T(p, '✓ 图很大，搜索深度很深', { x: 400, y: 540, size: 28, fill: TEXT, o: 0 });
+  tw(use1, { o: 1 }, 8, 0.5);
+  
+  const use2 = T(p, '✓ 起点和终点都已知', { x: 400, y: 600, size: 28, fill: TEXT, o: 0 });
+  tw(use2, { o: 1 }, 9, 0.5);
+  
+  const use3 = T(p, '✓ 搜索空间对称', { x: 400, y: 660, size: 28, fill: TEXT, o: 0 });
+  tw(use3, { o: 1 }, 10, 0.5);
+  
+  const tradeoff = T(p, '用空间换时间的经典优化', { x: 800, y: 750, size: 36, fill: PATH, anchor: 'middle', weight: 600, o: 0 });
+  tw(tradeoff, { o: 1 }, 12, 0.7);
+}],
+
+['summary', '总结', () => {
+  const p = panel(0);
+  
+  const title = T(p, '总结', { x: 800, y: 100, size: 56, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const core = T(p, '核心思想：从两端同时搜索，在中间相遇', { x: 800, y: 200, size: 32, fill: TEXT, anchor: 'middle', o: 0 });
+  tw(core, { o: 1 }, 1, 0.6);
+  
+  const complexity = T(p, '复杂度：O(b^d) → O(2×b^(d/2))', { x: 800, y: 280, size: 36, fill: MEETING, anchor: 'middle', weight: 600, o: 0 });
+  tw(complexity, { o: 1 }, 3, 0.7);
+  
+  const key = T(p, '关键技术', { x: 400, y: 370, size: 32, fill: COL.chalk, o: 0 });
+  tw(key, { o: 1 }, 5, 0.5);
+  
+  const tech1 = T(p, '• 两个队列 + 两个已访问集合', { x: 450, y: 430, size: 28, fill: TEXT, o: 0 });
+  tw(tech1, { o: 1 }, 6, 0.5);
+  
+  const tech2 = T(p, '• 相遇检测：检查对方集合', { x: 450, y: 490, size: 28, fill: TEXT, o: 0 });
+  tw(tech2, { o: 1 }, 7, 0.5);
+  
+  const tech3 = T(p, '• 路径重建：连接两段路径', { x: 450, y: 550, size: 28, fill: TEXT, o: 0 });
+  tw(tech3, { o: 1 }, 8, 0.5);
+  
+  const tech4 = T(p, '• 优化：扩展较小的一边', { x: 450, y: 610, size: 28, fill: TEXT, o: 0 });
+  tw(tech4, { o: 1 }, 9, 0.5);
+  
+  const powerful = T(p, '简单但极其强大的优化技术', { x: 800, y: 700, size: 38, fill: PATH, anchor: 'middle', weight: 700, o: 0 });
+  tw(powerful, { o: 1 }, 11, 0.8);
+  
+  const thanks = T(p, '谢谢观看！', { x: 800, y: 780, size: 36, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(thanks, { o: 1 }, 13, 0.6);
+}]
+
+];
+
+/* ---------- setup ---------- */
+function boot() {
+  defs();
+  beats(BEATS);
+}
+
+function defs() {
+  const svg = document.querySelector('svg');
+  const defs = mk('defs', {}, svg);
+  
+  // Arrow marker
+  const marker = mk('marker', {
+    id: 'arrow',
+    markerWidth: 10,
+    markerHeight: 10,
+    refX: 9,
+    refY: 3,
+    orient: 'auto',
+    markerUnits: 'strokeWidth'
+  }, defs);
+  mk('path', { d: 'M0,0 L0,6 L9,3 z', fill: '#999' }, marker);
+}
+
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>测试加载</title>
+</head>
+<body>
+<h1>测试第36章</h1>
+<iframe src="index.html" width="1600" height="900" style="border:1px solid #ccc"></iframe>
+<script>
+setTimeout(() => {
+  console.log('页面加载完成');
+  const iframe = document.querySelector('iframe');
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  console.log('BEATS数量:', doc.defaultView.BEATS ? doc.defaultView.BEATS.length : '未找到');
+  console.log('TIMINGS:', doc.defaultView.TIMINGS ? Object.keys(doc.defaultView.TIMINGS).length : '未找到');
+}, 2000);
+</script>
+</body>
+</html>

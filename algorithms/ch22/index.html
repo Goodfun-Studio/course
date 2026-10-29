@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第二十二章 霍夫曼编码（Huffman Coding）</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#huffman-tree-demo" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 22, title: '霍夫曼编码（Huffman Coding）', language: 'zh', minutes: 12 };
+
+/* ---------- 颜色方案 ---------- */
+const NODE_LEAF = '#2ecc71';      // 绿色（叶子节点）
+const NODE_INTERNAL = '#3498db';  // 蓝色（内部节点）
+const NODE_SELECTED = '#e74c3c';  // 红色（被选中的节点）
+const NODE_MERGED = '#9b59b6';    // 紫色（合并后的节点）
+const EDGE_COLOR = '#34495e';     // 深灰色（边）
+const CODE_0 = '#f39c12';         // 橙色（编码0）
+const CODE_1 = '#16a085';         // 青色（编码1）
+const TEXT_COLOR = '#2c3e50';     // 深色文字
+const BG_LIGHT = '#ecf0f1';       // 浅灰背景
+
+/* ---------- 辅助函数 ---------- */
+function drawNode(parent, x, y, label, freq, color = NODE_LEAF) {
+  const g = G(parent, { x, y, o: 0 });
+  const circle = mk('circle', { cx: 0, cy: 0, r: 30, fill: color, stroke: TEXT_COLOR, 'stroke-width': 3 }, g);
+  const text1 = T(g, label, { x: 0, y: -5, size: 24, weight: 700, fill: '#fff', anchor: 'middle' });
+  text1.setAttribute('dominant-baseline', 'central');
+  const text2 = T(g, freq.toString(), { x: 0, y: 12, size: 18, weight: 600, fill: '#fff', anchor: 'middle' });
+  text2.setAttribute('dominant-baseline', 'central');
+  return { g, circle, text1, text2 };
+}
+
+function drawEdge(parent, x1, y1, x2, y2, label = '', color = EDGE_COLOR) {
+  const g = G(parent, { o: 0 });
+  const line = mk('line', { x1, y1, x2, y2, stroke: color, 'stroke-width': 3 }, g);
+  let labelText = null;
+  if (label) {
+    const midX = (x1 + x2) / 2;
+    const midY = (y1 + y2) / 2;
+    labelText = T(g, label, { x: midX - 10, y: midY - 5, size: 20, weight: 700, fill: color, anchor: 'middle' });
+  }
+  return { g, line, labelText };
+}
+
+function drawCodeBox(parent, x, y, char, code, color) {
+  const g = G(parent, { x, y, o: 0 });
+  const rect = mk('rect', { x: 0, y: 0, width: 100, height: 50, fill: color, opacity: 0.2, rx: 5, stroke: color, 'stroke-width': 2 }, g);
+  const charText = T(g, char, { x: 20, y: 25, size: 24, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  charText.setAttribute('dominant-baseline', 'central');
+  const codeText = T(g, code, { x: 65, y: 25, size: 20, weight: 600, fill: color, anchor: 'middle', family: 'monospace' });
+  codeText.setAttribute('dominant-baseline', 'central');
+  return { g, rect, charText, codeText };
+}
+
+function drawBinaryBit(parent, x, y, bit, color) {
+  const g = G(parent, { x, y, o: 0 });
+  const rect = mk('rect', { x: 0, y: 0, width: 30, height: 40, fill: color, opacity: 0.3, rx: 3, stroke: color, 'stroke-width': 2 }, g);
+  const text = T(g, bit, { x: 15, y: 20, size: 24, weight: 700, fill: color, anchor: 'middle', family: 'monospace' });
+  text.setAttribute('dominant-baseline', 'central');
+  return { g, rect, text };
+}
+
+/* ---------- Beats ---------- */
+let BEATS = [
+
+['intro', '问题引入', () => {
+  const p = panel(0);
+
+  T(p, '霍夫曼编码（Huffman Coding）', { x: 400, y: 100, size: 48, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const scenarios = [
+    { icon: '📦', text: 'ZIP 文件压缩', y: 200 },
+    { icon: '🖼️', text: 'JPEG 图像压缩', y: 270 },
+    { icon: '🎵', text: 'MP3 音频压缩', y: 340 },
+    { icon: '📡', text: '摩尔斯电码', y: 410 },
+    { icon: '🎥', text: 'H.264 视频压缩', y: 480 }
+  ];
+  
+  scenarios.forEach(({ icon, text, y }, i) => {
+    const g = G(p, { x: 150, y, o: 0 });
+    T(g, icon, { x: 0, y: 0, size: 40, anchor: 'middle' });
+    T(g, text, { x: 80, y: 0, size: 28, fill: TEXT_COLOR, anchor: 'start' });
+    tw(g, { o: 1 }, 0.5 + i * 0.3);
+  });
+  
+  const question = T(p, '核心：高频字符短编码，低频字符长编码', { 
+    x: 400, y: 560, size: 30, weight: 600, fill: NODE_SELECTED, anchor: 'middle', o: 0 
+  });
+  tw(question, { o: 1 }, 2.5);
+}, { audio: 'intro' }],
+
+['fixed-length', '固定长度编码', () => {
+  const p = panel(0);
+
+  T(p, '固定长度编码的问题', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  // 字符表
+  const chars = ['A', 'B', 'C', 'D', 'E', 'F'];
+  const codes = ['000', '001', '010', '011', '100', '101'];
+  const freqs = [45, 13, 12, 16, 9, 5];
+  
+  T(p, '6个字符，固定3位编码：', { x: 100, y: 150, size: 28, weight: 600, fill: TEXT_COLOR, o: 0 });
+  
+  chars.forEach((char, i) => {
+    const y = 200 + i * 60;
+    const g = G(p, { x: 100, y, o: 0 });
+    
+    T(g, char, { x: 0, y: 0, size: 32, weight: 700, fill: NODE_LEAF, anchor: 'start' });
+    T(g, '→', { x: 50, y: 0, size: 28, fill: TEXT_COLOR, anchor: 'middle' });
+    T(g, codes[i], { x: 120, y: 0, size: 28, weight: 600, fill: CODE_1, anchor: 'start', family: 'monospace' });
+    T(g, `频率: ${freqs[i]}`, { x: 250, y: 0, size: 24, fill: TEXT_COLOR, anchor: 'start' });
+    
+    tw(g, { o: 1 }, 0.5 + i * 0.2);
+  });
+  
+  const problem = T(p, '问题：A 出现45次，F 出现5次，编码长度却一样！', { 
+    x: 400, y: 540, size: 28, weight: 600, fill: NODE_SELECTED, anchor: 'middle', o: 0 
+  });
+  tw(problem, { o: 1 }, 2.5);
+}, { audio: 'fixed-length' }],
+
+['variable-length', '变长编码', () => {
+  const p = panel(0);
+
+  T(p, '变长编码：频率决定长度', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const chars = ['A', 'B', 'C'];
+  const codes = ['0', '10', '110'];
+  const freqs = [45, 13, 12];
+  
+  T(p, '高频字符用短编码：', { x: 100, y: 160, size: 32, weight: 600, fill: NODE_LEAF, o: 0 });
+  
+  chars.forEach((char, i) => {
+    const y = 230 + i * 70;
+    const g = G(p, { x: 150, y, o: 0 });
+    
+    const box = mk('rect', { x: 0, y: -30, width: 500, height: 60, fill: NODE_LEAF, opacity: 0.1, rx: 8 }, g);
+    tw(box, { opacity: 0.2 }, 0.8 + i * 0.3);
+    
+    T(g, char, { x: 20, y: 0, size: 36, weight: 700, fill: NODE_LEAF, anchor: 'start' });
+    T(g, '→', { x: 90, y: 0, size: 32, fill: TEXT_COLOR, anchor: 'middle' });
+    T(g, codes[i], { x: 180, y: 0, size: 32, weight: 700, fill: CODE_1, anchor: 'start', family: 'monospace' });
+    T(g, `(频率: ${freqs[i]})`, { x: 320, y: 0, size: 26, fill: TEXT_COLOR, anchor: 'start' });
+    
+    tw(g, { o: 1 }, 0.5 + i * 0.3);
+  });
+  
+  const problem = T(p, '❌ 问题：01 可能是 "A,B" 或其他组合 → 歧义！', { 
+    x: 400, y: 480, size: 30, weight: 600, fill: NODE_SELECTED, anchor: 'middle', o: 0 
+  });
+  tw(problem, { o: 1 }, 2.0);
+  
+  const solution = T(p, '✅ 解决：前缀编码（Prefix Code）', { 
+    x: 400, y: 550, size: 32, weight: 700, fill: NODE_LEAF, anchor: 'middle', o: 0 
+  });
+  tw(solution, { o: 1 }, 2.8);
+}, { audio: 'variable-length' }],
+
+['prefix-code', '前缀编码', () => {
+  const p = panel(0);
+
+  T(p, '前缀编码（Prefix Code）', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const definition = T(p, '定义：任何编码都不是另一个编码的前缀', { 
+    x: 400, y: 150, size: 30, weight: 600, fill: NODE_INTERNAL, anchor: 'middle', o: 0 
+  });
+  tw(definition, { o: 1 }, 0.5);
+  
+  // 示例
+  const examples = [
+    { label: '✅ 合法前缀编码', codes: ['0', '10', '110', '111'], valid: true, y: 230 },
+    { label: '❌ 非法（0 是 01 的前缀）', codes: ['0', '01', '10', '11'], valid: false, y: 350 }
+  ];
+  
+  examples.forEach(({ label, codes, valid, y }, i) => {
+    const color = valid ? NODE_LEAF : NODE_SELECTED;
+    
+    T(p, label, { x: 120, y: y - 20, size: 28, weight: 600, fill: color, o: 0 });
+    tw(T(p, label, { x: 120, y: y - 20, size: 28, weight: 600, fill: color, o: 0 }), { o: 1 }, 1.0 + i * 0.8);
+    
+    codes.forEach((code, j) => {
+      const box = mk('rect', { 
+        x: 100 + j * 140, y: y + 10, width: 120, height: 50, 
+        fill: color, opacity: 0.2, rx: 5, stroke: color, 'stroke-width': 2, o: 0 
+      }, p);
+      tw(box, { o: 1 }, 1.2 + i * 0.8 + j * 0.15);
+      
+      const text = T(p, code, { 
+        x: 160 + j * 140, y: y + 35, size: 28, weight: 700, fill: color, 
+        anchor: 'middle', family: 'monospace', o: 0 
+      });
+      text.setAttribute('dominant-baseline', 'central');
+      tw(text, { o: 1 }, 1.3 + i * 0.8 + j * 0.15);
+    });
+  });
+  
+  const benefit = T(p, '优点：解码无歧义，不需要分隔符', { 
+    x: 400, y: 500, size: 30, weight: 600, fill: NODE_LEAF, anchor: 'middle', o: 0 
+  });
+  tw(benefit, { o: 1 }, 3.0);
+}, { audio: 'prefix-code' }],
+
+['huffman-tree-demo', '构建霍夫曼树（核心动画）', () => {
+  const p = panel(0);
+
+  T(p, '构建霍夫曼树：贪心合并', { x: 400, y: 50, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  // 初始节点
+  const initNodes = [
+    { char: 'A', freq: 45, x: 100, y: 150 },
+    { char: 'B', freq: 13, x: 220, y: 150 },
+    { char: 'C', freq: 12, x: 340, y: 150 },
+    { char: 'D', freq: 16, x: 460, y: 150 },
+    { char: 'E', freq: 9, x: 580, y: 150 },
+    { char: 'F', freq: 5, x: 700, y: 150 }
+  ];
+  
+  const nodes = {};
+  initNodes.forEach((n, i) => {
+    nodes[n.char] = drawNode(p, n.x, n.y, n.char, n.freq, NODE_LEAF);
+    tw(nodes[n.char].g, { o: 1 }, 0.5 + i * 0.1);
+  });
+  
+  const queueLabel = T(p, '优先队列：', { x: 50, y: 230, size: 24, weight: 600, fill: TEXT_COLOR, o: 0 });
+  tw(queueLabel, { o: 1 }, 1.2);
+  
+  let time = 2.0;
+  
+  // Step 1: 合并 F(5) 和 E(9)
+  T(p, 'Step 1: 选 F(5) + E(9) = 14', { x: 400, y: 270, size: 26, weight: 600, fill: NODE_SELECTED, anchor: 'middle', o: 0 });
+  tw(T(p, 'Step 1: 选 F(5) + E(9) = 14', { x: 400, y: 270, size: 26, weight: 600, fill: NODE_SELECTED, anchor: 'middle', o: 0 }), { o: 1 }, time);
+  tw(nodes['F'].circle, { fill: NODE_SELECTED }, time);
+  tw(nodes['E'].circle, { fill: NODE_SELECTED }, time + 0.3);
+  
+  const node_FE = drawNode(p, 640, 320, 'FE', 14, NODE_INTERNAL);
+  tw(node_FE.g, { o: 1 }, time + 0.8);
+  const edge_F = drawEdge(p, 700, 180, 665, 290, '0', CODE_0);
+  tw(edge_F.g, { o: 1 }, time + 1.0);
+  const edge_E = drawEdge(p, 580, 180, 615, 290, '1', CODE_1);
+  tw(edge_E.g, { o: 1 }, time + 1.2);
+  
+  time += 2.0;
+  
+  // Step 2: 合并 C(12) 和 B(13)
+  T(p, 'Step 2: 选 C(12) + B(13) = 25', { x: 400, y: 310, size: 26, weight: 600, fill: NODE_SELECTED, anchor: 'middle', o: 0 });
+  tw(T(p, 'Step 2: 选 C(12) + B(13) = 25', { x: 400, y: 310, size: 26, weight: 600, fill: NODE_SELECTED, anchor: 'middle', o: 0 }), { o: 1 }, time);
+  tw(nodes['C'].circle, { fill: NODE_SELECTED }, time);
+  tw(nodes['B'].circle, { fill: NODE_SELECTED }, time + 0.3);
+  
+  const node_CB = drawNode(p, 280, 320, 'CB', 25, NODE_INTERNAL);
+  tw(node_CB.g, { o: 1 }, time + 0.8);
+  const edge_C = drawEdge(p, 340, 180, 305, 290, '0', CODE_0);
+  tw(edge_C.g, { o: 1 }, time + 1.0);
+  const edge_B = drawEdge(p, 220, 180, 255, 290, '1', CODE_1);
+  tw(edge_B.g, { o: 1 }, time + 1.2);
+  
+  time += 2.0;
+  
+  // Step 3: 合并 FE(14) 和 D(16)
+  T(p, 'Step 3: 选 FE(14) + D(16) = 30', { x: 400, y: 350, size: 26, weight: 600, fill: NODE_SELECTED, anchor: 'middle', o: 0 });
+  tw(T(p, 'Step 3: 选 FE(14) + D(16) = 30', { x: 400, y: 350, size: 26, weight: 600, fill: NODE_SELECTED, anchor: 'middle', o: 0 }), { o: 1 }, time);
+  tw(node_FE.circle, { fill: NODE_SELECTED }, time);
+  tw(nodes['D'].circle, { fill: NODE_SELECTED }, time + 0.3);
+  
+  const node_FED = drawNode(p, 550, 450, '30', 30, NODE_INTERNAL);
+  tw(node_FED.g, { o: 1 }, time + 0.8);
+  const edge_FE = drawEdge(p, 640, 350, 575, 420, '0', CODE_0);
+  tw(edge_FE.g, { o: 1 }, time + 1.0);
+  const edge_D = drawEdge(p, 460, 180, 525, 420, '1', CODE_1);
+  tw(edge_D.g, { o: 1 }, time + 1.2);
+  
+  time += 2.5;
+  
+  // Step 4: 合并 CB(25) 和 FED(30)
+  T(p, 'Step 4: 选 CB(25) + FED(30) = 55', { x: 400, y: 390, size: 26, weight: 600, fill: NODE_SELECTED, anchor: 'middle', o: 0 });
+  tw(T(p, 'Step 4: 选 CB(25) + FED(30) = 55', { x: 400, y: 390, size: 26, weight: 600, fill: NODE_SELECTED, anchor: 'middle', o: 0 }), { o: 1 }, time);
+  tw(node_CB.circle, { fill: NODE_SELECTED }, time);
+  tw(node_FED.circle, { fill: NODE_SELECTED }, time + 0.3);
+  
+  const node_CBFED = drawNode(p, 415, 530, '55', 55, NODE_INTERNAL);
+  tw(node_CBFED.g, { o: 1 }, time + 0.8);
+  const edge_CB = drawEdge(p, 280, 350, 390, 500, '0', CODE_0);
+  tw(edge_CB.g, { o: 1 }, time + 1.0);
+  const edge_FED = drawEdge(p, 550, 480, 440, 500, '1', CODE_1);
+  tw(edge_FED.g, { o: 1 }, time + 1.2);
+  
+  time += 2.5;
+  
+  // Step 5: 最终合并 A(45) 和 55
+  T(p, 'Step 5: 选 A(45) + 55 = 100 (根)', { x: 400, y: 430, size: 26, weight: 600, fill: NODE_SELECTED, anchor: 'middle', o: 0 });
+  tw(T(p, 'Step 5: 选 A(45) + 55 = 100 (根)', { x: 400, y: 430, size: 26, weight: 600, fill: NODE_SELECTED, anchor: 'middle', o: 0 }), { o: 1 }, time);
+  tw(nodes['A'].circle, { fill: NODE_SELECTED }, time);
+  tw(node_CBFED.circle, { fill: NODE_SELECTED }, time + 0.3);
+  
+  const root = drawNode(p, 250, 570, 'Root', 100, NODE_MERGED);
+  tw(root.g, { o: 1 }, time + 0.8);
+  const edge_A = drawEdge(p, 100, 180, 225, 540, '0', CODE_0);
+  tw(edge_A.g, { o: 1 }, time + 1.0);
+  const edge_55 = drawEdge(p, 415, 560, 275, 540, '1', CODE_1);
+  tw(edge_55.g, { o: 1 }, time + 1.2);
+  
+  time += 2.0;
+  
+  const done = T(p, '✅ 霍夫曼树构建完成！', { 
+    x: 400, y: 470, size: 32, weight: 700, fill: NODE_LEAF, anchor: 'middle', o: 0 
+  });
+  tw(done, { o: 1 }, time);
+}, { audio: 'huffman-tree-demo' }],
+
+['tree-to-code', '从树到编码', () => {
+  const p = panel(0);
+
+  T(p, '生成霍夫曼编码', { x: 400, y: 70, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  T(p, '规则：左子树 = 0，右子树 = 1', { x: 400, y: 140, size: 28, weight: 600, fill: NODE_INTERNAL, anchor: 'middle', o: 0 });
+  
+  // 简化的树结构展示
+  const rootX = 400, rootY = 220;
+  const root = drawNode(p, rootX, rootY, '', 100, NODE_MERGED);
+  tw(root.g, { o: 1 }, 0.5);
+  
+  // A (左)
+  const nodeA = drawNode(p, 200, 320, 'A', 45, NODE_LEAF);
+  tw(nodeA.g, { o: 1 }, 0.8);
+  const edgeA = drawEdge(p, rootX, rootY + 30, 200, 290, '0', CODE_0);
+  tw(edgeA.g, { o: 1 }, 0.9);
+  
+  // 右子树
+  const node55 = drawNode(p, 600, 320, '', 55, NODE_INTERNAL);
+  tw(node55.g, { o: 1 }, 1.1);
+  const edge55 = drawEdge(p, rootX, rootY + 30, 600, 290, '1', CODE_1);
+  tw(edge55.g, { o: 1 }, 1.2);
+  
+  // C-B
+  const nodeCB = drawNode(p, 480, 420, '', 25, NODE_INTERNAL);
+  tw(nodeCB.g, { o: 1 }, 1.4);
+  const edgeCB = drawEdge(p, 600, 350, 505, 390, '0', CODE_0);
+  tw(edgeCB.g, { o: 1 }, 1.5);
+  
+  const nodeC = drawNode(p, 420, 520, 'C', 12, NODE_LEAF);
+  tw(nodeC.g, { o: 1 }, 1.7);
+  const edgeC = drawEdge(p, 480, 450, 445, 490, '0', CODE_0);
+  tw(edgeC.g, { o: 1 }, 1.8);
+  
+  const nodeB = drawNode(p, 540, 520, 'B', 13, NODE_LEAF);
+  tw(nodeB.g, { o: 1 }, 1.9);
+  const edgeB = drawEdge(p, 480, 450, 515, 490, '1', CODE_1);
+  tw(edgeB.g, { o: 1 }, 2.0);
+  
+  // F-E-D
+  const nodeFED = drawNode(p, 720, 420, '', 30, NODE_INTERNAL);
+  tw(nodeFED.g, { o: 1 }, 2.2);
+  const edgeFED = drawEdge(p, 600, 350, 695, 390, '1', CODE_1);
+  tw(edgeFED.g, { o: 1 }, 2.3);
+  
+  const nodeD = drawNode(p, 660, 520, 'D', 16, NODE_LEAF);
+  tw(nodeD.g, { o: 1 }, 2.5);
+  const edgeD = drawEdge(p, 720, 450, 685, 490, '0', CODE_0);
+  tw(edgeD.g, { o: 1 }, 2.6);
+  
+  // 编码表
+  const codes = [
+    { char: 'A', code: '0', y: 200, color: NODE_LEAF },
+    { char: 'C', code: '100', y: 260, color: NODE_LEAF },
+    { char: 'B', code: '101', y: 320, color: NODE_LEAF },
+    { char: 'D', code: '110', y: 380, color: NODE_LEAF },
+    { char: 'E', code: '1111', y: 440, color: NODE_LEAF },
+    { char: 'F', code: '1110', y: 500, color: NODE_LEAF }
+  ];
+  
+  T(p, '编码表：', { x: 50, y: 150, size: 28, weight: 700, fill: TEXT_COLOR, o: 0 });
+  tw(T(p, '编码表：', { x: 50, y: 150, size: 28, weight: 700, fill: TEXT_COLOR, o: 0 }), { o: 1 }, 3.0);
+  
+  codes.forEach(({ char, code, y, color }, i) => {
+    const box = drawCodeBox(p, 50, y, char, code, color);
+    tw(box.g, { o: 1 }, 3.2 + i * 0.2);
+  });
+}, { audio: 'tree-to-code' }],
+
+['encode-decode-demo', '编码解码演示（核心动画）', () => {
+  const p = panel(0);
+
+  T(p, '编码与解码过程', { x: 400, y: 50, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  // 原始文本
+  const text = ['A', 'A', 'B', 'D', 'A', 'C'];
+  T(p, '原始文本：', { x: 50, y: 120, size: 28, weight: 600, fill: TEXT_COLOR, o: 0 });
+  
+  text.forEach((char, i) => {
+    const charBox = mk('rect', { 
+      x: 200 + i * 80, y: 95, width: 60, height: 50, 
+      fill: NODE_LEAF, opacity: 0.2, rx: 5, stroke: NODE_LEAF, 'stroke-width': 2, o: 0 
+    }, p);
+    tw(charBox, { o: 1 }, 0.5 + i * 0.15);
+    
+    const charText = T(p, char, { 
+      x: 230 + i * 80, y: 120, size: 32, weight: 700, fill: NODE_LEAF, anchor: 'middle', o: 0 
+    });
+    charText.setAttribute('dominant-baseline', 'central');
+    tw(charText, { o: 1 }, 0.6 + i * 0.15);
+  });
+  
+  // 编码映射
+  const codeMap = { 'A': '0', 'B': '101', 'C': '100', 'D': '110' };
+  T(p, '编码表：A→0, B→101, C→100, D→110', { x: 400, y: 190, size: 24, weight: 600, fill: NODE_INTERNAL, anchor: 'middle', o: 0 });
+  tw(T(p, '编码表：A→0, B→101, C→100, D→110', { x: 400, y: 190, size: 24, weight: 600, fill: NODE_INTERNAL, anchor: 'middle', o: 0 }), { o: 1 }, 2.0);
+  
+  // 编码过程
+  T(p, '编码过程：', { x: 50, y: 240, size: 28, weight: 600, fill: TEXT_COLOR, o: 0 });
+  tw(T(p, '编码过程：', { x: 50, y: 240, size: 28, weight: 600, fill: TEXT_COLOR, o: 0 }), { o: 1 }, 2.5);
+  
+  let binaryStr = '';
+  let xOffset = 200;
+  let time = 3.0;
+  
+  text.forEach((char, i) => {
+    const code = codeMap[char];
+    binaryStr += code;
+    
+    // 显示字符到编码的转换
+    const arrow = T(p, `${char} →`, { x: xOffset - 40, y: 265 + i * 40, size: 24, weight: 600, fill: TEXT_COLOR, o: 0 });
+    tw(arrow, { o: 1 }, time);
+    
+    code.split('').forEach((bit, j) => {
+      const bitBox = drawBinaryBit(p, xOffset + j * 35, 245 + i * 40, bit, bit === '0' ? CODE_0 : CODE_1);
+      tw(bitBox.g, { o: 1 }, time + 0.2 + j * 0.1);
+    });
+    
+    xOffset += code.length * 35 + 20;
+    time += 0.5;
+  });
+  
+  // 最终二进制串
+  T(p, '最终编码：', { x: 50, y: 500, size: 28, weight: 700, fill: NODE_SELECTED, o: 0 });
+  tw(T(p, '最终编码：', { x: 50, y: 500, size: 28, weight: 700, fill: NODE_SELECTED, o: 0 }), { o: 1 }, time);
+  
+  const finalBinary = T(p, '0 0 101 110 0 100', { 
+    x: 220, y: 500, size: 28, weight: 700, fill: CODE_1, anchor: 'start', family: 'monospace', o: 0 
+  });
+  tw(finalBinary, { o: 1 }, time + 0.3);
+  
+  time += 1.0;
+  
+  const stats = T(p, '压缩：11位 vs 固定编码18位，节省39%！', { 
+    x: 400, y: 550, size: 26, weight: 600, fill: NODE_LEAF, anchor: 'middle', o: 0 
+  });
+  tw(stats, { o: 1 }, time);
+  
+  time += 1.5;
+  
+  // 解码过程
+  const p2 = panel(800);
+  T(p2, '解码过程', { x: 400, y: 50, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  T(p2, '输入：00101110100', { x: 400, y: 120, size: 28, weight: 600, fill: CODE_1, anchor: 'middle', family: 'monospace', o: 0 });
+  
+  const binaryInput = '00101110100';
+  let decodeTime = 0.5;
+  let decodeX = 50;
+  let resultY = 200;
+  
+  T(p2, '扫描二进制，匹配编码树：', { x: 50, y: 170, size: 26, weight: 600, fill: TEXT_COLOR, o: 0 });
+  
+  const decodeSteps = [
+    { bits: '0', char: 'A', desc: '读 0 → A' },
+    { bits: '0', char: 'A', desc: '读 0 → A' },
+    { bits: '101', char: 'B', desc: '读 101 → B' },
+    { bits: '110', char: 'D', desc: '读 110 → D' },
+    { bits: '0', char: 'A', desc: '读 0 → A' },
+    { bits: '100', char: 'C', desc: '读 100 → C' }
+  ];
+  
+  decodeSteps.forEach(({ bits, char, desc }, i) => {
+    const stepG = G(p2, { x: 80, y: resultY + i * 50, o: 0 });
+    
+    T(stepG, desc, { x: 0, y: 0, size: 24, weight: 600, fill: NODE_INTERNAL, anchor: 'start' });
+    T(stepG, '→', { x: 180, y: 0, size: 24, fill: TEXT_COLOR, anchor: 'middle' });
+    
+    const charBox = mk('rect', { 
+      x: 220, y: -20, width: 50, height: 40, 
+      fill: NODE_LEAF, opacity: 0.3, rx: 5, stroke: NODE_LEAF, 'stroke-width': 2 
+    }, stepG);
+    
+    const charText = T(stepG, char, { 
+      x: 245, y: 0, size: 28, weight: 700, fill: NODE_LEAF, anchor: 'middle' 
+    });
+    charText.setAttribute('dominant-baseline', 'central');
+    
+    tw(stepG, { o: 1 }, decodeTime + i * 0.4);
+  });
+  
+  decodeTime += decodeSteps.length * 0.4 + 0.5;
+  
+  const result = T(p2, '解码结果：A A B D A C ✅', { 
+    x: 400, y: 530, size: 32, weight: 700, fill: NODE_LEAF, anchor: 'middle', o: 0 
+  });
+  tw(result, { o: 1 }, decodeTime);
+}, { audio: 'encode-decode-demo' }],
+
+['implementation', '算法实现', () => {
+  const p = panel(0);
+
+  T(p, '霍夫曼编码实现', { x: 400, y: 70, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const steps = [
+    { 
+      title: 'Step 1: 统计频率', 
+      code: 'freq = Counter(text)\n# {"A": 45, "B": 13, ...}',
+      y: 150,
+      color: NODE_LEAF
+    },
+    { 
+      title: 'Step 2: 构建最小堆', 
+      code: 'heap = [(f, Node(c)) for c, f in freq.items()]\nheapq.heapify(heap)',
+      y: 260,
+      color: NODE_INTERNAL
+    },
+    { 
+      title: 'Step 3: 贪心合并', 
+      code: 'while len(heap) > 1:\n  f1, n1 = heappop(heap)\n  f2, n2 = heappop(heap)\n  merged = Node(n1, n2, f1+f2)\n  heappush(heap, (f1+f2, merged))',
+      y: 370,
+      color: NODE_MERGED
+    },
+    { 
+      title: 'Step 4: 生成编码表', 
+      code: 'def dfs(node, code):\n  if node.is_leaf:\n    table[node.char] = code\n  else:\n    dfs(node.left, code+"0")\n    dfs(node.right, code+"1")',
+      y: 510,
+      color: CODE_1
+    }
+  ];
+  
+  steps.forEach(({ title, code, y, color }, i) => {
+    T(p, title, { x: 80, y: y - 10, size: 26, weight: 700, fill: color, o: 0 });
+    tw(T(p, title, { x: 80, y: y - 10, size: 26, weight: 700, fill: color, o: 0 }), { o: 1 }, 0.5 + i * 0.8);
+    
+    const lines = code.split('\n');
+    lines.forEach((line, j) => {
+      const lineText = T(p, line, { 
+        x: 100, y: y + 20 + j * 22, size: 16, fill: TEXT_COLOR, family: 'monospace', o: 0 
+      });
+      tw(lineText, { o: 1 }, 0.7 + i * 0.8 + j * 0.1);
+    });
+  });
+}, { audio: 'implementation' }],
+
+['complexity', '复杂度分析', () => {
+  const p = panel(0);
+
+  T(p, '时间与空间复杂度', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const complexities = [
+    { phase: '统计频率', time: 'O(m)', space: 'O(n)', desc: 'm = 文本长度, n = 字符数', y: 180 },
+    { phase: '构建最小堆', time: 'O(n)', space: 'O(n)', desc: 'n 个节点初始化', y: 260 },
+    { phase: '贪心合并', time: 'O(n log n)', space: 'O(n)', desc: 'n-1 次堆操作', y: 340 },
+    { phase: '生成编码表', time: 'O(n)', space: 'O(n)', desc: 'DFS 遍历树', y: 420 },
+    { phase: '编码', time: 'O(m)', space: 'O(m)', desc: '查表 + 拼接', y: 500 },
+    { phase: '解码', time: 'O(m)', space: 'O(1)', desc: '遍历二进制串', y: 580 }
+  ];
+  
+  T(p, '阶段', { x: 100, y: 140, size: 24, weight: 700, fill: TEXT_COLOR, o: 0 });
+  T(p, '时间', { x: 300, y: 140, size: 24, weight: 700, fill: NODE_SELECTED, o: 0 });
+  T(p, '空间', { x: 480, y: 140, size: 24, weight: 700, fill: NODE_INTERNAL, o: 0 });
+  T(p, '说明', { x: 630, y: 140, size: 24, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  complexities.forEach(({ phase, time, space, desc, y }, i) => {
+    const row = G(p, { x: 0, y: 0, o: 0 });
+    
+    T(row, phase, { x: 100, y, size: 22, weight: 600, fill: TEXT_COLOR, anchor: 'start' });
+    T(row, time, { x: 300, y, size: 22, weight: 700, fill: NODE_SELECTED, anchor: 'start', family: 'monospace' });
+    T(row, space, { x: 480, y, size: 22, weight: 700, fill: NODE_INTERNAL, anchor: 'start', family: 'monospace' });
+    T(row, desc, { x: 630, y, size: 18, fill: TEXT_COLOR, anchor: 'start' });
+    
+    tw(row, { o: 1 }, 0.5 + i * 0.3);
+  });
+}, { audio: 'complexity' }],
+
+['optimality', '最优性证明', () => {
+  const p = panel(0);
+
+  T(p, '为什么霍夫曼编码最优？', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const proofs = [
+    { 
+      step: '定义', 
+      text: '平均编码长度 = Σ(频率 × 编码长度)',
+      y: 160,
+      color: NODE_INTERNAL
+    },
+    { 
+      step: '性质1', 
+      text: '频率越高 → 树中深度越浅 → 编码越短',
+      y: 230,
+      color: NODE_LEAF
+    },
+    { 
+      step: '性质2', 
+      text: '最优前缀编码中，频率最低的两个字符必为兄弟',
+      y: 300,
+      color: NODE_MERGED
+    },
+    { 
+      step: '反证', 
+      text: '如果不是兄弟，交换可使低频字符下沉，总长度更短',
+      y: 370,
+      color: NODE_SELECTED
+    },
+    { 
+      step: '贪心', 
+      text: '霍夫曼每次合并最小两个节点，保证低频在深层',
+      y: 440,
+      color: CODE_1
+    },
+    { 
+      step: '归纳', 
+      text: '逐步归纳证明：霍夫曼编码达到最短平均长度',
+      y: 510,
+      color: NODE_LEAF
+    }
+  ];
+  
+  proofs.forEach(({ step, text, y, color }, i) => {
+    const box = mk('rect', { 
+      x: 70, y: y - 25, width: 660, height: 60, 
+      fill: color, opacity: 0.15, rx: 8, stroke: color, 'stroke-width': 2, o: 0 
+    }, p);
+    tw(box, { o: 1 }, 0.5 + i * 0.5);
+    
+    T(p, step, { x: 90, y: y - 5, size: 26, weight: 700, fill: color, o: 0 });
+    tw(T(p, step, { x: 90, y: y - 5, size: 26, weight: 700, fill: color, o: 0 }), { o: 1 }, 0.6 + i * 0.5);
+    
+    T(p, text, { x: 90, y: y + 20, size: 20, fill: TEXT_COLOR, o: 0 });
+    tw(T(p, text, { x: 90, y: y + 20, size: 20, fill: TEXT_COLOR, o: 0 }), { o: 1 }, 0.7 + i * 0.5);
+  });
+}, { audio: 'optimality' }],
+
+['applications', '应用场景', () => {
+  const p = panel(0);
+
+  T(p, '霍夫曼编码的广泛应用', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const apps = [
+    { icon: '📦', name: 'ZIP/GZIP', desc: '文件压缩的核心算法', y: 170 },
+    { icon: '🖼️', name: 'JPEG', desc: '图像压缩的最后一步', y: 250 },
+    { icon: '🎵', name: 'MP3', desc: '音频频域数据压缩', y: 330 },
+    { icon: '🎥', name: 'H.264/H.265', desc: '视频编码标准', y: 410 },
+    { icon: '🌐', name: 'HTTP/2 HPACK', desc: '头部压缩协议', y: 490 },
+    { icon: '📠', name: '传真/条形码', desc: '数据传输优化', y: 570 }
+  ];
+  
+  apps.forEach(({ icon, name, desc, y }, i) => {
+    const g = G(p, { x: 120, y, o: 0 });
+    
+    T(g, icon, { x: 0, y: 0, size: 48, anchor: 'middle' });
+    
+    T(g, name, { x: 80, y: -8, size: 32, weight: 700, fill: NODE_LEAF, anchor: 'start' });
+    T(g, desc, { x: 80, y: 20, size: 22, fill: TEXT_COLOR, anchor: 'start' });
+    
+    tw(g, { o: 1 }, 0.5 + i * 0.3);
+  });
+  
+  const summary = T(p, '霍夫曼编码是数据压缩的基石', { 
+    x: 400, y: 650, size: 30, weight: 700, fill: NODE_MERGED, anchor: 'middle', o: 0 
+  });
+  tw(summary, { o: 1 }, 3.0);
+}, { audio: 'applications' }],
+
+['limitations', '局限性与总结', () => {
+  const p = panel(0);
+
+  T(p, '局限性', { x: 400, y: 70, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const limits = [
+    { icon: '🔄', text: '需要两遍扫描，不适合流式数据', y: 150 },
+    { icon: '📊', text: '需要传输频率表，小文件开销大', y: 220 },
+    { icon: '📏', text: '字符均匀分布时压缩效果差', y: 290 },
+    { icon: '🎯', text: '逐字符编码，不如算术编码精确', y: 360 }
+  ];
+  
+  limits.forEach(({ icon, text, y }, i) => {
+    const g = G(p, { x: 100, y, o: 0 });
+    T(g, icon, { x: 0, y: 0, size: 36, anchor: 'middle' });
+    T(g, text, { x: 70, y: 0, size: 26, fill: TEXT_COLOR, anchor: 'start' });
+    tw(g, { o: 1 }, 0.5 + i * 0.4);
+  });
+  
+  T(p, '核心总结', { x: 400, y: 450, size: 40, weight: 700, fill: NODE_MERGED, o: 0 });
+  tw(T(p, '核心总结', { x: 400, y: 450, size: 40, weight: 700, fill: NODE_MERGED, o: 0 }), { o: 1 }, 2.5);
+  
+  const summaries = [
+    '✅ 贪心构建最优前缀树',
+    '✅ 高频短码，低频长码',
+    '✅ 时间复杂度 O(n log n)',
+    '✅ 数据压缩的经典算法'
+  ];
+  
+  summaries.forEach((text, i) => {
+    const summary = T(p, text, { 
+      x: 400, y: 510 + i * 40, size: 28, weight: 600, fill: NODE_LEAF, anchor: 'middle', o: 0 
+    });
+    tw(summary, { o: 1 }, 3.0 + i * 0.3);
+  });
+}, { audio: 'limitations' }]
+
+];
+
+// 标准化 beats
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
+boot();
+if (typeof module !== 'undefined') module.exports = { CHAPTER, BEATS };
+</script>
+</body>
+</html>

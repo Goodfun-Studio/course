@@ -390,6 +390,13 @@ const BEATS = [
 
 ];
 
+// Normalize BEATS structure
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
+
+// Initialize the player
+boot();
+
 window.addEventListener('load', () => setPlayer(CHAPTER, BEATS, TIMINGS));
 </script>
 </body>

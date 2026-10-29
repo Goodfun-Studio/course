@@ -246,51 +246,51 @@ function updateMatrixCell(cells, rowKey, colKey, newValue, t0, options = {}) {
 let BEATS = [
 
 ['intro', '引入：全源最短路径', (m, dur) => {
-  const p = stage(m);
+  const p = panel(0);
   
   const title = T(p, '全源最短路径（All-Pairs Shortest Paths）', {
-    x: W/2, y: 120, size: 42, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+    x: 800, y: 120, size: 42, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
   });
   tw(title, { o: 1 }, 0.5, 0.8);
   
   const subtitle = T(p, 'Floyd-Warshall 算法', {
-    x: W/2, y: 180, size: 28, fill: PRIMARY, weight: 600, anchor: 'middle', o: 0
+    x: 800, y: 180, size: 28, fill: PRIMARY, weight: 600, anchor: 'middle', o: 0
   });
   tw(subtitle, { o: 1 }, 1.5, 0.8);
   
   // 三种算法对比
   const algoY = 280;
   const algo1 = T(p, '单源最短路径：Dijkstra（非负权边）', {
-    x: W/2, y: algoY, size: 24, fill: COL.dim, o: 0
+    x: 800, y: algoY, size: 24, fill: COL.dim, o: 0
   });
   tw(algo1, { o: 1 }, 3, 0.6);
   
   const algo2 = T(p, '单源最短路径：Bellman-Ford（负权边）', {
-    x: W/2, y: algoY + 60, size: 24, fill: COL.dim, o: 0
+    x: 800, y: algoY + 60, size: 24, fill: COL.dim, o: 0
   });
   tw(algo2, { o: 1 }, 4.5, 0.6);
   
   const arrow = T(p, '↓', {
-    x: W/2, y: algoY + 120, size: 48, fill: PRIMARY, weight: 700, o: 0
+    x: 800, y: algoY + 120, size: 48, fill: PRIMARY, weight: 700, o: 0
   });
   tw(arrow, { o: 1 }, 6, 0.6);
   
   const algo3 = T(p, '全源最短路径：Floyd-Warshall（所有点对）', {
-    x: W/2, y: algoY + 190, size: 28, fill: PRIMARY, weight: 700, o: 0
+    x: 800, y: algoY + 190, size: 28, fill: PRIMARY, weight: 700, o: 0
   });
   tw(algo3, { o: 1 }, 7.5, 0.8);
   
   const hint = T(p, '一次计算，得到任意两点间的最短距离', {
-    x: W/2, y: algoY + 250, size: 22, fill: SECONDARY, o: 0
+    x: 800, y: algoY + 250, size: 22, fill: SECONDARY, o: 0
   });
   tw(hint, { o: 1 }, 9, 0.7);
 }],
 
 ['problem', '问题定义', (m, dur) => {
-  const p = stage(m);
+  const p = panel(0);
   
   const title = T(p, '问题：全源最短路径', {
-    x: W/2, y: 100, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+    x: 800, y: 100, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
   });
   tw(title, { o: 1 }, 0.5, 0.7);
   
@@ -326,10 +326,10 @@ let BEATS = [
 }],
 
 ['applications', '应用场景', (m, dur) => {
-  const p = stage(m);
+  const p = panel(0);
   
   const title = T(p, '应用场景', {
-    x: W/2, y: 100, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+    x: 800, y: 100, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
   });
   tw(title, { o: 1 }, 0.5, 0.7);
   
@@ -356,10 +356,10 @@ let BEATS = [
 }],
 
 ['dp_idea', '动态规划思想', (m, dur) => {
-  const p = stage(m);
+  const p = panel(0);
   
   const title = T(p, '核心：动态规划', {
-    x: W/2, y: 100, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+    x: 800, y: 100, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
   });
   tw(title, { o: 1 }, 0.5, 0.7);
   
@@ -405,15 +405,15 @@ let BEATS = [
 }],
 
 ['transition', '状态转移方程', (m, dur) => {
-  const p = stage(m);
+  const p = panel(0);
   
   const title = T(p, '状态转移方程', {
-    x: W/2, y: 100, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+    x: 800, y: 100, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
   });
   tw(title, { o: 1 }, 0.5, 0.7);
   
   // 公式展示
-  const formulaBg = G(p, { x: W/2 - 350, y: 220, o: 0 });
+  const formulaBg = G(p, { x: 800 - 350, y: 220, o: 0 });
   mk('rect', {
     width: 700, height: 120,
     fill: '#2c3e50',
@@ -452,21 +452,21 @@ let BEATS = [
   tw(explain2, { o: 1 }, 8, 0.7);
   
   const optimize = T(p, '✨ 空间优化：可以用二维数组滚动更新', {
-    x: W/2, y: 550, size: 24, fill: SECONDARY, weight: 600, anchor: 'middle', o: 0
+    x: 800, y: 550, size: 24, fill: SECONDARY, weight: 600, anchor: 'middle', o: 0
   });
   tw(optimize, { o: 1 }, 12, 0.8);
   
   const why = T(p, '原因：每次只需要前一版本 k-1 的距离', {
-    x: W/2, y: 605, size: 20, fill: COL.dim, anchor: 'middle', o: 0
+    x: 800, y: 605, size: 20, fill: COL.dim, anchor: 'middle', o: 0
   });
   tw(why, { o: 1 }, 14, 0.7);
 }],
 
 ['implementation', '算法实现', (m, dur) => {
-  const p = stage(m);
+  const p = panel(0);
   
   const title = T(p, '算法实现', {
-    x: W/2, y: 80, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+    x: 800, y: 80, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
   });
   tw(title, { o: 1 }, 0.5, 0.7);
   
@@ -512,16 +512,16 @@ let BEATS = [
   });
   
   const keyPoint = T(p, '⚠️ k 在最外层！每轮必须用同一个 k 版本', {
-    x: W/2, y: 680, size: 22, fill: '#e74c3c', weight: 600, anchor: 'middle', o: 0
+    x: 800, y: 680, size: 22, fill: '#e74c3c', weight: 600, anchor: 'middle', o: 0
   });
   tw(keyPoint, { o: 1 }, 18, 0.8);
 }],
 
 ['demo_setup', 'Floyd-Warshall 演示：初始化', (m, dur) => {
-  const p = stage(m);
+  const p = panel(0);
   
   const title = T(p, 'Floyd-Warshall 演示', {
-    x: W/2, y: 80, size: 32, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+    x: 800, y: 80, size: 32, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
   });
   tw(title, { o: 1 }, 0.5, 0.7);
   
@@ -548,12 +548,12 @@ let BEATS = [
   tw(matrix, { o: 1 }, 3, 0.8);
   
   const hint1 = T(p, '初始化：对角线 = 0，直接边 = 权值，无边 = ∞', {
-    x: W/2, y: 620, size: 20, fill: COL.dim, anchor: 'middle', o: 0
+    x: 800, y: 620, size: 20, fill: COL.dim, anchor: 'middle', o: 0
   });
   tw(hint1, { o: 1 }, 5, 0.7);
   
   const hint2 = T(p, '接下来逐个中转点 k 迭代，更新矩阵...', {
-    x: W/2, y: 670, size: 22, fill: PRIMARY, weight: 600, anchor: 'middle', o: 0
+    x: 800, y: 670, size: 22, fill: PRIMARY, weight: 600, anchor: 'middle', o: 0
   });
   tw(hint2, { o: 1 }, 8, 0.8);
   
@@ -564,10 +564,10 @@ let BEATS = [
 }],
 
 ['demo_k0', 'Floyd-Warshall 演示：k = 0 (A)', (m, dur) => {
-  const p = stage(m);
+  const p = panel(0);
   
   const title = T(p, '迭代：k = 0（中转点 A）', {
-    x: W/2, y: 80, size: 28, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+    x: 800, y: 80, size: 28, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
   });
   tw(title, { o: 1 }, 0.5, 0.7);
   
@@ -642,16 +642,16 @@ let BEATS = [
   tw(nodeA.circle, { fill: VISITED }, t, 0.5);
   
   const hint = T(p, '第一轮结束：部分距离通过 A 更新', {
-    x: W/2, y: 650, size: 20, fill: PRIMARY, anchor: 'middle', o: 0
+    x: 800, y: 650, size: 20, fill: PRIMARY, anchor: 'middle', o: 0
   });
   tw(hint, { o: 1 }, t, 0.7);
 }],
 
 ['demo_k1', 'Floyd-Warshall 演示：k = 1 (B)', (m, dur) => {
-  const p = stage(m);
+  const p = panel(0);
   
   const title = T(p, '迭代：k = 1（中转点 B）', {
-    x: W/2, y: 80, size: 28, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+    x: 800, y: 80, size: 28, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
   });
   tw(title, { o: 1 }, 0.5, 0.7);
   
@@ -714,16 +714,16 @@ let BEATS = [
   tw(nodeB.circle, { fill: VISITED }, t, 0.5);
   
   const hint = T(p, 'A→C 和 C→D 通过 B 找到路径', {
-    x: W/2, y: 650, size: 20, fill: PRIMARY, anchor: 'middle', o: 0
+    x: 800, y: 650, size: 20, fill: PRIMARY, anchor: 'middle', o: 0
   });
   tw(hint, { o: 1 }, t, 0.7);
 }],
 
 ['demo_k2', 'Floyd-Warshall 演示：k = 2 (C)', (m, dur) => {
-  const p = stage(m);
+  const p = panel(0);
   
   const title = T(p, '迭代：k = 2（中转点 C）', {
-    x: W/2, y: 80, size: 28, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+    x: 800, y: 80, size: 28, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
   });
   tw(title, { o: 1 }, 0.5, 0.7);
   
@@ -788,16 +788,16 @@ let BEATS = [
   tw(nodeC.circle, { fill: VISITED }, t, 0.5);
   
   const hint = T(p, '负权边 D→C 让 D→E 的距离优化为 1！', {
-    x: W/2, y: 650, size: 20, fill: EDGE_NEGATIVE, weight: 600, anchor: 'middle', o: 0
+    x: 800, y: 650, size: 20, fill: EDGE_NEGATIVE, weight: 600, anchor: 'middle', o: 0
   });
   tw(hint, { o: 1 }, t, 0.7);
 }],
 
 ['demo_final', 'Floyd-Warshall 演示：收敛', (m, dur) => {
-  const p = stage(m);
+  const p = panel(0);
   
   const title = T(p, '迭代：k = 3, 4（D, E）→ 收敛', {
-    x: W/2, y: 80, size: 28, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+    x: 800, y: 80, size: 28, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
   });
   tw(title, { o: 1 }, 0.5, 0.7);
   
@@ -874,16 +874,16 @@ let BEATS = [
   });
   
   const hint = T(p, '✅ 算法收敛！所有点对最短距离已计算完成', {
-    x: W/2, y: 650, size: 22, fill: PRIMARY, weight: 600, anchor: 'middle', o: 0
+    x: 800, y: 650, size: 22, fill: PRIMARY, weight: 600, anchor: 'middle', o: 0
   });
   tw(hint, { o: 1 }, t + 0.5, 0.8);
 }],
 
 ['negative_cycle', '负权环检测', (m, dur) => {
-  const p = stage(m);
+  const p = panel(0);
   
   const title = T(p, '负权环检测', {
-    x: W/2, y: 100, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+    x: 800, y: 100, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
   });
   tw(title, { o: 1 }, 0.5, 0.7);
   
@@ -918,16 +918,16 @@ let BEATS = [
   tw(step3, { o: 1 }, 11, 0.6);
   
   const compare = T(p, 'vs Bellman-Ford：更直观，一次检查所有节点', {
-    x: W/2, y: 620, size: 22, fill: SECONDARY, anchor: 'middle', o: 0
+    x: 800, y: 620, size: 22, fill: SECONDARY, anchor: 'middle', o: 0
   });
   tw(compare, { o: 1 }, 13.5, 0.7);
 }],
 
 ['complexity', '复杂度分析', (m, dur) => {
-  const p = stage(m);
+  const p = panel(0);
   
   const title = T(p, '复杂度分析', {
-    x: W/2, y: 100, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+    x: 800, y: 100, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
   });
   tw(title, { o: 1 }, 0.5, 0.7);
   
@@ -973,10 +973,10 @@ let BEATS = [
 }],
 
 ['comparison', '算法对比', (m, dur) => {
-  const p = stage(m);
+  const p = panel(0);
   
   const title = T(p, '最短路径算法对比', {
-    x: W/2, y: 80, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+    x: 800, y: 80, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
   });
   tw(title, { o: 1 }, 0.5, 0.7);
   
@@ -1045,10 +1045,10 @@ let BEATS = [
 }],
 
 ['summary', '总结', (m, dur) => {
-  const p = stage(m);
+  const p = panel(0);
   
   const title = T(p, 'Floyd-Warshall 算法总结', {
-    x: W/2, y: 100, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+    x: 800, y: 100, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
   });
   tw(title, { o: 1 }, 0.5, 0.8);
   
@@ -1062,16 +1062,16 @@ let BEATS = [
     { emoji: '✨', text: '特点：代码简洁、支持负权边、全源一次搞定', delay: 17.5 }
   ];
   
-  points.forEach((p, idx) => {
+  points.forEach((point, idx) => {
     const y = 220 + idx * 70;
     
-    const text = T(stage(m), `${p.emoji} ${p.text}`, {
+    const text = T(p, `${point.emoji} ${point.text}`, {
       x: 200, y, size: 22, fill: COL.dim, o: 0
     });
-    tw(text, { o: 1 }, p.delay, 0.7);
+    tw(text, { o: 1 }, point.delay, 0.7);
     
     if (idx === points.length - 1) {
-      tw(text, { fill: PRIMARY, s: 1.1 }, p.delay + 1, 0.5, out);
+      tw(text, { fill: PRIMARY, s: 1.1 }, point.delay + 1, 0.5, out);
     }
   });
 }]

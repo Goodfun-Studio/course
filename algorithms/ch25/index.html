@@ -1286,7 +1286,7 @@ function summary() {
 }
 
 /* ---------- 注册 beats ---------- */
-const BEATS = [
+let BEATS = [
   ['intro', '引入', intro, { audio: 'intro' }],
   ['problem', '问题场景', problem, { audio: 'problem' }],
   ['structure', '线段树结构', structure, { audio: 'structure' }],
@@ -1303,6 +1303,9 @@ const BEATS = [
   ['vs_fenwick', '对比树状数组', vs_fenwick, { audio: 'vs_fenwick' }],
   ['summary', '总结', summary, { audio: 'summary' }]
 ];
+
+// 转换BEATS数组格式为对象格式
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
 
 window.BEATS = BEATS;
 window.CHAPTER = CHAPTER;

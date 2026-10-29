@@ -80,7 +80,7 @@ let BEATS = [
     x: 400, y: 550, size: 32, weight: 600, fill: VISITING, anchor: 'middle', o: 0 
   });
   tw(question, { o: 1 }, 2.5);
-}],
+}, { audio: 'intro' }],
 
 ['concept', 'DFS 基本思想', (panel) => {
   T(panel(0), 'DFS 基本思想', { x: 400, y: 100, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
@@ -113,7 +113,7 @@ let BEATS = [
     x: 400, y: 500, size: 26, fill: TEXT_COLOR, anchor: 'middle', o: 0 
   });
   tw(process, { o: 1 }, 2.5);
-}],
+}, { audio: 'concept' }],
 
 ['recursive', '递归实现', (panel) => {
   T(panel(0), '递归实现', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
@@ -143,7 +143,7 @@ let BEATS = [
     x: 400, y: 550, size: 28, weight: 600, fill: VISITING, anchor: 'middle', o: 0 
   });
   tw(note, { o: 1 }, 3.0);
-}],
+}, { audio: 'recursive' }],
 
 ['iterative', '迭代实现', (panel) => {
   T(panel(0), '迭代实现（显式栈）', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
@@ -179,7 +179,7 @@ let BEATS = [
     x: 400, y: 560, size: 26, weight: 600, fill: EDGE_ACTIVE, anchor: 'middle', o: 0 
   });
   tw(complexity, { o: 1 }, 3.5);
-}],
+}, { audio: 'iterative' }],
 
 ['dfs-demo', 'DFS 遍历演示', (panel) => {
   T(panel(0), 'DFS 遍历演示', { x: 400, y: 60, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
@@ -377,7 +377,7 @@ let BEATS = [
   // 最终状态
   const finalNote = T(panel(0), '遍历完成！', { x: 400, y: 560, size: 28, weight: 600, fill: VISITED, anchor: 'middle', o: 0 });
   tw(finalNote, { o: 1 }, 17.5);
-}],
+}, { audio: 'dfs-demo' }],
 
 ['comparison', 'DFS vs BFS', (panel) => {
   T(panel(0), 'DFS vs BFS 对比', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
@@ -411,7 +411,7 @@ let BEATS = [
       tw(text, { o: 1 }, 1.0 + ri * 0.3 + ci * 0.1);
     });
   });
-}],
+}, { audio: 'comparison' }],
 
 ['path-finding', '应用：路径查找', (panel) => {
   T(panel(0), '应用：路径查找', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
@@ -445,7 +445,7 @@ let BEATS = [
     x: 400, y: 540, size: 26, weight: 600, fill: VISITING, anchor: 'middle', o: 0 
   });
   tw(note, { o: 1 }, 2.5);
-}],
+}, { audio: 'path-finding' }],
 
 ['cycle-detection', '应用：环检测', (panel) => {
   T(panel(0), '应用：环检测', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
@@ -486,7 +486,7 @@ let BEATS = [
     x: 400, y: 560, size: 26, weight: 600, fill: EDGE_ACTIVE, anchor: 'middle', o: 0 
   });
   tw(note, { o: 1 }, 2.8);
-}],
+}, { audio: 'cycle-detection' }],
 
 ['components', '应用：连通分量', (panel) => {
   T(panel(0), '应用：连通分量', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
@@ -520,7 +520,7 @@ let BEATS = [
     x: 400, y: 540, size: 26, weight: 600, fill: VISITING, anchor: 'middle', o: 0 
   });
   tw(note, { o: 1 }, 2.5);
-}],
+}, { audio: 'components' }],
 
 ['timestamps', 'DFS 时间戳', (panel) => {
   T(panel(0), 'DFS 的三个时间戳', { x: 400, y: 100, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
@@ -559,7 +559,7 @@ let BEATS = [
     x: 400, y: 520, size: 28, weight: 600, fill: EDGE_ACTIVE, anchor: 'middle', o: 0 
   });
   tw(note, { o: 1 }, 2.5);
-}],
+}, { audio: 'timestamps' }],
 
 ['tree-traversal', '树的遍历', (panel) => {
   T(panel(0), '树的遍历（DFS 变体）', { x: 400, y: 100, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
@@ -592,7 +592,7 @@ let BEATS = [
     x: 400, y: 540, size: 26, weight: 600, fill: EDGE_ACTIVE, anchor: 'middle', o: 0 
   });
   tw(note, { o: 1 }, 2.5);
-}],
+}, { audio: 'tree-traversal' }],
 
 ['techniques', '实现技巧', (panel) => {
   T(panel(0), '实现技巧', { x: 400, y: 100, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
@@ -616,7 +616,7 @@ let BEATS = [
     });
     tw(text, { o: 1 }, 0.7 + i * 0.3);
   });
-}],
+}, { audio: 'techniques' }],
 
 ['finish', '总结', (panel) => {
   T(panel(0), '深度优先搜索（DFS）', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
@@ -646,7 +646,7 @@ let BEATS = [
     x: 400, y: 570, size: 26, weight: 600, fill: EDGE_ACTIVE, anchor: 'middle', o: 0 
   });
   tw(complexity, { o: 1 }, 3.5);
-}]
+}, { audio: 'finish' }]
 
 ];
 

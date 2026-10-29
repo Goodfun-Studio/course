@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Ch23 Manual Test</title>
+</head>
+<body>
+<h1>Chapter 23 Manual Test</h1>
+<div id="results"></div>
+<script>
+async function testChapter() {
+  const results = document.getElementById('results');
+  
+  // Test 1: Load the iframe
+  const iframe = document.createElement('iframe');
+  iframe.src = 'ch23/index.html';
+  iframe.style.width = '100%';
+  iframe.style.height = '600px';
+  document.body.appendChild(iframe);
+  
+  await new Promise(resolve => setTimeout(resolve, 3000));
+  
+  const win = iframe.contentWindow;
+  
+  results.innerHTML += '<h2>Test Results:</h2>';
+  results.innerHTML += '<p>BEATS length: ' + (win.BEATS ? win.BEATS.length : 'undefined') + '</p>';
+  results.innerHTML += '<p>CHAPTER: ' + (win.CHAPTER ? JSON.stringify(win.CHAPTER) : 'undefined') + '</p>';
+  results.innerHTML += '<p>P.t: ' + (win.P ? win.P.t : 'undefined') + '</p>';
+  
+  if (win.BEATS && win.BEATS.length > 0) {
+    results.innerHTML += '<h3>Beat IDs:</h3><ul>';
+    win.BEATS.forEach(b => {
+      results.innerHTML += '<li>' + (b.id || 'undefined') + ' - ' + (b.title || 'undefined') + '</li>';
+    });
+    results.innerHTML += '</ul>';
+  }
+}
+
+testChapter();
+</script>
+</body>
+</html>

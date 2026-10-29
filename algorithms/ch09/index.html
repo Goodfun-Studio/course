@@ -412,10 +412,10 @@ let BEATS = [
   });
   tw(title, { o: 1 }, 0.5, 0.7);
   
-  // 公式展示
-  const formulaBg = G(p, { x: 800 - 350, y: 220, o: 0 });
+  // 公式展示（单行布局）
+  const formulaBg = G(p, { x: 800 - 420, y: 220, o: 0 });
   mk('rect', {
-    width: 700, height: 120,
+    width: 840, height: 80,
     fill: '#2c3e50',
     stroke: PRIMARY,
     'stroke-width': 3,
@@ -423,19 +423,23 @@ let BEATS = [
   }, formulaBg);
   
   const formula = T(formulaBg, 'dist[i][j][k] = min(', {
-    x: 20, y: 45, size: 24, fill: '#ecf0f1', family: 'monospace', o: 1
+    x: 20, y: 50, size: 24, fill: '#ecf0f1', family: 'monospace', o: 1
   });
   
-  const part1 = T(formulaBg, 'dist[i][j][k-1],', {
-    x: 80, y: 80, size: 22, fill: '#f39c12', family: 'monospace', o: 1
+  const part1 = T(formulaBg, 'dist[i][j][k-1]', {
+    x: 290, y: 50, size: 24, fill: '#f39c12', family: 'monospace', o: 1
+  });
+  
+  const comma = T(formulaBg, ',', {
+    x: 500, y: 50, size: 24, fill: '#ecf0f1', family: 'monospace', o: 1
   });
   
   const part2 = T(formulaBg, 'dist[i][k][k-1] + dist[k][j][k-1]', {
-    x: 80, y: 110, size: 22, fill: '#2ecc71', family: 'monospace', o: 1
+    x: 530, y: 50, size: 22, fill: '#2ecc71', family: 'monospace', o: 1
   });
   
   const closeParen = T(formulaBg, ')', {
-    x: 680, y: 45, size: 24, fill: '#ecf0f1', family: 'monospace', o: 1
+    x: 810, y: 50, size: 24, fill: '#ecf0f1', family: 'monospace', o: 1
   });
   
   tw(formulaBg, { o: 1 }, 2, 0.8);

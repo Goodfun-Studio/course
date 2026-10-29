@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第二十章 最长递增子序列（LIS）</title>
+<link rel="stylesheet" href="../lib/engine.css">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 20, title: '最长递增子序列（LIS）', language: 'zh', minutes: 11 };
+
+/* ---------- 颜色方案 ---------- */
+const CURRENT = '#e74c3c';         // 红色（当前元素）
+const HIGHLIGHT = '#f39c12';       // 橙色（高亮）
+const SUCCESS = '#2ecc71';         // 绿色（成功）
+const COMPARE = '#3498db';         // 蓝色（比较）
+const DP_COLOR = '#9b59b6';        // 紫色（DP值）
+const TAILS = '#1abc9c';           // 青色（tails数组）
+const BACKGROUND = '#ecf0f1';      // 浅灰（背景）
+const TEXT_COLOR = '#2c3e50';      // 深色文字
+
+/* ---------- 辅助函数 ---------- */
+function drawArray(parent, x, y, arr, label = '') {
+  const g = G(parent, { x, y, o: 0 });
+  if (label) {
+    T(g, label, { x: -80, y: 25, size: 20, weight: 600, fill: TEXT_COLOR, anchor: 'end' });
+  }
+  const boxes = [];
+  arr.forEach((val, i) => {
+    const box = G(g, { x: i * 60, y: 0 });
+    mk('rect', { x: 0, y: 0, width: 55, height: 50, fill: '#fff', stroke: TEXT_COLOR, 'stroke-width': 2 }, box);
+    const text = T(box, val.toString(), { x: 27.5, y: 25, size: 22, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+    text.setAttribute('dominant-baseline', 'central');
+    boxes.push(box);
+  });
+  return { g, boxes };
+}
+
+function drawDPTable(parent, x, y, nums, dp) {
+  const g = G(parent, { x, y, o: 0 });
+  
+  // 绘制nums数组
+  T(g, 'nums:', { x: 0, y: 25, size: 20, weight: 600, fill: TEXT_COLOR, anchor: 'start' });
+  const numsBoxes = [];
+  nums.forEach((val, i) => {
+    const box = G(g, { x: 100 + i * 60, y: 0 });
+    mk('rect', { x: 0, y: 0, width: 55, height: 50, fill: '#fff', stroke: TEXT_COLOR, 'stroke-width': 2 }, box);
+    const text = T(box, val.toString(), { x: 27.5, y: 25, size: 20, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
+    text.setAttribute('dominant-baseline', 'central');
+    numsBoxes.push(box);
+  });
+  
+  // 绘制dp数组
+  T(g, 'dp:', { x: 0, y: 95, size: 20, weight: 600, fill: DP_COLOR, anchor: 'start' });
+  const dpBoxes = [];
+  dp.forEach((val, i) => {
+    const box = G(g, { x: 100 + i * 60, y: 70 });
+    mk('rect', { x: 0, y: 0, width: 55, height: 50, fill: '#fff', stroke: DP_COLOR, 'stroke-width': 2 }, box);
+    const text = T(box, val.toString(), { x: 27.5, y: 25, size: 22, weight: 700, fill: DP_COLOR, anchor: 'middle' });
+    text.setAttribute('dominant-baseline', 'central');
+    dpBoxes.push(box);
+  });
+  
+  return { g, numsBoxes, dpBoxes };
+}
+
+function highlightBox(box, color, duration = 0.5) {
+  const rect = box.querySelector('rect');
+  tw(rect, { fill: color }, duration);
+}
+
+function updateDPValue(box, value, duration = 0.5) {
+  const text = box.querySelector('text');
+  tw(text, { o: 0 }, duration / 2, () => {
+    text.textContent = value.toString();
+    tw(text, { o: 1 }, duration / 2);
+  });
+}
+
+/* ---------- Beats ---------- */
+let BEATS = [
+
+['intro', '问题引入', () => {
+  const p = panel(0);
+
+  T(p, '最长递增子序列（LIS）', { x: 400, y: 80, size: 48, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const scenarios = [
+    { icon: '📈', text: '股票分析：找到最长上涨趋势', y: 180 },
+    { icon: '🎮', text: '俄罗斯方块：优化递增高度序列', y: 250 },
+    { icon: '📊', text: '数据分析：识别上升趋势长度', y: 320 },
+    { icon: '🔢', text: '子序列问题：元素可以不连续', y: 390 }
+  ];
+  
+  scenarios.forEach(({ icon, text, y }, i) => {
+    const g = G(p, { x: 150, y, o: 0 });
+    T(g, icon, { x: 0, y: 0, size: 36, anchor: 'middle' });
+    T(g, text, { x: 70, y: 0, size: 24, fill: TEXT_COLOR, anchor: 'start' });
+    tw(g, { o: 1 }, 0.5 + i * 0.3);
+  });
+  
+  const question = T(p, '核心问题：如何高效找到最长递增子序列？', { 
+    x: 400, y: 490, size: 28, weight: 600, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+  });
+  tw(question, { o: 1 }, 2.5);
+}],
+
+['definition', '问题定义', () => {
+  const p = panel(0);
+
+  T(p, '问题定义', { x: 400, y: 80, size: 42, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  const example = [10, 9, 2, 5, 3, 7, 101, 18];
+  const arr = drawArray(p, 120, 150, example, '数组:');
+  tw(arr.g, { o: 1 }, 0.5);
+  
+  // 示例1
+  const seq1 = [2, 3, 7, 18];
+  const seq1Indices = [2, 4, 5, 7];
+  T(p, '递增子序列 1:', { x: 100, y: 250, size: 22, weight: 600, fill: SUCCESS, anchor: 'start' });
+  seq1Indices.forEach((idx, i) => {
+    const box = arr.boxes[idx].querySelector('rect');
+    tw(box, { stroke: SUCCESS, 'stroke-width': 3 }, 1 + i * 0.2);
+  });
+  const seq1Text = T(p, `[${seq1.join(', ')}] 长度 = 4`, { 
+    x: 300, y: 250, size: 22, weight: 600, fill: SUCCESS, anchor: 'start', o: 0 
+  });
+  tw(seq1Text, { o: 1 }, 2);
+  
+  // 示例2
+  const seq2 = [2, 5, 7, 101];
+  const seq2Indices = [2, 3, 5, 6];
+  T(p, '递增子序列 2:', { x: 100, y: 310, size: 22, weight: 600, fill: COMPARE, anchor: 'start', o: 0 });
+  const label2 = T(p, '递增子序列 2:', { x: 100, y: 310, size: 22, weight: 600, fill: COMPARE, anchor: 'start', o: 0 });
+  tw(label2, { o: 1 }, 2.5);
+  
+  seq2Indices.forEach((idx, i) => {
+    const box = arr.boxes[idx].querySelector('rect');
+    tw(box, { stroke: COMPARE, 'stroke-width': 3 }, 2.5 + i * 0.2);
+  });
+  const seq2Text = T(p, `[${seq2.join(', ')}] 长度 = 4`, { 
+    x: 300, y: 310, size: 22, weight: 600, fill: COMPARE, anchor: 'start', o: 0 
+  });
+  tw(seq2Text, { o: 1 }, 3.5);
+  
+  const answer = T(p, '最长递增子序列（LIS）长度 = 4', { 
+    x: 400, y: 400, size: 30, weight: 700, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+  });
+  tw(answer, { o: 1 }, 4.5);
+  
+  const note = T(p, '注意：子序列元素可以不连续，但要保持相对顺序', { 
+    x: 400, y: 480, size: 20, fill: TEXT_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(note, { o: 1 }, 5);
+}],
+
+['dp-idea', '动态规划思路', () => {
+  const p = panel(0);
+
+  T(p, '动态规划思路', { x: 400, y: 60, size: 42, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  // 状态定义
+  const defBox = G(p, { x: 100, y: 120, o: 0 });
+  mk('rect', { x: 0, y: 0, width: 600, height: 80, fill: DP_COLOR, opacity: 0.1, rx: 10 }, defBox);
+  T(defBox, '状态定义：dp[i] = 以第 i 个元素结尾的 LIS 长度', { 
+    x: 300, y: 40, size: 24, weight: 600, fill: DP_COLOR, anchor: 'middle' 
+  });
+  tw(defBox, { o: 1 }, 0.5);
+  
+  // 状态转移
+  const transBox = G(p, { x: 100, y: 230, o: 0 });
+  mk('rect', { x: 0, y: 0, width: 600, height: 120, fill: HIGHLIGHT, opacity: 0.1, rx: 10 }, transBox);
+  T(transBox, '状态转移方程：', { x: 20, y: 30, size: 24, weight: 600, fill: HIGHLIGHT, anchor: 'start' });
+  T(transBox, 'dp[i] = max(dp[j] + 1)', { x: 20, y: 65, size: 22, weight: 600, fill: TEXT_COLOR, anchor: 'start' });
+  T(transBox, '其中 j < i 且 nums[j] < nums[i]', { x: 20, y: 95, size: 20, fill: TEXT_COLOR, anchor: 'start' });
+  tw(transBox, { o: 1 }, 1.5);
+  
+  // 初始条件
+  const baseBox = G(p, { x: 100, y: 380, o: 0 });
+  mk('rect', { x: 0, y: 0, width: 600, height: 60, fill: SUCCESS, opacity: 0.1, rx: 10 }, baseBox);
+  T(baseBox, '初始条件：dp[i] = 1（每个元素自己单独成一个序列）', { 
+    x: 300, y: 30, size: 22, weight: 600, fill: SUCCESS, anchor: 'middle' 
+  });
+  tw(baseBox, { o: 1 }, 2.5);
+  
+  // 答案
+  const ansBox = G(p, { x: 100, y: 470, o: 0 });
+  mk('rect', { x: 0, y: 0, width: 600, height: 60, fill: CURRENT, opacity: 0.1, rx: 10 }, ansBox);
+  T(ansBox, '答案：max(dp[i])（所有位置中的最大值）', { 
+    x: 300, y: 30, size: 22, weight: 600, fill: CURRENT, anchor: 'middle' 
+  });
+  tw(ansBox, { o: 1 }, 3.5);
+}],
+
+['dp-demo', 'DP动画演示', () => {
+  const p = panel(0);
+
+  T(p, 'DP 解法演示', { x: 400, y: 50, size: 42, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  const nums = [10, 9, 2, 5, 3, 7, 101, 18];
+  const dp = [1, 1, 1, 1, 1, 1, 1, 1];
+  
+  const table = drawDPTable(p, 50, 120, nums, dp);
+  tw(table.g, { o: 1 }, 0.5);
+  
+  let time = 1;
+  
+  // i=1: 9
+  time += 0.5;
+  highlightBox(table.numsBoxes[1], CURRENT, 0.3);
+  tw(T(p, 'i=1: nums[1]=9', { x: 50, y: 350, size: 22, weight: 600, fill: CURRENT, anchor: 'start', o: 0 }), { o: 1 }, time);
+  time += 0.8;
+  
+  // i=2: 2
+  time += 0.5;
+  highlightBox(table.numsBoxes[1], '#fff', 0.3);
+  highlightBox(table.numsBoxes[2], CURRENT, 0.3);
+  tw(T(p, 'i=2: nums[2]=2', { x: 50, y: 380, size: 22, weight: 600, fill: CURRENT, anchor: 'start', o: 0 }), { o: 1 }, time);
+  time += 0.8;
+  
+  // i=3: 5 -> dp[3]=2
+  time += 0.5;
+  highlightBox(table.numsBoxes[2], '#fff', 0.3);
+  highlightBox(table.numsBoxes[3], CURRENT, 0.3);
+  highlightBox(table.numsBoxes[2], COMPARE, 0.3);
+  tw(T(p, 'i=3: nums[3]=5 > nums[2]=2 ✓', { x: 50, y: 410, size: 20, fill: SUCCESS, anchor: 'start', o: 0 }), { o: 1 }, time);
+  time += 0.5;
+  updateDPValue(table.dpBoxes[3], 2, 0.5);
+  highlightBox(table.dpBoxes[3], SUCCESS, 0.5);
+  time += 1;
+  
+  // i=4: 3 -> dp[4]=2
+  time += 0.5;
+  highlightBox(table.numsBoxes[3], '#fff', 0.3);
+  highlightBox(table.numsBoxes[2], '#fff', 0.3);
+  highlightBox(table.dpBoxes[3], '#fff', 0.3);
+  highlightBox(table.numsBoxes[4], CURRENT, 0.3);
+  highlightBox(table.numsBoxes[2], COMPARE, 0.3);
+  time += 0.5;
+  updateDPValue(table.dpBoxes[4], 2, 0.5);
+  highlightBox(table.dpBoxes[4], SUCCESS, 0.5);
+  time += 1;
+  
+  // i=5: 7 -> dp[5]=3
+  time += 0.5;
+  highlightBox(table.numsBoxes[4], '#fff', 0.3);
+  highlightBox(table.numsBoxes[2], '#fff', 0.3);
+  highlightBox(table.dpBoxes[4], '#fff', 0.3);
+  highlightBox(table.numsBoxes[5], CURRENT, 0.3);
+  time += 0.3;
+  highlightBox(table.numsBoxes[3], COMPARE, 0.3);
+  time += 0.3;
+  updateDPValue(table.dpBoxes[5], 3, 0.5);
+  highlightBox(table.dpBoxes[5], SUCCESS, 0.5);
+  time += 1;
+  
+  // i=6: 101 -> dp[6]=4
+  time += 0.5;
+  highlightBox(table.numsBoxes[5], '#fff', 0.3);
+  highlightBox(table.numsBoxes[3], '#fff', 0.3);
+  highlightBox(table.dpBoxes[5], '#fff', 0.3);
+  highlightBox(table.numsBoxes[6], CURRENT, 0.3);
+  time += 0.3;
+  highlightBox(table.numsBoxes[5], COMPARE, 0.3);
+  time += 0.3;
+  updateDPValue(table.dpBoxes[6], 4, 0.5);
+  highlightBox(table.dpBoxes[6], SUCCESS, 0.5);
+  time += 1;
+  
+  // i=7: 18 -> dp[7]=4
+  time += 0.5;
+  highlightBox(table.numsBoxes[6], '#fff', 0.3);
+  highlightBox(table.numsBoxes[5], '#fff', 0.3);
+  highlightBox(table.dpBoxes[6], '#fff', 0.3);
+  highlightBox(table.numsBoxes[7], CURRENT, 0.3);
+  time += 0.3;
+  highlightBox(table.numsBoxes[5], COMPARE, 0.3);
+  time += 0.3;
+  updateDPValue(table.dpBoxes[7], 4, 0.5);
+  highlightBox(table.dpBoxes[7], SUCCESS, 0.5);
+  time += 1;
+  
+  // 最终答案
+  time += 0.5;
+  highlightBox(table.numsBoxes[7], '#fff', 0.3);
+  highlightBox(table.numsBoxes[5], '#fff', 0.3);
+  const answer = T(p, '答案：max(dp) = 4', { 
+    x: 400, y: 450, size: 32, weight: 700, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+  });
+  tw(answer, { o: 1 }, time);
+}],
+
+['dp-code', 'DP代码实现', () => {
+  const p = panel(0);
+
+  T(p, 'DP 代码实现', { x: 400, y: 60, size: 42, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  const code = `def lengthOfLIS(nums):
+    n = len(nums)
+    dp = [1] * n  # 初始化
+    
+    for i in range(n):
+        for j in range(i):
+            if nums[j] < nums[i]:
+                dp[i] = max(dp[i], dp[j] + 1)
+    
+    return max(dp)  # 返回最大值`;
+  
+  const lines = code.split('\n');
+  lines.forEach((line, i) => {
+    const text = T(p, line, { 
+      x: 100, y: 140 + i * 32, size: 18, weight: 500, fill: TEXT_COLOR, anchor: 'start', o: 0 
+    });
+    text.style.fontFamily = 'Monaco, Consolas, monospace';
+    tw(text, { o: 1 }, 0.5 + i * 0.2);
+  });
+  
+  const complexity = T(p, '时间复杂度：O(n²)  空间复杂度：O(n)', { 
+    x: 400, y: 480, size: 24, weight: 600, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+  });
+  tw(complexity, { o: 1 }, 3);
+}],
+
+['greedy-idea', '二分优化思路', () => {
+  const p = panel(0);
+
+  T(p, '二分优化思路', { x: 400, y: 60, size: 42, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  // 核心思想
+  const ideaBox = G(p, { x: 80, y: 120, o: 0 });
+  mk('rect', { x: 0, y: 0, width: 640, height: 80, fill: TAILS, opacity: 0.1, rx: 10 }, ideaBox);
+  T(ideaBox, '核心思想：维护递增数组 tails', { x: 320, y: 25, size: 26, weight: 600, fill: TAILS, anchor: 'middle' });
+  T(ideaBox, 'tails[i] = 长度为 i+1 的递增子序列的最小尾部', { 
+    x: 320, y: 55, size: 22, weight: 600, fill: TEXT_COLOR, anchor: 'middle' 
+  });
+  tw(ideaBox, { o: 1 }, 0.5);
+  
+  // 贪心策略
+  const greedyBox = G(p, { x: 80, y: 230, o: 0 });
+  mk('rect', { x: 0, y: 0, width: 640, height: 100, fill: HIGHLIGHT, opacity: 0.1, rx: 10 }, greedyBox);
+  T(greedyBox, '贪心策略：保持尾部最小', { x: 20, y: 30, size: 24, weight: 600, fill: HIGHLIGHT, anchor: 'start' });
+  T(greedyBox, '• 尾部越小，后面能接的元素越多', { x: 40, y: 60, size: 20, fill: TEXT_COLOR, anchor: 'start' });
+  T(greedyBox, '• 二分查找第一个 ≥ 当前元素的位置并替换', { x: 40, y: 85, size: 20, fill: TEXT_COLOR, anchor: 'start' });
+  tw(greedyBox, { o: 1 }, 1.5);
+  
+  // 操作
+  const opBox = G(p, { x: 80, y: 360, o: 0 });
+  mk('rect', { x: 0, y: 0, width: 640, height: 120, fill: SUCCESS, opacity: 0.1, rx: 10 }, opBox);
+  T(opBox, '对每个元素：', { x: 20, y: 30, size: 24, weight: 600, fill: SUCCESS, anchor: 'start' });
+  T(opBox, '• 如果比所有元素都大 → 追加到末尾，长度+1', { 
+    x: 40, y: 60, size: 20, fill: TEXT_COLOR, anchor: 'start' 
+  });
+  T(opBox, '• 否则 → 二分查找位置并替换，保持最小性', { 
+    x: 40, y: 90, size: 20, fill: TEXT_COLOR, anchor: 'start' 
+  });
+  tw(opBox, { o: 1 }, 2.5);
+}],
+
+['binary-demo', '二分优化演示', () => {
+  const p = panel(800);
+
+  T(p, '二分优化演示', { x: 400, y: 50, size: 42, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  const nums = [10, 9, 2, 5, 3, 7, 101, 18];
+  
+  // 显示原数组
+  T(p, '数组:', { x: 50, y: 110, size: 22, weight: 600, fill: TEXT_COLOR, anchor: 'start' });
+  nums.forEach((val, i) => {
+    T(p, val.toString(), { 
+      x: 150 + i * 60, y: 110, size: 22, weight: 600, fill: TEXT_COLOR, anchor: 'middle' 
+    });
+  });
+  
+  // tails 数组区域
+  const tailsY = 180;
+  T(p, 'tails:', { x: 50, y: tailsY + 30, size: 22, weight: 600, fill: TAILS, anchor: 'start' });
+  
+  const tailsValues = [];
+  let time = 0.5;
+  
+  // 辅助函数：绘制 tails 数组
+  function drawTails(values, startTime) {
+    values.forEach((val, i) => {
+      const box = G(p, { x: 150 + i * 60, y: tailsY, o: 0 });
+      mk('rect', { x: 0, y: 0, width: 55, height: 50, fill: TAILS, opacity: 0.3, stroke: TAILS, 'stroke-width': 2, rx: 5 }, box);
+      T(box, val.toString(), { x: 27.5, y: 25, size: 22, weight: 700, fill: '#fff', anchor: 'middle' });
+      tw(box, { o: 1 }, startTime);
+    });
+  }
+  
+  // 步骤提示区域
+  const stepY = 270;
+  
+  // Step 1: 10
+  time += 0.5;
+  let step = T(p, '处理 10: tails 为空，追加', { 
+    x: 50, y: stepY, size: 20, weight: 600, fill: CURRENT, anchor: 'start', o: 0 
+  });
+  tw(step, { o: 1 }, time);
+  tailsValues.push(10);
+  drawTails([10], time);
+  time += 1;
+  tw(step, { o: 0 }, time);
+  
+  // Step 2: 9
+  time += 0.3;
+  step = T(p, '处理 9: 9 < 10，替换 10', { 
+    x: 50, y: stepY, size: 20, weight: 600, fill: CURRENT, anchor: 'start', o: 0 
+  });
+  tw(step, { o: 1 }, time);
+  time += 0.5;
+  // 清除旧的，绘制新的
+  const oldBoxes = p.querySelectorAll('g[transform*="150"]');
+  oldBoxes.forEach(box => tw(box, { o: 0 }, 0.3));
+  time += 0.3;
+  tailsValues[0] = 9;
+  drawTails([9], time);
+  time += 0.8;
+  tw(step, { o: 0 }, time);
+  
+  // Step 3: 2
+  time += 0.3;
+  step = T(p, '处理 2: 2 < 9，替换 9', { 
+    x: 50, y: stepY, size: 20, weight: 600, fill: CURRENT, anchor: 'start', o: 0 
+  });
+  tw(step, { o: 1 }, time);
+  time += 0.5;
+  drawTails([2], time);
+  time += 0.8;
+  tw(step, { o: 0 }, time);
+  
+  // Step 4: 5
+  time += 0.3;
+  step = T(p, '处理 5: 5 > 2，追加到末尾', { 
+    x: 50, y: stepY, size: 20, weight: 600, fill: SUCCESS, anchor: 'start', o: 0 
+  });
+  tw(step, { o: 1 }, time);
+  time += 0.5;
+  drawTails([2, 5], time);
+  time += 0.8;
+  tw(step, { o: 0 }, time);
+  
+  // Step 5: 3
+  time += 0.3;
+  step = T(p, '处理 3: 2 < 3 < 5，替换 5', { 
+    x: 50, y: stepY, size: 20, weight: 600, fill: CURRENT, anchor: 'start', o: 0 
+  });
+  tw(step, { o: 1 }, time);
+  time += 0.5;
+  drawTails([2, 3], time);
+  time += 0.8;
+  tw(step, { o: 0 }, time);
+  
+  // Step 6: 7
+  time += 0.3;
+  step = T(p, '处理 7: 7 > 3，追加到末尾', { 
+    x: 50, y: stepY, size: 20, weight: 600, fill: SUCCESS, anchor: 'start', o: 0 
+  });
+  tw(step, { o: 1 }, time);
+  time += 0.5;
+  drawTails([2, 3, 7], time);
+  time += 0.8;
+  tw(step, { o: 0 }, time);
+  
+  // Step 7: 101
+  time += 0.3;
+  step = T(p, '处理 101: 101 > 7，追加到末尾', { 
+    x: 50, y: stepY, size: 20, weight: 600, fill: SUCCESS, anchor: 'start', o: 0 
+  });
+  tw(step, { o: 1 }, time);
+  time += 0.5;
+  drawTails([2, 3, 7, 101], time);
+  time += 0.8;
+  tw(step, { o: 0 }, time);
+  
+  // Step 8: 18
+  time += 0.3;
+  step = T(p, '处理 18: 7 < 18 < 101，替换 101', { 
+    x: 50, y: stepY, size: 20, weight: 600, fill: CURRENT, anchor: 'start', o: 0 
+  });
+  tw(step, { o: 1 }, time);
+  time += 0.5;
+  drawTails([2, 3, 7, 18], time);
+  time += 0.8;
+  tw(step, { o: 0 }, time);
+  
+  // 最终答案
+  time += 0.5;
+  const answer = T(p, '答案：tails.length = 4', { 
+    x: 400, y: 400, size: 32, weight: 700, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+  });
+  tw(answer, { o: 1 }, time);
+}],
+
+['binary-code', '二分优化代码', () => {
+  const p = panel(0);
+
+  T(p, '二分优化代码', { x: 400, y: 60, size: 42, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  const code = `def lengthOfLIS(nums):
+    tails = []
+    
+    for num in nums:
+        # 二分查找第一个 >= num 的位置
+        left, right = 0, len(tails)
+        while left < right:
+            mid = (left + right) // 2
+            if tails[mid] < num:
+                left = mid + 1
+            else:
+                right = mid
+        
+        # 如果找到，替换；否则追加
+        if left < len(tails):
+            tails[left] = num
+        else:
+            tails.append(num)
+    
+    return len(tails)`;
+  
+  const lines = code.split('\n');
+  lines.forEach((line, i) => {
+    const text = T(p, line, { 
+      x: 80, y: 120 + i * 28, size: 16, weight: 500, fill: TEXT_COLOR, anchor: 'start', o: 0 
+    });
+    text.style.fontFamily = 'Monaco, Consolas, monospace';
+    tw(text, { o: 1 }, 0.3 + i * 0.15);
+  });
+  
+  const complexity = T(p, '时间复杂度：O(n log n)  空间复杂度：O(n)', { 
+    x: 400, y: 520, size: 24, weight: 600, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+  });
+  tw(complexity, { o: 1 }, 4);
+}],
+
+['path', '路径回溯', () => {
+  const p = panel(0);
+
+  T(p, '找出具体的 LIS 序列', { x: 400, y: 70, size: 42, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  const methods = [
+    {
+      title: 'DP 方法：',
+      points: [
+        '记录每个位置的前驱节点',
+        '找到最大 dp 值的位置',
+        '沿前驱节点回溯构建序列'
+      ],
+      color: DP_COLOR,
+      y: 160
+    },
+    {
+      title: '二分方法：',
+      points: [
+        '记录每个元素在 tails 中的位置',
+        '或记录每个位置的前驱索引',
+        '注意：tails 数组本身不是 LIS'
+      ],
+      color: TAILS,
+      y: 320
+    }
+  ];
+  
+  methods.forEach(({ title, points, color, y }, methodIdx) => {
+    const box = G(p, { x: 80, y, o: 0 });
+    mk('rect', { x: 0, y: 0, width: 640, height: 140, fill: color, opacity: 0.1, rx: 10 }, box);
+    T(box, title, { x: 20, y: 30, size: 26, weight: 600, fill: color, anchor: 'start' });
+    points.forEach((point, i) => {
+      T(box, `• ${point}`, { 
+        x: 40, y: 65 + i * 30, size: 20, fill: TEXT_COLOR, anchor: 'start' 
+      });
+    });
+    tw(box, { o: 1 }, 0.5 + methodIdx * 1.5);
+  });
+  
+  const note = T(p, '回溯是可选的，大多数题目只要求返回长度', { 
+    x: 400, y: 500, size: 22, weight: 600, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+  });
+  tw(note, { o: 1 }, 3.5);
+}],
+
+['applications', '应用场景', () => {
+  const p = panel(0);
+
+  T(p, 'LIS 的应用', { x: 400, y: 70, size: 42, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  const apps = [
+    { icon: '📈', title: '股票交易', desc: '找最长上涨趋势，计算最大收益', color: SUCCESS },
+    { icon: '📊', title: '数据分析', desc: '识别时间序列的上升趋势', color: COMPARE },
+    { icon: '📁', title: '版本控制', desc: '找文件的最长不变部分', color: DP_COLOR },
+    { icon: '🎮', title: '游戏优化', desc: '俄罗斯方块策略优化', color: HIGHLIGHT },
+    { icon: '🔢', title: 'LCS 问题', desc: '最长公共子序列可转化为 LIS', color: TAILS },
+    { icon: '📦', title: '二维偏序', desc: '一维排序后，另一维求 LIS', color: CURRENT }
+  ];
+  
+  apps.forEach(({ icon, title, desc, color }, i) => {
+    const box = G(p, { x: 100 + (i % 2) * 350, y: 160 + Math.floor(i / 2) * 100, o: 0 });
+    mk('rect', { x: 0, y: 0, width: 300, height: 80, fill: color, opacity: 0.1, rx: 8, stroke: color, 'stroke-width': 2 }, box);
+    T(box, icon, { x: 20, y: 25, size: 32, anchor: 'start' });
+    T(box, title, { x: 70, y: 25, size: 22, weight: 600, fill: color, anchor: 'start' });
+    T(box, desc, { x: 70, y: 55, size: 16, fill: TEXT_COLOR, anchor: 'start' });
+    tw(box, { o: 1 }, 0.5 + i * 0.3);
+  });
+}],
+
+['variants', '变体问题', () => {
+  const p = panel(0);
+
+  T(p, 'LIS 的变体', { x: 400, y: 70, size: 42, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  const variants = [
+    { 
+      title: '最长非递减子序列', 
+      desc: '允许相等元素，≥ 代替 >', 
+      color: SUCCESS,
+      y: 160 
+    },
+    { 
+      title: '最长递减子序列', 
+      desc: '反转数组或改判断条件', 
+      color: COMPARE,
+      y: 250 
+    },
+    { 
+      title: '最长公共递增子序列', 
+      desc: '两个数组的公共递增部分', 
+      color: DP_COLOR,
+      y: 340 
+    },
+    { 
+      title: '俄罗斯信封问题', 
+      desc: '二维 LIS：先排序宽度，再求高度 LIS', 
+      color: TAILS,
+      y: 430 
+    }
+  ];
+  
+  variants.forEach(({ title, desc, color, y }, i) => {
+    const box = G(p, { x: 100, y, o: 0 });
+    mk('rect', { x: 0, y: 0, width: 600, height: 70, fill: color, opacity: 0.1, rx: 8, stroke: color, 'stroke-width': 2 }, box);
+    T(box, title, { x: 20, y: 25, size: 24, weight: 600, fill: color, anchor: 'start' });
+    T(box, desc, { x: 20, y: 50, size: 18, fill: TEXT_COLOR, anchor: 'start' });
+    tw(box, { o: 1 }, 0.5 + i * 0.4);
+  });
+}],
+
+['finish', '总结', () => {
+  const p = panel(0);
+
+  T(p, '总结', { x: 400, y: 70, size: 48, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  
+  const summary = [
+    { icon: '🎯', text: 'DP 解法：O(n²)，简单直观', color: DP_COLOR },
+    { icon: '⚡', text: '二分优化：O(n log n)，高效优雅', color: TAILS },
+    { icon: '💡', text: '核心：维护最小尾部数组', color: HIGHLIGHT },
+    { icon: '🔄', text: '回溯：记录前驱找具体序列', color: COMPARE },
+    { icon: '🚀', text: '应用：股票、趋势、版本控制', color: SUCCESS }
+  ];
+  
+  summary.forEach(({ icon, text, color }, i) => {
+    const g = G(p, { x: 150, y: 180 + i * 60, o: 0 });
+    T(g, icon, { x: 0, y: 0, size: 36, anchor: 'middle' });
+    T(g, text, { x: 70, y: 0, size: 26, weight: 600, fill: color, anchor: 'start' });
+    tw(g, { o: 1 }, 0.5 + i * 0.4);
+  });
+  
+  const final = T(p, '掌握 LIS，掌握子序列问题的关键！', { 
+    x: 400, y: 500, size: 30, weight: 700, fill: CURRENT, anchor: 'middle', o: 0 
+  });
+  tw(final, { o: 1 }, 3);
+}]
+
+];
+
+/* ---------- 初始化 ---------- */
+function boot() {
+  setupBeats(BEATS);
+  console.log('✓ ch20 LIS ready');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,804 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第十七章 KMP 字符串匹配算法</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#next-build" blocking="render">
+<link rel="expect" href="#matching-demo" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 17, title: 'KMP 字符串匹配算法', language: 'zh', minutes: 14 };
+
+/* ---------- 颜色方案 ---------- */
+const MATCH_COLOR = '#2ecc71';      // 绿色（匹配成功）
+const MISMATCH_COLOR = '#e74c3c';   // 红色（失配）
+const CURRENT_COLOR = '#f39c12';    // 橙色（当前比较）
+const PATTERN_COLOR = '#3498db';    // 蓝色（模式串）
+const TEXT_COLOR = '#2c3e50';       // 深色文字
+const NEXT_BG = '#9b59b6';          // 紫色（next数组）
+const POINTER_COLOR = '#e67e22';    // 深橙色（指针）
+const BG_GRAY = '#ecf0f1';          // 浅灰背景
+
+/* ---------- 辅助函数 ---------- */
+function drawChar(parent, x, y, char, bgColor = BG_GRAY, textColor = TEXT_COLOR) {
+  const g = G(parent, { x, y, o: 0 });
+  const box = mk('rect', {
+    x: -20, y: -20,
+    width: 40, height: 40,
+    fill: bgColor,
+    stroke: TEXT_COLOR,
+    'stroke-width': 2,
+    rx: 4
+  }, g);
+  const text = T(g, char, { x: 0, y: 0, size: 24, weight: 700, fill: textColor, anchor: 'middle' });
+  text.setAttribute('dominant-baseline', 'central');
+  return { g, box, text };
+}
+
+function drawPointer(parent, x, y, label, color = POINTER_COLOR) {
+  const g = G(parent, { x, y, o: 0 });
+  const line = mk('line', { x1: 0, y1: -15, x2: 0, y2: 0, stroke: color, 'stroke-width': 3 }, g);
+  const circle = mk('circle', { cx: 0, cy: -15, r: 5, fill: color }, g);
+  const text = T(g, label, { x: 0, y: -25, size: 20, weight: 600, fill: color, anchor: 'middle' });
+  return { g, line, circle, text };
+}
+
+function drawNextArray(parent, x, y, values) {
+  const cells = [];
+  values.forEach((val, i) => {
+    const cellX = x + i * 45;
+    const g = G(parent, { x: cellX, y, o: 0 });
+    const box = mk('rect', {
+      x: -20, y: -20,
+      width: 40, height: 40,
+      fill: NEXT_BG,
+      stroke: TEXT_COLOR,
+      'stroke-width': 2,
+      rx: 4
+    }, g);
+    const text = T(g, val.toString(), { x: 0, y: 0, size: 22, weight: 700, fill: '#fff', anchor: 'middle' });
+    text.setAttribute('dominant-baseline', 'central');
+    cells.push({ g, box, text });
+  });
+  return cells;
+}
+
+/* ---------- Beats ---------- */
+let BEATS = [
+
+['intro', '问题引入', () => {
+  const p = panel(0);
+
+  const title = T(p, 'KMP 字符串匹配算法', { x: 400, y: 80, size: 48, weight: 700, fill: TEXT_COLOR, o: 0 });
+  tw(title, { o: 1 }, 0.3);
+  
+  const scenarios = [
+    { icon: '🔍', text: '文本搜索：在文档中查找关键词', y: 180 },
+    { icon: '🧬', text: 'DNA 匹配：在基因组中查找特定片段', y: 250 },
+    { icon: '🦠', text: '病毒检测：匹配病毒特征码', y: 320 },
+    { icon: '🌐', text: '网络安全：检测攻击模式', y: 390 }
+  ];
+  
+  scenarios.forEach(({ icon, text, y }, i) => {
+    const g = G(p, { x: 120, y, o: 0 });
+    T(g, icon, { x: 0, y: 0, size: 36, anchor: 'middle' });
+    T(g, text, { x: 80, y: 0, size: 26, fill: TEXT_COLOR, anchor: 'start' });
+    tw(g, { o: 1 }, 0.8 + i * 0.3);
+  });
+  
+  const problem = G(p, { x: 400, y: 480, o: 0 });
+  T(problem, '朴素算法：O(n × m)', { x: -120, y: 0, size: 28, fill: MISMATCH_COLOR, anchor: 'middle' });
+  T(problem, '→', { x: 0, y: 0, size: 32, fill: TEXT_COLOR, anchor: 'middle' });
+  T(problem, 'KMP 算法：O(n + m)', { x: 120, y: 0, size: 28, fill: MATCH_COLOR, anchor: 'middle' });
+  tw(problem, { o: 1 }, 2.5);
+}, { audio: 'intro' }],
+
+['naive', '朴素算法的问题', () => {
+  const p = panel(0);
+
+  T(p, '朴素算法的低效之处', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const text = 'ABABDABACDABABCABAA';
+  const pattern = 'ABABCABAA';
+  
+  // 绘制文本
+  const textY = 180;
+  T(p, '文本:', { x: 80, y: textY, size: 24, fill: TEXT_COLOR, anchor: 'end', o: 0 });
+  const textChars = [];
+  for (let i = 0; i < text.length; i++) {
+    const char = drawChar(p, 120 + i * 32, textY, text[i]);
+    tw(char.g, { o: 1 }, 0.5 + i * 0.05);
+    textChars.push(char);
+  }
+  
+  // 第一次尝试匹配
+  const patternY = 280;
+  T(p, '模式:', { x: 80, y: patternY, size: 24, fill: TEXT_COLOR, anchor: 'end', o: 0 });
+  const patternChars = [];
+  for (let i = 0; i < pattern.length; i++) {
+    const char = drawChar(p, 120 + i * 32, patternY, pattern[i], PATTERN_COLOR, '#fff');
+    tw(char.g, { o: 1 }, 1.5 + i * 0.05);
+    patternChars.push(char);
+  }
+  
+  // 匹配过程：前4个匹配，第5个失配
+  [0, 1, 2, 3].forEach((i, idx) => {
+    tw(textChars[i].box, { fill: MATCH_COLOR }, 2.5 + idx * 0.3);
+    tw(patternChars[i].box, { fill: MATCH_COLOR }, 2.5 + idx * 0.3);
+  });
+  
+  tw(textChars[4].box, { fill: MISMATCH_COLOR }, 3.8);
+  tw(patternChars[4].box, { fill: MISMATCH_COLOR }, 3.8);
+  
+  // 回溯说明
+  const backtrack = G(p, { x: 400, y: 400, o: 0 });
+  T(backtrack, '失配后回溯 → 浪费了已匹配的信息', { 
+    x: 0, y: 0, size: 28, weight: 600, fill: MISMATCH_COLOR, anchor: 'middle' 
+  });
+  tw(backtrack, { o: 1 }, 4.5);
+  
+  const waste = T(p, '前面匹配了 "ABAB"，为什么要重新比较？', { 
+    x: 400, y: 500, size: 26, fill: POINTER_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(waste, { o: 1 }, 5.5);
+}, { audio: 'naive' }],
+
+['kmp-idea', 'KMP 核心思想', () => {
+  const p = panel(0);
+
+  T(p, 'KMP 的关键洞察', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const ideas = [
+    { title: '利用已匹配信息', desc: '失配时，我们已经知道一部分文本内容', color: MATCH_COLOR, y: 170 },
+    { title: '避免重复比较', desc: '模式串跳到合适位置，不用从头开始', color: PATTERN_COLOR, y: 260 },
+    { title: '最长相同前后缀', desc: 'next 数组记录跳转位置', color: NEXT_BG, y: 350 }
+  ];
+  
+  ideas.forEach(({ title, desc, color, y }, i) => {
+    const box = mk('rect', { 
+      x: 100, y: y - 30, width: 600, height: 70, 
+      fill: color, stroke: TEXT_COLOR, 'stroke-width': 3, rx: 8, o: 0 
+    }, p);
+    tw(box, { o: 0.3 }, 0.8 + i * 0.5);
+    
+    const titleText = T(p, title, { x: 400, y: y - 5, size: 28, weight: 700, fill: '#fff', anchor: 'middle', o: 0 });
+    tw(titleText, { o: 1 }, 0.8 + i * 0.5);
+    
+    const descText = T(p, desc, { x: 400, y: y + 22, size: 22, fill: '#fff', anchor: 'middle', o: 0 });
+    tw(descText, { o: 1 }, 1.0 + i * 0.5);
+  });
+  
+  // 前后缀示例
+  const example = G(p, { x: 400, y: 480, o: 0 });
+  T(example, '示例："ABAB"', { x: 0, y: -30, size: 26, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
+  T(example, '前缀: A, AB, ABA', { x: -120, y: 10, size: 22, fill: MATCH_COLOR, anchor: 'middle' });
+  T(example, '后缀: B, AB, BAB', { x: 120, y: 10, size: 22, fill: PATTERN_COLOR, anchor: 'middle' });
+  T(example, '最长相同前后缀: "AB" (长度 2)', { x: 0, y: 50, size: 24, weight: 600, fill: POINTER_COLOR, anchor: 'middle' });
+  tw(example, { o: 1 }, 2.5);
+}, { audio: 'kmp-idea' }],
+
+['next-intro', 'next 数组介绍', () => {
+  const p = panel(0);
+
+  T(p, 'next 数组（部分匹配表）', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const definition = G(p, { x: 400, y: 170, o: 0 });
+  T(definition, 'next[i] = 前 i 个字符的最长相同前后缀长度', { 
+    x: 0, y: 0, size: 28, weight: 600, fill: NEXT_BG, anchor: 'middle' 
+  });
+  tw(definition, { o: 1 }, 0.8);
+  
+  // 示例模式串
+  const pattern = 'ABABCABAA';
+  const patternY = 280;
+  T(p, '模式串:', { x: 100, y: patternY, size: 24, fill: TEXT_COLOR, anchor: 'start', o: 0 });
+  
+  for (let i = 0; i < pattern.length; i++) {
+    const char = drawChar(p, 230 + i * 45, patternY, pattern[i], PATTERN_COLOR, '#fff');
+    tw(char.g, { o: 1 }, 1.2 + i * 0.08);
+  }
+  
+  // 索引
+  const indexY = 340;
+  T(p, '索引:', { x: 100, y: indexY, size: 22, fill: TEXT_COLOR, anchor: 'start', o: 0 });
+  for (let i = 0; i < pattern.length; i++) {
+    const idx = T(p, i.toString(), { 
+      x: 230 + i * 45, y: indexY, size: 20, fill: TEXT_COLOR, anchor: 'middle', o: 0 
+    });
+    tw(idx, { o: 1 }, 1.5 + i * 0.08);
+  }
+  
+  // next 数组占位
+  const nextY = 400;
+  T(p, 'next:', { x: 100, y: nextY, size: 22, fill: TEXT_COLOR, anchor: 'start', o: 0 });
+  for (let i = 0; i < pattern.length; i++) {
+    const cell = drawChar(p, 230 + i * 45, nextY, '?', NEXT_BG, '#fff');
+    tw(cell.g, { o: 1 }, 2.0 + i * 0.08);
+  }
+  
+  const purpose = T(p, '失配时，next 数组告诉模式串应该跳到哪个位置', { 
+    x: 400, y: 500, size: 26, fill: POINTER_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(purpose, { o: 1 }, 3.5);
+}, { audio: 'next-intro' }],
+
+['next-build', 'next 数组构建动画', () => {
+  const p = panel(0);
+
+  T(p, '构建 next 数组', { x: 400, y: 60, size: 42, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const pattern = 'ABABCABAA';
+  const next = [0, 0, 1, 2, 0, 1, 2, 3, 1];
+  
+  // 绘制模式串
+  const patternY = 140;
+  const patternChars = [];
+  for (let i = 0; i < pattern.length; i++) {
+    const char = drawChar(p, 100 + i * 45, patternY, pattern[i], PATTERN_COLOR, '#fff');
+    tw(char.g, { o: 1 }, 0.3 + i * 0.05);
+    patternChars.push(char);
+  }
+  
+  // 索引
+  for (let i = 0; i < pattern.length; i++) {
+    T(p, i.toString(), { 
+      x: 100 + i * 45, y: 190, size: 18, fill: TEXT_COLOR, anchor: 'middle', o: 0 
+    });
+  }
+  
+  // next 数组
+  const nextY = 240;
+  const nextCells = [];
+  for (let i = 0; i < pattern.length; i++) {
+    const cell = drawChar(p, 100 + i * 45, nextY, '', NEXT_BG, '#fff');
+    tw(cell.g, { o: 1 }, 0.8);
+    nextCells.push(cell);
+  }
+  
+  // 指针
+  const iPtr = drawPointer(p, 100, patternY + 60, 'i', CURRENT_COLOR);
+  tw(iPtr.g, { o: 1 }, 1.0);
+  const jPtr = drawPointer(p, 100, patternY - 60, 'j', POINTER_COLOR);
+  tw(jPtr.g, { o: 1 }, 1.0);
+  
+  // 说明区域
+  const explainY = 320;
+  const explain = T(p, '', { x: 400, y: explainY, size: 22, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
+  
+  let time = 1.5;
+  const step = 0.6;
+  
+  // 逐步计算
+  const steps = [
+    { i: 0, j: 0, nextVal: 0, desc: 'next[0] = 0 (第一个字符没有前缀)' },
+    { i: 1, j: 0, nextVal: 0, desc: 'A ≠ B，next[1] = 0' },
+    { i: 2, j: 0, nextVal: 1, desc: 'A = A，next[2] = j + 1 = 1, j++' },
+    { i: 3, j: 1, nextVal: 2, desc: 'B = B，next[3] = j + 1 = 2, j++' },
+    { i: 4, j: 2, nextVal: 0, desc: 'A ≠ C，j 回退到 0，next[4] = 0' },
+    { i: 5, j: 0, nextVal: 1, desc: 'A = A，next[5] = 1, j++' },
+    { i: 6, j: 1, nextVal: 2, desc: 'B = B，next[6] = 2, j++' },
+    { i: 7, j: 2, nextVal: 3, desc: 'A = A，next[7] = 3, j++' },
+    { i: 8, j: 3, nextVal: 1, desc: 'B ≠ A，j 回退到 1，A = A，next[8] = 1' }
+  ];
+  
+  steps.forEach(({ i, j, nextVal, desc }, idx) => {
+    // 移动指针
+    tw(iPtr.g, { x: 100 + i * 45 }, time);
+    tw(jPtr.g, { x: 100 + j * 45 }, time);
+    
+    // 高亮当前比较的字符
+    tw(patternChars[i].box, { fill: CURRENT_COLOR }, time);
+    if (j < pattern.length) {
+      tw(patternChars[j].box, { fill: CURRENT_COLOR }, time);
+    }
+    
+    time += step * 0.5;
+    
+    // 更新 next 值
+    nextCells[i].text.textContent = nextVal.toString();
+    tw(nextCells[i].g, { o: 1 }, time);
+    tw(nextCells[i].box, { fill: MATCH_COLOR }, time);
+    
+    // 更新说明
+    explain.textContent = desc;
+    tw(explain, { o: 1 }, time);
+    
+    time += step;
+    
+    // 恢复颜色
+    tw(patternChars[i].box, { fill: PATTERN_COLOR }, time);
+    if (j < pattern.length && j !== i) {
+      tw(patternChars[j].box, { fill: PATTERN_COLOR }, time);
+    }
+    tw(nextCells[i].box, { fill: NEXT_BG }, time);
+    
+    time += step * 0.3;
+  });
+  
+  // 最终结果
+  const result = T(p, `next = [${next.join(', ')}]`, { 
+    x: 400, y: 480, size: 26, weight: 600, fill: MATCH_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(result, { o: 1 }, time);
+}, { audio: 'next-build' }],
+
+['matching-intro', '匹配过程介绍', () => {
+  const p = panel(0);
+
+  T(p, 'KMP 匹配过程', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const rules = [
+    { title: '字符匹配', desc: 'i 和 j 都前进 → i++, j++', color: MATCH_COLOR, y: 180 },
+    { title: '字符不匹配', desc: 'j 跳到 next[j-1]，i 不回退', color: MISMATCH_COLOR, y: 270 },
+    { title: '找到匹配', desc: 'j == 模式串长度，记录位置', color: PATTERN_COLOR, y: 360 }
+  ];
+  
+  rules.forEach(({ title, desc, color, y }, i) => {
+    const box = mk('rect', { 
+      x: 100, y: y - 30, width: 600, height: 70, 
+      fill: color, stroke: TEXT_COLOR, 'stroke-width': 3, rx: 8, o: 0 
+    }, p);
+    tw(box, { o: 0.3 }, 0.8 + i * 0.5);
+    
+    const titleText = T(p, title, { x: 400, y: y - 5, size: 28, weight: 700, fill: '#fff', anchor: 'middle', o: 0 });
+    tw(titleText, { o: 1 }, 0.8 + i * 0.5);
+    
+    const descText = T(p, desc, { x: 400, y: y + 22, size: 22, fill: '#fff', anchor: 'middle', o: 0 });
+    tw(descText, { o: 1 }, 1.0 + i * 0.5);
+  });
+  
+  const essence = G(p, { x: 400, y: 480, o: 0 });
+  T(essence, '精髓：文本指针 i 永远不回退！', { 
+    x: 0, y: 0, size: 30, weight: 700, fill: POINTER_COLOR, anchor: 'middle' 
+  });
+  tw(essence, { o: 1 }, 2.5);
+}, { audio: 'matching-intro' }],
+
+['matching-demo', 'KMP 匹配演示', () => {
+  const p = panel(0);
+
+  T(p, 'KMP 匹配演示', { x: 400, y: 50, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const text = 'ABABDABACDABABCABAA';
+  const pattern = 'ABABCABAA';
+  const next = [0, 0, 1, 2, 0, 1, 2, 3, 1];
+  
+  // 绘制文本
+  const textY = 130;
+  T(p, '文本:', { x: 50, y: textY, size: 20, fill: TEXT_COLOR, anchor: 'end', o: 0 });
+  const textChars = [];
+  for (let i = 0; i < text.length; i++) {
+    const char = drawChar(p, 70 + i * 28, textY, text[i], BG_GRAY, TEXT_COLOR);
+    tw(char.g, { o: 1 }, 0.3 + i * 0.03);
+    textChars.push(char);
+  }
+  
+  // 绘制模式串
+  const patternY = 210;
+  T(p, '模式:', { x: 50, y: patternY, size: 20, fill: TEXT_COLOR, anchor: 'end', o: 0 });
+  const patternChars = [];
+  for (let i = 0; i < pattern.length; i++) {
+    const char = drawChar(p, 70 + i * 28, patternY, pattern[i], PATTERN_COLOR, '#fff');
+    tw(char.g, { o: 1 }, 0.8 + i * 0.03);
+    patternChars.push(char);
+  }
+  
+  // 指针
+  const iPtr = drawPointer(p, 70, textY + 50, 'i', CURRENT_COLOR);
+  tw(iPtr.g, { o: 1 }, 1.2);
+  const jPtr = drawPointer(p, 70, patternY + 50, 'j', POINTER_COLOR);
+  tw(jPtr.g, { o: 1 }, 1.2);
+  
+  // 说明
+  const explain = T(p, '', { x: 400, y: 310, size: 20, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
+  
+  let time = 1.5;
+  const step = 0.5;
+  
+  // 匹配过程
+  let i = 0, j = 0;
+  let matchStart = -1;
+  
+  while (i < text.length && time < 30) {
+    if (j < pattern.length && text[i] === pattern[j]) {
+      // 匹配
+      tw(iPtr.g, { x: 70 + i * 28 }, time);
+      tw(jPtr.g, { x: 70 + j * 28 }, time);
+      tw(textChars[i].box, { fill: MATCH_COLOR }, time);
+      tw(patternChars[j].box, { fill: MATCH_COLOR }, time);
+      
+      explain.textContent = `匹配成功：${text[i]} = ${pattern[j]}`;
+      tw(explain, { o: 1 }, time);
+      
+      if (j === 0) matchStart = i;
+      i++;
+      j++;
+      time += step;
+      
+      if (j === pattern.length) {
+        // 找到完整匹配
+        explain.textContent = `找到匹配！位置 ${matchStart}`;
+        tw(explain, { o: 1, fill: MATCH_COLOR }, time);
+        time += step * 2;
+        break;
+      }
+    } else {
+      // 失配
+      if (j > 0) {
+        tw(iPtr.g, { x: 70 + i * 28 }, time);
+        tw(jPtr.g, { x: 70 + j * 28 }, time);
+        tw(textChars[i].box, { fill: MISMATCH_COLOR }, time);
+        tw(patternChars[j].box, { fill: MISMATCH_COLOR }, time);
+        
+        explain.textContent = `失配：${text[i]} ≠ ${pattern[j]}，j 跳到 next[${j-1}] = ${next[j-1]}`;
+        tw(explain, { o: 1 }, time);
+        time += step;
+        
+        // 恢复颜色
+        tw(textChars[i].box, { fill: BG_GRAY }, time);
+        tw(patternChars[j].box, { fill: PATTERN_COLOR }, time);
+        
+        // 移动模式串（视觉上）
+        const oldJ = j;
+        j = next[j - 1];
+        const offset = (oldJ - j) * 28;
+        patternChars.forEach((char, idx) => {
+          tw(char.g, { x: 70 + idx * 28 + offset }, time);
+        });
+        tw(jPtr.g, { x: 70 + j * 28 + offset }, time);
+        
+        time += step;
+      } else {
+        // j = 0 且失配，i++
+        tw(iPtr.g, { x: 70 + i * 28 }, time);
+        tw(jPtr.g, { x: 70 }, time);
+        tw(textChars[i].box, { fill: MISMATCH_COLOR }, time);
+        tw(patternChars[0].box, { fill: MISMATCH_COLOR }, time);
+        
+        explain.textContent = `失配：${text[i]} ≠ ${pattern[0]}，i++`;
+        tw(explain, { o: 1 }, time);
+        time += step * 0.7;
+        
+        tw(textChars[i].box, { fill: BG_GRAY }, time);
+        tw(patternChars[0].box, { fill: PATTERN_COLOR }, time);
+        
+        i++;
+        
+        // 移动模式串到新的起始位置
+        const offset = i * 28;
+        patternChars.forEach((char, idx) => {
+          tw(char.g, { x: 70 + idx * 28 + offset }, time);
+        });
+        tw(jPtr.g, { x: 70 + offset }, time);
+        
+        time += step * 0.5;
+      }
+    }
+  }
+  
+  // 最终总结
+  const summary = T(p, '文本指针 i 从头到尾只遍历一次 → O(n) 时间', { 
+    x: 400, y: 480, size: 24, weight: 600, fill: MATCH_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(summary, { o: 1 }, time + 1);
+}, { audio: 'matching-demo' }],
+
+['code', '算法实现', () => {
+  const p = panel(0);
+
+  T(p, 'KMP 算法实现', { x: 400, y: 70, size: 42, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const code1 = [
+    'def compute_next(pattern):',
+    '  next = [0] * len(pattern)',
+    '  j = 0',
+    '  for i in range(1, len(pattern)):',
+    '    while j > 0 and pattern[i] != pattern[j]:',
+    '      j = next[j - 1]',
+    '    if pattern[i] == pattern[j]:',
+    '      j += 1',
+    '    next[i] = j',
+    '  return next'
+  ];
+  
+  const code2 = [
+    'def kmp_search(text, pattern):',
+    '  next = compute_next(pattern)',
+    '  j = 0',
+    '  for i in range(len(text)):',
+    '    while j > 0 and text[i] != pattern[j]:',
+    '      j = next[j - 1]',
+    '    if text[i] == pattern[j]:',
+    '      j += 1',
+    '    if j == len(pattern):',
+    '      return i - j + 1  # 找到匹配',
+    '  return -1  # 未找到'
+  ];
+  
+  const codeY = 150;
+  const lineHeight = 25;
+  
+  T(p, '1. 计算 next 数组', { x: 120, y: codeY - 20, size: 24, weight: 600, fill: NEXT_BG, o: 0 });
+  code1.forEach((line, i) => {
+    const text = T(p, line, { 
+      x: 120, y: codeY + i * lineHeight, 
+      size: 16, fill: TEXT_COLOR, anchor: 'start', o: 0,
+      family: 'monospace'
+    });
+    tw(text, { o: 1 }, 0.5 + i * 0.2);
+  });
+  
+  T(p, '2. 执行匹配', { x: 480, y: codeY - 20, size: 24, weight: 600, fill: PATTERN_COLOR, o: 0 });
+  code2.forEach((line, i) => {
+    const text = T(p, line, { 
+      x: 480, y: codeY + i * lineHeight, 
+      size: 16, fill: TEXT_COLOR, anchor: 'start', o: 0,
+      family: 'monospace'
+    });
+    tw(text, { o: 1 }, 2.5 + i * 0.2);
+  });
+}, { audio: 'code' }],
+
+['complexity', '复杂度分析', () => {
+  const p = panel(0);
+
+  T(p, '时间复杂度分析', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const items = [
+    { 
+      title: '计算 next 数组', 
+      complexity: 'O(m)', 
+      desc: '遍历模式串，每个字符最多回退 m 次', 
+      color: NEXT_BG, 
+      y: 180 
+    },
+    { 
+      title: '执行匹配', 
+      complexity: 'O(n)', 
+      desc: '遍历文本，j 总移动不超过 2n 次', 
+      color: PATTERN_COLOR, 
+      y: 280 
+    },
+    { 
+      title: '总时间复杂度', 
+      complexity: 'O(n + m)', 
+      desc: '线性时间，相比朴素算法的 O(n × m) 巨大提升', 
+      color: MATCH_COLOR, 
+      y: 380 
+    }
+  ];
+  
+  items.forEach(({ title, complexity, desc, color, y }, i) => {
+    const box = mk('rect', { 
+      x: 80, y: y - 35, width: 640, height: 80, 
+      fill: color, stroke: TEXT_COLOR, 'stroke-width': 3, rx: 8, o: 0 
+    }, p);
+    tw(box, { o: 0.3 }, 0.8 + i * 0.8);
+    
+    const titleText = T(p, title, { x: 120, y: y - 10, size: 26, weight: 700, fill: '#fff', anchor: 'start', o: 0 });
+    tw(titleText, { o: 1 }, 0.8 + i * 0.8);
+    
+    const complexityText = T(p, complexity, { 
+      x: 680, y: y - 10, size: 28, weight: 700, fill: '#fff', anchor: 'end', o: 0 
+    });
+    tw(complexityText, { o: 1 }, 0.8 + i * 0.8);
+    
+    const descText = T(p, desc, { x: 120, y: y + 20, size: 20, fill: '#fff', anchor: 'start', o: 0 });
+    tw(descText, { o: 1 }, 1.0 + i * 0.8);
+  });
+  
+  const space = T(p, '空间复杂度：O(m) 用于存储 next 数组', { 
+    x: 400, y: 510, size: 26, fill: POINTER_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(space, { o: 1 }, 3.5);
+}, { audio: 'complexity' }],
+
+['applications', '应用场景', () => {
+  const p = panel(0);
+
+  T(p, 'KMP 的实际应用', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const apps = [
+    { icon: '📝', title: '文本编辑器', desc: '查找/替换功能', color: MATCH_COLOR, y: 170 },
+    { icon: '🔍', title: '搜索引擎', desc: '关键词匹配', color: PATTERN_COLOR, y: 250 },
+    { icon: '🧬', title: 'DNA 分析', desc: '基因序列比对', color: NEXT_BG, y: 330 },
+    { icon: '🦠', title: '病毒检测', desc: '特征码匹配', color: MISMATCH_COLOR, y: 410 },
+    { icon: '🛡️', title: '网络安全', desc: '入侵检测系统', color: POINTER_COLOR, y: 490 }
+  ];
+  
+  apps.forEach(({ icon, title, desc, color, y }, i) => {
+    const g = G(p, { x: 150, y, o: 0 });
+    
+    const box = mk('rect', { 
+      x: -20, y: -25, width: 520, height: 60, 
+      fill: color, stroke: TEXT_COLOR, 'stroke-width': 2, rx: 6, o: 0.3 
+    }, g);
+    
+    T(g, icon, { x: 0, y: 0, size: 32, anchor: 'middle' });
+    T(g, title, { x: 60, y: -5, size: 26, weight: 600, fill: '#fff', anchor: 'start' });
+    T(g, desc, { x: 60, y: 18, size: 20, fill: '#fff', anchor: 'start' });
+    
+    tw(g, { o: 1 }, 0.8 + i * 0.4);
+  });
+}, { audio: 'applications' }],
+
+['variants', '算法变体', () => {
+  const p = panel(0);
+
+  T(p, '其他字符串匹配算法', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const algorithms = [
+    { 
+      name: 'Boyer-Moore', 
+      feature: '从右向左比较', 
+      perf: '平均更快', 
+      color: MATCH_COLOR, 
+      y: 180 
+    },
+    { 
+      name: 'Rabin-Karp', 
+      feature: '使用哈希值', 
+      perf: '适合多模式', 
+      color: PATTERN_COLOR, 
+      y: 260 
+    },
+    { 
+      name: 'Aho-Corasick', 
+      feature: 'KMP 的多模式扩展', 
+      perf: '多模式匹配', 
+      color: NEXT_BG, 
+      y: 340 
+    },
+    { 
+      name: '后缀数组/树', 
+      feature: '预处理文本', 
+      perf: '复杂查询', 
+      color: POINTER_COLOR, 
+      y: 420 
+    }
+  ];
+  
+  algorithms.forEach(({ name, feature, perf, color, y }, i) => {
+    const box = mk('rect', { 
+      x: 100, y: y - 30, width: 600, height: 70, 
+      fill: color, stroke: TEXT_COLOR, 'stroke-width': 3, rx: 8, o: 0 
+    }, p);
+    tw(box, { o: 0.3 }, 0.8 + i * 0.5);
+    
+    const nameText = T(p, name, { x: 130, y: y - 5, size: 26, weight: 700, fill: '#fff', anchor: 'start', o: 0 });
+    tw(nameText, { o: 1 }, 0.8 + i * 0.5);
+    
+    const featureText = T(p, feature, { x: 350, y: y - 5, size: 22, fill: '#fff', anchor: 'start', o: 0 });
+    tw(featureText, { o: 1 }, 1.0 + i * 0.5);
+    
+    const perfText = T(p, perf, { x: 650, y: y - 5, size: 22, weight: 600, fill: '#fff', anchor: 'end', o: 0 });
+    tw(perfText, { o: 1 }, 1.0 + i * 0.5);
+  });
+  
+  const choice = T(p, '选择算法：单模式用 KMP/BM，多模式用 AC 自动机', { 
+    x: 400, y: 520, size: 24, fill: TEXT_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(choice, { o: 1 }, 3.5);
+}, { audio: 'variants' }],
+
+['optimization', '优化技巧', () => {
+  const p = panel(0);
+
+  T(p, '实现优化技巧', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const tips = [
+    '改进 next 数组为 nextval，避免冗余比较',
+    '对于二进制串，使用位运算加速',
+    '查找所有匹配：找到后继续，不要停止',
+    '并行化：把长文本分段，多线程处理',
+    '优化内存：next 数组可以用 int8 或 int16'
+  ];
+  
+  tips.forEach((tip, i) => {
+    const g = G(p, { x: 150, y: 180 + i * 70, o: 0 });
+    
+    const bullet = mk('circle', { cx: 0, cy: 0, r: 8, fill: PATTERN_COLOR }, g);
+    const text = T(g, tip, { x: 30, y: 0, size: 24, fill: TEXT_COLOR, anchor: 'start' });
+    text.setAttribute('dominant-baseline', 'central');
+    
+    tw(g, { o: 1 }, 0.8 + i * 0.5);
+  });
+}, { audio: 'optimization' }],
+
+['edge-cases', '边界情况', () => {
+  const p = panel(0);
+
+  T(p, '需要注意的边界情况', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const cases = [
+    { case: '空字符串', handle: '空模式串匹配任何位置', color: NEXT_BG },
+    { case: '单字符', handle: 'next 数组只有一个元素 0', color: PATTERN_COLOR },
+    { case: '完全不匹配', handle: '返回 -1 或空列表', color: MISMATCH_COLOR },
+    { case: '多次匹配', handle: '找到后继续搜索', color: MATCH_COLOR },
+    { case: '重叠匹配', handle: 'AAA 中找 AA，有两个匹配', color: POINTER_COLOR }
+  ];
+  
+  cases.forEach(({ case: caseName, handle, color }, i) => {
+    const y = 180 + i * 75;
+    
+    const box = mk('rect', { 
+      x: 80, y: y - 30, width: 640, height: 65, 
+      fill: color, stroke: TEXT_COLOR, 'stroke-width': 2, rx: 6, o: 0 
+    }, p);
+    tw(box, { o: 0.3 }, 0.8 + i * 0.4);
+    
+    const caseText = T(p, caseName, { x: 110, y: y - 5, size: 24, weight: 600, fill: '#fff', anchor: 'start', o: 0 });
+    tw(caseText, { o: 1 }, 0.8 + i * 0.4);
+    
+    const handleText = T(p, handle, { x: 110, y: y + 20, size: 20, fill: '#fff', anchor: 'start', o: 0 });
+    tw(handleText, { o: 1 }, 1.0 + i * 0.4);
+  });
+}, { audio: 'edge-cases' }],
+
+['finish', '总结', () => {
+  const p = panel(0);
+
+  T(p, 'KMP 算法总结', { x: 400, y: 80, size: 46, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const summary = [
+    { icon: '💡', text: '核心思想：利用已匹配信息，避免回溯', color: MATCH_COLOR, y: 170 },
+    { icon: '📊', text: 'next 数组：记录最长相同前后缀', color: NEXT_BG, y: 240 },
+    { icon: '⚡', text: '关键优化：文本指针不回退', color: POINTER_COLOR, y: 310 },
+    { icon: '⏱️', text: '时间复杂度：O(n + m) 线性时间', color: PATTERN_COLOR, y: 380 },
+    { icon: '🎯', text: '应用广泛：搜索、生物、安全', color: MISMATCH_COLOR, y: 450 }
+  ];
+  
+  summary.forEach(({ icon, text, color, y }, i) => {
+    const g = G(p, { x: 150, y, o: 0 });
+    
+    const box = mk('rect', { 
+      x: -20, y: -25, width: 520, height: 55, 
+      fill: color, stroke: TEXT_COLOR, 'stroke-width': 3, rx: 8, o: 0.3 
+    }, g);
+    
+    T(g, icon, { x: 0, y: 0, size: 32, anchor: 'middle' });
+    T(g, text, { x: 60, y: 0, size: 24, weight: 600, fill: '#fff', anchor: 'start' });
+    text.setAttribute('dominant-baseline', 'central');
+    
+    tw(g, { o: 1 }, 0.8 + i * 0.4);
+  });
+  
+  const final = T(p, '简单的想法，巧妙的实现，优雅的分析', { 
+    x: 400, y: 540, size: 28, weight: 700, fill: TEXT_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(final, { o: 1 }, 3.5);
+}, { audio: 'finish' }],
+
+];
+
+/* 暴露到 window 以便测试访问 */
+window.BEATS = BEATS;
+window.CHAPTER = CHAPTER;
+window.MATCH_COLOR = MATCH_COLOR;
+window.MISMATCH_COLOR = MISMATCH_COLOR;
+window.CURRENT_COLOR = CURRENT_COLOR;
+window.PATTERN_COLOR = PATTERN_COLOR;
+window.TEXT_COLOR = TEXT_COLOR;
+window.NEXT_BG = NEXT_BG;
+window.POINTER_COLOR = POINTER_COLOR;
+window.drawChar = drawChar;
+window.drawPointer = drawPointer;
+window.drawNextArray = drawNextArray;
+
+/* ---------- 初始化 ---------- */
+function boot() {
+  panel(0);
+  panel(800);
+}
+
+boot();
+</script>
+</body>
+</html>

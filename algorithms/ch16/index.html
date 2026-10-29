@@ -59,8 +59,10 @@ function drawStack(parent, x, y, width = 120, height = 60) {
 /* ---------- Beats ---------- */
 let BEATS = [
 
-['intro', '问题引入', (panel) => {
-  T(panel(0), '深度优先搜索（DFS）', { x: 400, y: 100, size: 48, weight: 700, fill: TEXT_COLOR, o: 0 });
+['intro', '问题引入', () => {
+  const p = panel(0);
+
+  T(p, '深度优先搜索（DFS）', { x: 400, y: 100, size: 48, weight: 700, fill: TEXT_COLOR, o: 0 });
   
   const scenarios = [
     { icon: '🧩', text: '走迷宫：一条路走到底，不行就回溯', y: 200 },
@@ -70,20 +72,22 @@ let BEATS = [
   ];
   
   scenarios.forEach(({ icon, text, y }, i) => {
-    const g = G(panel(0), { x: 150, y, o: 0 });
+    const g = G(p, { x: 150, y, o: 0 });
     T(g, icon, { x: 0, y: 0, size: 40, anchor: 'middle' });
     T(g, text, { x: 80, y: 0, size: 28, fill: TEXT_COLOR, anchor: 'start' });
     tw(g, { o: 1 }, 0.5 + i * 0.3);
   });
   
-  const question = T(panel(0), '核心问题：如何深入探索图/树的结构？', { 
+  const question = T(p, '核心问题：如何深入探索图/树的结构？', { 
     x: 400, y: 550, size: 32, weight: 600, fill: VISITING, anchor: 'middle', o: 0 
   });
   tw(question, { o: 1 }, 2.5);
 }, { audio: 'intro' }],
 
-['concept', 'DFS 基本思想', (panel) => {
-  T(panel(0), 'DFS 基本思想', { x: 400, y: 100, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+['concept', 'DFS 基本思想', () => {
+  const p = panel(0);
+
+  T(p, 'DFS 基本思想', { x: 400, y: 100, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
   
   const concepts = [
     { title: '深度优先', desc: '沿着一条路径尽可能深入', color: VISITING, y: 200 },
@@ -95,28 +99,30 @@ let BEATS = [
     const box = mk('rect', { 
       x: 100, y: y - 30, width: 600, height: 70, 
       fill: color, opacity: 0.2, rx: 10, o: 0 
-    }, panel(0));
+    }, p);
     tw(box, { o: 1 }, 0.5 + i * 0.5);
     
-    const titleText = T(panel(0), title, { 
+    const titleText = T(p, title, { 
       x: 120, y: y - 5, size: 32, weight: 700, fill: color, o: 0 
     });
     tw(titleText, { o: 1 }, 0.7 + i * 0.5);
     
-    const descText = T(panel(0), desc, { 
+    const descText = T(p, desc, { 
       x: 120, y: y + 25, size: 24, fill: TEXT_COLOR, o: 0 
     });
     tw(descText, { o: 1 }, 0.9 + i * 0.5);
   });
   
-  const process = T(panel(0), '过程：从起点开始 → 访问未访问的邻居 → 递归 → 回溯', { 
+  const process = T(p, '过程：从起点开始 → 访问未访问的邻居 → 递归 → 回溯', { 
     x: 400, y: 500, size: 26, fill: TEXT_COLOR, anchor: 'middle', o: 0 
   });
   tw(process, { o: 1 }, 2.5);
 }, { audio: 'concept' }],
 
-['recursive', '递归实现', (panel) => {
-  T(panel(0), '递归实现', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+['recursive', '递归实现', () => {
+  const p = panel(0);
+
+  T(p, '递归实现', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
   
   const code = `def dfs_recursive(graph, node, visited=None):
     if visited is None:
@@ -133,20 +139,22 @@ let BEATS = [
   
   const lines = code.split('\n');
   lines.forEach((line, i) => {
-    const text = T(panel(0), line, { 
+    const text = T(p, line, { 
       x: 100, y: 150 + i * 32, size: 20, fill: TEXT_COLOR, family: 'monospace', o: 0 
     });
     tw(text, { o: 1 }, 0.3 + i * 0.15);
   });
   
-  const note = T(panel(0), '简洁优雅，利用递归栈自动管理回溯', { 
+  const note = T(p, '简洁优雅，利用递归栈自动管理回溯', { 
     x: 400, y: 550, size: 28, weight: 600, fill: VISITING, anchor: 'middle', o: 0 
   });
   tw(note, { o: 1 }, 3.0);
 }, { audio: 'recursive' }],
 
-['iterative', '迭代实现', (panel) => {
-  T(panel(0), '迭代实现（显式栈）', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+['iterative', '迭代实现', () => {
+  const p = panel(0);
+
+  T(p, '迭代实现（显式栈）', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
   
   const code = `def dfs_iterative(graph, start):
     visited = set()
@@ -169,20 +177,22 @@ let BEATS = [
   
   const lines = code.split('\n');
   lines.forEach((line, i) => {
-    const text = T(panel(0), line, { 
+    const text = T(p, line, { 
       x: 80, y: 140 + i * 26, size: 18, fill: TEXT_COLOR, family: 'monospace', o: 0 
     });
     tw(text, { o: 1 }, 0.2 + i * 0.12);
   });
   
-  const complexity = T(panel(0), '时间复杂度：O(V + E)    空间复杂度：O(V)', { 
+  const complexity = T(p, '时间复杂度：O(V + E)    空间复杂度：O(V)', { 
     x: 400, y: 560, size: 26, weight: 600, fill: EDGE_ACTIVE, anchor: 'middle', o: 0 
   });
   tw(complexity, { o: 1 }, 3.5);
 }, { audio: 'iterative' }],
 
-['dfs-demo', 'DFS 遍历演示', (panel) => {
-  T(panel(0), 'DFS 遍历演示', { x: 400, y: 60, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+['dfs-demo', 'DFS 遍历演示', () => {
+  const p = panel(0);
+
+  T(p, 'DFS 遍历演示', { x: 400, y: 60, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
   
   // 图结构：7个节点
   const nodes = {
@@ -206,26 +216,26 @@ let BEATS = [
   edges.forEach(([from, to], i) => {
     const { x: x1, y: y1 } = nodes[from];
     const { x: x2, y: y2 } = nodes[to];
-    edgeElements[`${from}-${to}`] = drawEdge(panel(0), x1, y1, x2, y2);
+    edgeElements[`${from}-${to}`] = drawEdge(p, x1, y1, x2, y2);
     tw(edgeElements[`${from}-${to}`], { opacity: 0.3 }, 0.5 + i * 0.1);
   });
   
   // 创建节点
   const nodeElements = {};
   Object.entries(nodes).forEach(([label, { x, y }], i) => {
-    nodeElements[label] = drawNode(panel(0), x, y, label);
+    nodeElements[label] = drawNode(p, x, y, label);
     tw(nodeElements[label].g, { o: 1 }, 0.8 + i * 0.1);
   });
   
   // 调用栈显示
-  const stackLabel = T(panel(0), '调用栈:', { x: 50, y: 520, size: 24, weight: 600, fill: TEXT_COLOR, o: 0 });
+  const stackLabel = T(p, '调用栈:', { x: 50, y: 520, size: 24, weight: 600, fill: TEXT_COLOR, o: 0 });
   tw(stackLabel, { o: 1 }, 1.0);
   
   // 遍历顺序显示
-  const orderLabel = T(panel(0), '遍历顺序:', { x: 400, y: 520, size: 24, weight: 600, fill: TEXT_COLOR, o: 0 });
+  const orderLabel = T(p, '遍历顺序:', { x: 400, y: 520, size: 24, weight: 600, fill: TEXT_COLOR, o: 0 });
   tw(orderLabel, { o: 1 }, 1.0);
   
-  const orderText = T(panel(0), '', { x: 520, y: 520, size: 24, fill: VISITED, o: 0 });
+  const orderText = T(p, '', { x: 520, y: 520, size: 24, fill: VISITED, o: 0 });
   tw(orderText, { o: 1 }, 1.0);
   
   let order = [];
@@ -238,7 +248,7 @@ let BEATS = [
   orderText.textContent = 'A';
   
   // A 入栈
-  const stackA = drawStack(panel(0), 50, 560);
+  const stackA = drawStack(p, 50, 560);
   const stackTextA = T(stackA.g, 'A', { x: 60, y: 30, size: 24, weight: 600, fill: '#fff', anchor: 'middle' });
   stackTextA.setAttribute('dominant-baseline', 'central');
   tw(stackA.g, { o: 1 }, 2.5);
@@ -254,7 +264,7 @@ let BEATS = [
   orderText.textContent = 'A → B';
   
   // B 入栈
-  const stackB = drawStack(panel(0), 50, 545);
+  const stackB = drawStack(p, 50, 545);
   const stackTextB = T(stackB.g, 'B', { x: 60, y: 30, size: 24, weight: 600, fill: '#fff', anchor: 'middle' });
   stackTextB.setAttribute('dominant-baseline', 'central');
   tw(stackB.g, { o: 1 }, 4.0);
@@ -270,7 +280,7 @@ let BEATS = [
   orderText.textContent = 'A → B → D';
   
   // D 入栈
-  const stackD = drawStack(panel(0), 50, 530);
+  const stackD = drawStack(p, 50, 530);
   const stackTextD = T(stackD.g, 'D', { x: 60, y: 30, size: 24, weight: 600, fill: '#fff', anchor: 'middle' });
   stackTextD.setAttribute('dominant-baseline', 'central');
   tw(stackD.g, { o: 1 }, 5.5);
@@ -291,7 +301,7 @@ let BEATS = [
   orderText.textContent = 'A → B → D → E';
   
   // E 入栈
-  const stackE = drawStack(panel(0), 50, 530);
+  const stackE = drawStack(p, 50, 530);
   const stackTextE = T(stackE.g, 'E', { x: 60, y: 30, size: 24, weight: 600, fill: '#fff', anchor: 'middle' });
   stackTextE.setAttribute('dominant-baseline', 'central');
   tw(stackE.g, { o: 1 }, 7.8);
@@ -317,7 +327,7 @@ let BEATS = [
   orderText.textContent = 'A → B → D → E → C';
   
   // C 入栈
-  const stackC = drawStack(panel(0), 50, 545);
+  const stackC = drawStack(p, 50, 545);
   const stackTextC = T(stackC.g, 'C', { x: 60, y: 30, size: 24, weight: 600, fill: '#fff', anchor: 'middle' });
   stackTextC.setAttribute('dominant-baseline', 'central');
   tw(stackC.g, { o: 1 }, 10.9);
@@ -333,7 +343,7 @@ let BEATS = [
   orderText.textContent = 'A → B → D → E → C → F';
   
   // F 入栈
-  const stackF = drawStack(panel(0), 50, 530);
+  const stackF = drawStack(p, 50, 530);
   const stackTextF = T(stackF.g, 'F', { x: 60, y: 30, size: 24, weight: 600, fill: '#fff', anchor: 'middle' });
   stackTextF.setAttribute('dominant-baseline', 'central');
   tw(stackF.g, { o: 1 }, 12.4);
@@ -354,7 +364,7 @@ let BEATS = [
   orderText.textContent = 'A → B → D → E → C → F → G';
   
   // G 入栈
-  const stackG = drawStack(panel(0), 50, 530);
+  const stackG = drawStack(p, 50, 530);
   const stackTextG = T(stackG.g, 'G', { x: 60, y: 30, size: 24, weight: 600, fill: '#fff', anchor: 'middle' });
   stackTextG.setAttribute('dominant-baseline', 'central');
   tw(stackG.g, { o: 1 }, 14.7);
@@ -375,12 +385,14 @@ let BEATS = [
   tw(stackA.g, { o: 0 }, 17.1);
   
   // 最终状态
-  const finalNote = T(panel(0), '遍历完成！', { x: 400, y: 560, size: 28, weight: 600, fill: VISITED, anchor: 'middle', o: 0 });
+  const finalNote = T(p, '遍历完成！', { x: 400, y: 560, size: 28, weight: 600, fill: VISITED, anchor: 'middle', o: 0 });
   tw(finalNote, { o: 1 }, 17.5);
 }, { audio: 'dfs-demo' }],
 
-['comparison', 'DFS vs BFS', (panel) => {
-  T(panel(0), 'DFS vs BFS 对比', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+['comparison', 'DFS vs BFS', () => {
+  const p = panel(0);
+
+  T(p, 'DFS vs BFS 对比', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
   
   const headers = ['特性', 'DFS', 'BFS'];
   const rows = [
@@ -396,7 +408,7 @@ let BEATS = [
   const rowHeight = 60;
   
   headers.forEach((h, i) => {
-    const text = T(panel(0), h, { 
+    const text = T(p, h, { 
       x: colX[i], y: startY, size: 28, weight: 700, fill: VISITING, o: 0 
     });
     tw(text, { o: 1 }, 0.5 + i * 0.2);
@@ -404,7 +416,7 @@ let BEATS = [
   
   rows.forEach((row, ri) => {
     row.forEach((cell, ci) => {
-      const text = T(panel(0), cell, { 
+      const text = T(p, cell, { 
         x: colX[ci], y: startY + (ri + 1) * rowHeight, 
         size: 22, fill: TEXT_COLOR, o: 0 
       });
@@ -413,8 +425,10 @@ let BEATS = [
   });
 }, { audio: 'comparison' }],
 
-['path-finding', '应用：路径查找', (panel) => {
-  T(panel(0), '应用：路径查找', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+['path-finding', '应用：路径查找', () => {
+  const p = panel(0);
+
+  T(p, '应用：路径查找', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
   
   const code = `def find_path(graph, start, target, path=None):
     if path is None:
@@ -435,20 +449,22 @@ let BEATS = [
   
   const lines = code.split('\n');
   lines.forEach((line, i) => {
-    const text = T(panel(0), line, { 
+    const text = T(p, line, { 
       x: 80, y: 140 + i * 26, size: 18, fill: TEXT_COLOR, family: 'monospace', o: 0 
     });
     tw(text, { o: 1 }, 0.2 + i * 0.1);
   });
   
-  const note = T(panel(0), '找到从起点到目标的一条路径（不一定最短）', { 
+  const note = T(p, '找到从起点到目标的一条路径（不一定最短）', { 
     x: 400, y: 540, size: 26, weight: 600, fill: VISITING, anchor: 'middle', o: 0 
   });
   tw(note, { o: 1 }, 2.5);
 }, { audio: 'path-finding' }],
 
-['cycle-detection', '应用：环检测', (panel) => {
-  T(panel(0), '应用：环检测', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+['cycle-detection', '应用：环检测', () => {
+  const p = panel(0);
+
+  T(p, '应用：环检测', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
   
   const code = `def has_cycle(graph):
     visited = set()
@@ -476,20 +492,22 @@ let BEATS = [
   
   const lines = code.split('\n');
   lines.forEach((line, i) => {
-    const text = T(panel(0), line, { 
+    const text = T(p, line, { 
       x: 70, y: 130 + i * 22, size: 17, fill: TEXT_COLOR, family: 'monospace', o: 0 
     });
     tw(text, { o: 1 }, 0.15 + i * 0.08);
   });
   
-  const note = T(panel(0), '用递归栈检测有向图中的环', { 
+  const note = T(p, '用递归栈检测有向图中的环', { 
     x: 400, y: 560, size: 26, weight: 600, fill: EDGE_ACTIVE, anchor: 'middle', o: 0 
   });
   tw(note, { o: 1 }, 2.8);
 }, { audio: 'cycle-detection' }],
 
-['components', '应用：连通分量', (panel) => {
-  T(panel(0), '应用：连通分量', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+['components', '应用：连通分量', () => {
+  const p = panel(0);
+
+  T(p, '应用：连通分量', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
   
   const code = `def count_components(graph):
     visited = set()
@@ -510,20 +528,22 @@ let BEATS = [
   
   const lines = code.split('\n');
   lines.forEach((line, i) => {
-    const text = T(panel(0), line, { 
+    const text = T(p, line, { 
       x: 100, y: 150 + i * 28, size: 19, fill: TEXT_COLOR, family: 'monospace', o: 0 
     });
     tw(text, { o: 1 }, 0.2 + i * 0.12);
   });
   
-  const note = T(panel(0), '统计无向图中有多少个连通分量', { 
+  const note = T(p, '统计无向图中有多少个连通分量', { 
     x: 400, y: 540, size: 26, weight: 600, fill: VISITING, anchor: 'middle', o: 0 
   });
   tw(note, { o: 1 }, 2.5);
 }, { audio: 'components' }],
 
-['timestamps', 'DFS 时间戳', (panel) => {
-  T(panel(0), 'DFS 的三个时间戳', { x: 400, y: 100, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+['timestamps', 'DFS 时间戳', () => {
+  const p = panel(0);
+
+  T(p, 'DFS 的三个时间戳', { x: 400, y: 100, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
   
   const concepts = [
     { 
@@ -544,25 +564,27 @@ let BEATS = [
   ];
   
   concepts.forEach(({ title, desc, y }, i) => {
-    const titleText = T(panel(0), title, { 
+    const titleText = T(p, title, { 
       x: 120, y, size: 30, weight: 700, fill: VISITING, o: 0 
     });
     tw(titleText, { o: 1 }, 0.5 + i * 0.5);
     
-    const descText = T(panel(0), desc, { 
+    const descText = T(p, desc, { 
       x: 120, y: y + 40, size: 24, fill: TEXT_COLOR, o: 0 
     });
     tw(descText, { o: 1 }, 0.7 + i * 0.5);
   });
   
-  const note = T(panel(0), '按完成时间降序 = 拓扑排序', { 
+  const note = T(p, '按完成时间降序 = 拓扑排序', { 
     x: 400, y: 520, size: 28, weight: 600, fill: EDGE_ACTIVE, anchor: 'middle', o: 0 
   });
   tw(note, { o: 1 }, 2.5);
 }, { audio: 'timestamps' }],
 
-['tree-traversal', '树的遍历', (panel) => {
-  T(panel(0), '树的遍历（DFS 变体）', { x: 400, y: 100, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+['tree-traversal', '树的遍历', () => {
+  const p = panel(0);
+
+  T(p, '树的遍历（DFS 变体）', { x: 400, y: 100, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
   
   const traversals = [
     { name: '前序遍历（Pre-order）', order: '根 → 左 → 右', color: VISITING, y: 210 },
@@ -574,28 +596,30 @@ let BEATS = [
     const box = mk('rect', { 
       x: 100, y: y - 40, width: 600, height: 80, 
       fill: color, opacity: 0.2, rx: 10, o: 0 
-    }, panel(0));
+    }, p);
     tw(box, { o: 1 }, 0.5 + i * 0.5);
     
-    const nameText = T(panel(0), name, { 
+    const nameText = T(p, name, { 
       x: 120, y: y - 10, size: 32, weight: 700, fill: color, o: 0 
     });
     tw(nameText, { o: 1 }, 0.7 + i * 0.5);
     
-    const orderText = T(panel(0), order, { 
+    const orderText = T(p, order, { 
       x: 120, y: y + 20, size: 26, fill: TEXT_COLOR, o: 0 
     });
     tw(orderText, { o: 1 }, 0.9 + i * 0.5);
   });
   
-  const note = T(panel(0), '后序遍历 = DFS 完成时间顺序', { 
+  const note = T(p, '后序遍历 = DFS 完成时间顺序', { 
     x: 400, y: 540, size: 26, weight: 600, fill: EDGE_ACTIVE, anchor: 'middle', o: 0 
   });
   tw(note, { o: 1 }, 2.5);
 }, { audio: 'tree-traversal' }],
 
-['techniques', '实现技巧', (panel) => {
-  T(panel(0), '实现技巧', { x: 400, y: 100, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+['techniques', '实现技巧', () => {
+  const p = panel(0);
+
+  T(p, '实现技巧', { x: 400, y: 100, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
   
   const tips = [
     '递归 vs 迭代：递归更简洁，迭代更灵活',
@@ -606,20 +630,22 @@ let BEATS = [
   ];
   
   tips.forEach((tip, i) => {
-    const bullet = T(panel(0), '●', { 
+    const bullet = T(p, '●', { 
       x: 100, y: 200 + i * 70, size: 32, fill: VISITING, o: 0 
     });
     tw(bullet, { o: 1 }, 0.5 + i * 0.3);
     
-    const text = T(panel(0), tip, { 
+    const text = T(p, tip, { 
       x: 140, y: 200 + i * 70, size: 26, fill: TEXT_COLOR, o: 0 
     });
     tw(text, { o: 1 }, 0.7 + i * 0.3);
   });
 }, { audio: 'techniques' }],
 
-['finish', '总结', (panel) => {
-  T(panel(0), '深度优先搜索（DFS）', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+['finish', '总结', () => {
+  const p = panel(0);
+
+  T(p, '深度优先搜索（DFS）', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
   
   const applications = [
     '🔍 拼写检查：岛屿数量问题',
@@ -631,18 +657,18 @@ let BEATS = [
   ];
   
   applications.forEach((app, i) => {
-    const text = T(panel(0), app, { 
+    const text = T(p, app, { 
       x: 120, y: 180 + i * 55, size: 26, fill: TEXT_COLOR, o: 0 
     });
     tw(text, { o: 1 }, 0.5 + i * 0.25);
   });
   
-  const summary = T(panel(0), '核心思想：深入探索 + 回溯 + 记忆化', { 
+  const summary = T(p, '核心思想：深入探索 + 回溯 + 记忆化', { 
     x: 400, y: 520, size: 30, weight: 700, fill: VISITING, anchor: 'middle', o: 0 
   });
   tw(summary, { o: 1 }, 3.0);
   
-  const complexity = T(panel(0), '时间：O(V + E)    空间：O(V)', { 
+  const complexity = T(p, '时间：O(V + E)    空间：O(V)', { 
     x: 400, y: 570, size: 26, weight: 600, fill: EDGE_ACTIVE, anchor: 'middle', o: 0 
   });
   tw(complexity, { o: 1 }, 3.5);

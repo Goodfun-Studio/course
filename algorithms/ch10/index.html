@@ -100,11 +100,16 @@ let BEATS = [
     { x: 800, y: 420, size: 32, fill: PRIMARY, anchor: 'middle', o: 0 });
   tw(def, { o: 1 }, 5.5, 0.7);
   
-  const features = G(p, { x: 800, y: 530, o: 0 });
-  T(features, '✓ 稳定排序', { x: -200, y: 0, size: 28, fill: LEFT_COLOR, weight: 600 });
-  T(features, '✓ O(n log n) 保证', { x: 0, y: 0, size: 28, fill: RIGHT_COLOR, weight: 600, anchor: 'middle' });
-  T(features, '✓ 适合外部排序', { x: 200, y: 0, size: 28, fill: MERGED_COLOR, weight: 600, anchor: 'end' });
-  tw(features, { o: 1 }, 9.0, 0.8);
+  const features = [
+    { text: '✓ 稳定排序', color: LEFT_COLOR, y: 500 },
+    { text: '✓ O(n log n) 保证', color: RIGHT_COLOR, y: 560 },
+    { text: '✓ 适合外部排序', color: MERGED_COLOR, y: 620 }
+  ];
+  
+  features.forEach((f, i) => {
+    const t = T(p, f.text, { x: 800, y: f.y, size: 28, fill: f.color, weight: 600, anchor: 'middle', o: 0 });
+    tw(t, { o: 1 }, 9.0 + i * 0.3, 0.8);
+  });
   
   const apps = T(p, '应用场景：链表排序 · 外部排序 · 需要稳定性的场景', 
     { x: 800, y: 680, size: 24, fill: DIM, anchor: 'middle', o: 0 });

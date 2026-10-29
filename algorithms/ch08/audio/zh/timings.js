@@ -1,15 +1,15 @@
-const TIMINGS = {
-  "intro": 16.78,
-  "negative_weight": 20.45,
-  "why_dijkstra_fails": 21.31,
-  "bellman_ford_idea": 17.06,
-  "relaxation": 22.94,
-  "iteration_logic": 21.38,
-  "demo_setup": 17.04,
-  "demo_iteration": 23.3,
-  "demo_convergence": 17.38,
-  "negative_cycle": 19.18,
-  "complexity": 23.38,
-  "comparison": 22.75,
-  "summary": 17.98
+window.TIMINGS = {
+  "intro": { "dur": 16.78, "marks": {}, "cues": [] },
+  "negative_weight": { "dur": 20.45, "marks": {}, "cues": [] },
+  "why_dijkstra_fails": { "dur": 21.31, "marks": {}, "cues": [] },
+  "bellman_ford_idea": { "dur": 17.06, "marks": {}, "cues": [] },
+  "relaxation": { "dur": 22.94, "marks": {}, "cues": [] },
+  "iteration_logic": { "dur": 21.38, "marks": {}, "cues": [] },
+  "demo_setup": { "dur": 17.04, "marks": {}, "cues": [] },
+  "demo_iteration": { "dur": 23.3, "marks": {}, "cues": [] },
+  "demo_convergence": { "dur": 17.38, "marks": {}, "cues": [] },
+  "negative_cycle": { "dur": 19.18, "marks": {}, "cues": [] },
+  "complexity": { "dur": 23.38, "marks": {}, "cues": [] },
+  "comparison": { "dur": 22.75, "marks": {}, "cues": [] },
+  "summary": { "dur": 17.98, "marks": {}, "cues": [] }
 };

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Test CH11</title>
+</head>
+<body>
+<h1>Testing Chapter 11</h1>
+<div id="result"></div>
+<script>
+fetch('index.html')
+  .then(r => r.text())
+  .then(html => {
+    const hasBeats = html.includes('let BEATS = [');
+    const hasTimings = html.includes('timings.js');
+    const noStage = !html.match(/stage\(/);
+    const noW2 = !html.includes('W/2');
+    
+    const result = document.getElementById('result');
+    result.innerHTML = `
+      <p>Has BEATS: ${hasBeats ? '✅' : '❌'}</p>
+      <p>Has timings: ${hasTimings ? '✅' : '❌'}</p>
+      <p>No stage(): ${noStage ? '✅' : '❌'}</p>
+      <p>No W/2: ${noW2 ? '✅' : '❌'}</p>
+    `;
+  });
+</script>
+</body>
+</html>

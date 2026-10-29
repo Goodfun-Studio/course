@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第十九章 并查集（Union-Find）</title>
+<link rel="stylesheet" href="../lib/engine.css">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 19, title: '并查集（Union-Find）', language: 'zh', minutes: 10 };
+
+/* ---------- 颜色方案 ---------- */
+const ROOT_COLOR = '#e74c3c';      // 红色（根节点）
+const NODE_COLOR = '#3498db';      // 蓝色（普通节点）
+const HIGHLIGHT = '#f39c12';       // 橙色（高亮）
+const SUCCESS = '#2ecc71';         // 绿色（成功/合并后）
+const BACKGROUND = '#ecf0f1';      // 浅灰（背景）
+const TEXT_COLOR = '#2c3e50';      // 深色文字
+const RANK_COLOR = '#9b59b6';      // 紫色（秩）
+
+/* ---------- 辅助函数 ---------- */
+function drawNode(parent, x, y, label, color = NODE_COLOR, isRoot = false) {
+  const g = G(parent, { x, y, o: 0 });
+  const circle = mk('circle', { 
+    cx: 0, cy: 0, r: 30, 
+    fill: isRoot ? ROOT_COLOR : color, 
+    stroke: TEXT_COLOR, 
+    'stroke-width': isRoot ? 4 : 2 
+  }, g);
+  const text = T(g, label, { x: 0, y: 0, size: 24, weight: 700, fill: '#fff', anchor: 'middle' });
+  text.setAttribute('dominant-baseline', 'central');
+  return { g, circle, text };
+}
+
+function drawEdge(parent, x1, y1, x2, y2, color = TEXT_COLOR, width = 2) {
+  const line = mk('line', { 
+    x1, y1, x2, y2, 
+    stroke: color, 
+    'stroke-width': width,
+    'marker-end': 'url(#arrow)',
+    opacity: 0 
+  }, parent);
+  return line;
+}
+
+function drawArrow(parent) {
+  const defs = mk('defs', {}, parent);
+  const marker = mk('marker', {
+    id: 'arrow',
+    markerWidth: 10,
+    markerHeight: 10,
+    refX: 9,
+    refY: 3,
+    orient: 'auto',
+    markerUnits: 'strokeWidth'
+  }, defs);
+  mk('path', {
+    d: 'M0,0 L0,6 L9,3 z',
+    fill: TEXT_COLOR
+  }, marker);
+}
+
+function drawRankLabel(parent, x, y, rank) {
+  const text = T(parent, `秩=${rank}`, { 
+    x, y, size: 18, weight: 600, fill: RANK_COLOR, anchor: 'middle', o: 0 
+  });
+  return text;
+}
+
+/* ---------- Beats ---------- */
+let BEATS = [
+
+['intro', '问题引入', () => {
+  const p = panel(0);
+
+  T(p, '并查集（Union-Find）', { x: 400, y: 80, size: 48, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const scenarios = [
+    { icon: '👥', text: '社交网络：判断是否是朋友', y: 180 },
+    { icon: '🌐', text: '网络连通：设备是否互通', y: 260 },
+    { icon: '🗺️', text: '地图区域：是否属于同一块陆地', y: 340 },
+    { icon: '🔗', text: '动态连通性：快速查询和合并', y: 420 }
+  ];
+  
+  scenarios.forEach(({ icon, text, y }, i) => {
+    const g = G(p, { x: 150, y, o: 0 });
+    T(g, icon, { x: 0, y: 0, size: 36, anchor: 'middle' });
+    T(g, text, { x: 70, y: 0, size: 26, fill: TEXT_COLOR, anchor: 'start' });
+    tw(g, { o: 1 }, 0.5 + i * 0.3);
+  });
+  
+  const question = T(p, '核心问题：如何高效维护等价关系？', { 
+    x: 400, y: 530, size: 30, weight: 600, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+  });
+  tw(question, { o: 1 }, 2.5);
+}, { audio: 'intro' }],
+
+['operations', '核心操作', () => {
+  const p = panel(0);
+
+  T(p, '并查集的三个核心操作', { x: 400, y: 80, size: 42, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const operations = [
+    { name: 'find(x)', desc: '查找 x 所属集合的代表元（根节点）', color: ROOT_COLOR, y: 180 },
+    { name: 'union(x, y)', desc: '合并 x 和 y 所在的两个集合', color: SUCCESS, y: 300 },
+    { name: 'connected(x, y)', desc: '判断 x 和 y 是否在同一集合', color: NODE_COLOR, y: 420 }
+  ];
+  
+  operations.forEach(({ name, desc, color, y }, i) => {
+    const box = mk('rect', { 
+      x: 80, y: y - 40, width: 640, height: 100, 
+      fill: color, opacity: 0.15, rx: 12, o: 0 
+    }, p);
+    tw(box, { o: 1 }, 0.5 + i * 0.6);
+    
+    const nameText = T(p, name, { 
+      x: 120, y: y - 10, size: 32, weight: 700, fill: color, family: 'monospace', o: 0 
+    });
+    tw(nameText, { o: 1 }, 0.7 + i * 0.6);
+    
+    const descText = T(p, desc, { 
+      x: 120, y: y + 25, size: 22, fill: TEXT_COLOR, o: 0 
+    });
+    tw(descText, { o: 1 }, 0.9 + i * 0.6);
+  });
+}, { audio: 'operations' }],
+
+['naive', '朴素实现', () => {
+  const p = panel(0);
+
+  T(p, '朴素实现：数组标记', { x: 400, y: 80, size: 42, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  // 显示数组
+  const elements = ['0', '1', '2', '3', '4', '5', '6', '7'];
+  const ids = ['0', '0', '1', '1', '2', '2', '2', '3'];
+  
+  elements.forEach((elem, i) => {
+    const x = 100 + i * 75;
+    const box = mk('rect', { 
+      x: x - 25, y: 180, width: 50, height: 50, 
+      fill: BACKGROUND, stroke: TEXT_COLOR, 'stroke-width': 2, o: 0 
+    }, p);
+    tw(box, { o: 1 }, 0.3 + i * 0.1);
+    
+    const text = T(p, elem, { 
+      x, y: 205, size: 24, weight: 600, fill: TEXT_COLOR, anchor: 'middle', o: 0 
+    });
+    tw(text, { o: 1 }, 0.4 + i * 0.1);
+  });
+  
+  T(p, '索引', { x: 40, y: 205, size: 20, fill: TEXT_COLOR, anchor: 'end', o: 0 });
+  
+  ids.forEach((id, i) => {
+    const x = 100 + i * 75;
+    const box = mk('rect', { 
+      x: x - 25, y: 260, width: 50, height: 50, 
+      fill: ['#e74c3c', '#3498db', '#2ecc71', '#f39c12'][parseInt(id)], 
+      stroke: TEXT_COLOR, 'stroke-width': 2, o: 0 
+    }, p);
+    tw(box, { o: 1 }, 1.5 + i * 0.1);
+    
+    const text = T(p, id, { 
+      x, y: 285, size: 24, weight: 700, fill: '#fff', anchor: 'middle', o: 0 
+    });
+    tw(text, { o: 1 }, 1.6 + i * 0.1);
+  });
+  
+  T(p, 'ID', { x: 40, y: 285, size: 20, fill: TEXT_COLOR, anchor: 'end', o: 0 });
+  
+  const pros = T(p, '✓ find: O(1)', { x: 150, y: 380, size: 26, fill: SUCCESS, o: 0 });
+  tw(pros, { o: 1 }, 2.8);
+  
+  const cons = T(p, '✗ union: O(n) — 需要遍历整个数组', { x: 150, y: 430, size: 26, fill: ROOT_COLOR, o: 0 });
+  tw(cons, { o: 1 }, 3.3);
+  
+  const conclusion = T(p, 'n 次合并总时间 O(n²)，太慢了！', { 
+    x: 400, y: 500, size: 28, weight: 600, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+  });
+  tw(conclusion, { o: 1 }, 3.8);
+}, { audio: 'naive' }],
+
+['tree', '树形结构', () => {
+  const p = panel(0);
+
+  T(p, '树形结构：更高效的实现', { x: 400, y: 70, size: 42, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  // 绘制三棵树
+  const tree1 = { root: { x: 150, y: 200, label: '1' }, children: [
+    { x: 100, y: 300, label: '3' },
+    { x: 200, y: 300, label: '5' }
+  ]};
+  
+  const tree2 = { root: { x: 400, y: 200, label: '2' }, children: [
+    { x: 400, y: 300, label: '4' }
+  ]};
+  
+  const tree3 = { root: { x: 650, y: 200, label: '0' }, children: [
+    { x: 600, y: 300, label: '6' },
+    { x: 700, y: 300, label: '7' }
+  ]};
+  
+  [tree1, tree2, tree3].forEach((tree, treeIdx) => {
+    const rootNode = drawNode(p, tree.root.x, tree.root.y, tree.root.label, ROOT_COLOR, true);
+    tw(rootNode.g, { o: 1 }, 0.5 + treeIdx * 0.4);
+    
+    tree.children.forEach((child, childIdx) => {
+      const edge = drawEdge(p, child.x, child.y - 30, tree.root.x, tree.root.y + 30);
+      tw(edge, { o: 1 }, 0.8 + treeIdx * 0.4 + childIdx * 0.2);
+      
+      const childNode = drawNode(p, child.x, child.y, child.label);
+      tw(childNode.g, { o: 1 }, 0.9 + treeIdx * 0.4 + childIdx * 0.2);
+    });
+  });
+  
+  drawArrow(p);
+  
+  const features = [
+    '• 每个集合是一棵树，树根是代表元',
+    '• 每个节点存储父节点指针',
+    '• find: 沿着父指针向上找根',
+    '• union: 把一棵树的根接到另一棵树的根'
+  ];
+  
+  features.forEach((text, i) => {
+    const t = T(p, text, { x: 100, y: 400 + i * 35, size: 22, fill: TEXT_COLOR, o: 0 });
+    tw(t, { o: 1 }, 2.5 + i * 0.3);
+  });
+}, { audio: 'tree' }],
+
+['path-compression', '路径压缩动画', () => {
+  const p = panel(0);
+
+  T(p, '优化一：路径压缩', { x: 400, y: 60, size: 42, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  // 初始树：5 -> 3 -> 1
+  const nodes = {
+    1: { x: 400, y: 150, label: '1' },
+    3: { x: 400, y: 250, label: '3' },
+    5: { x: 400, y: 350, label: '5' }
+  };
+  
+  drawArrow(p);
+  
+  const node1 = drawNode(p, nodes[1].x, nodes[1].y, '1', ROOT_COLOR, true);
+  tw(node1.g, { o: 1 }, 0.3);
+  
+  const node3 = drawNode(p, nodes[3].x, nodes[3].y, '3');
+  tw(node3.g, { o: 1 }, 0.5);
+  
+  const node5 = drawNode(p, nodes[5].x, nodes[5].y, '5');
+  tw(node5.g, { o: 1 }, 0.7);
+  
+  const edge3to1 = drawEdge(p, nodes[3].x, nodes[3].y - 30, nodes[1].x, nodes[1].y + 30);
+  tw(edge3to1, { o: 1 }, 0.9);
+  
+  const edge5to3 = drawEdge(p, nodes[5].x, nodes[5].y - 30, nodes[3].x, nodes[3].y + 30);
+  tw(edge5to3, { o: 1 }, 1.1);
+  
+  T(p, '查找前：深度为 2', { x: 400, y: 430, size: 24, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
+  
+  // 高亮查找路径
+  tw(node5.circle, { stroke: HIGHLIGHT, 'stroke-width': 5 }, 2.0);
+  tw(edge5to3, { stroke: HIGHLIGHT, 'stroke-width': 4 }, 2.2);
+  tw(node3.circle, { stroke: HIGHLIGHT, 'stroke-width': 5 }, 2.4);
+  tw(edge3to1, { stroke: HIGHLIGHT, 'stroke-width': 4 }, 2.6);
+  tw(node1.circle, { stroke: HIGHLIGHT, 'stroke-width': 6 }, 2.8);
+  
+  T(p, '找到根节点 1', { x: 400, y: 470, size: 22, fill: HIGHLIGHT, anchor: 'middle', o: 0 });
+  
+  // 路径压缩：5 和 3 都直接连到 1
+  tw(edge5to3, { o: 0 }, 4.0);
+  tw(node3.g, { x: 300, y: 250 }, 4.5);
+  tw(edge3to1, { x1: 300, y1: 220, x2: 400, y2: 180 }, 4.5);
+  
+  const edge5to1 = drawEdge(p, nodes[5].x, nodes[5].y - 30, nodes[1].x, nodes[1].y + 30, SUCCESS, 4);
+  tw(edge5to1, { o: 1 }, 4.5);
+  
+  tw(node5.g, { x: 500, y: 250 }, 5.0);
+  tw(edge5to1, { x1: 500, y1: 220, x2: 400, y2: 180 }, 5.0);
+  
+  const compressed = T(p, '压缩后：深度为 1', { x: 400, y: 430, size: 24, fill: SUCCESS, anchor: 'middle', o: 0 });
+  tw(compressed, { o: 1 }, 5.5);
+  
+  tw(node5.circle, { fill: SUCCESS }, 6.0);
+  tw(node3.circle, { fill: SUCCESS }, 6.2);
+  
+  const benefit = T(p, '下次查找只需一步！', { x: 400, y: 510, size: 26, weight: 600, fill: SUCCESS, anchor: 'middle', o: 0 });
+  tw(benefit, { o: 1 }, 6.5);
+  
+  // 显示代码
+  const code = T(p, 'parent[x] = find(parent[x])', { 
+    x: 400, y: 550, size: 20, family: 'monospace', fill: TEXT_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(code, { o: 1 }, 7.0);
+  
+}, { audio: 'path-compression' }],
+
+['union-by-rank', '按秩合并动画', () => {
+  const p = panel(0);
+
+  T(p, '优化二：按秩合并', { x: 400, y: 60, size: 42, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  drawArrow(p);
+  
+  // 左边的树（秩为2）
+  const leftRoot = drawNode(p, 200, 200, '1', ROOT_COLOR, true);
+  tw(leftRoot.g, { o: 1 }, 0.3);
+  
+  const leftChild1 = drawNode(p, 150, 300, '3');
+  tw(leftChild1.g, { o: 1 }, 0.5);
+  
+  const leftChild2 = drawNode(p, 250, 300, '5');
+  tw(leftChild2.g, { o: 1 }, 0.7);
+  
+  const leftEdge1 = drawEdge(p, 150, 270, 200, 230);
+  tw(leftEdge1, { o: 1 }, 0.9);
+  
+  const leftEdge2 = drawEdge(p, 250, 270, 200, 230);
+  tw(leftEdge2, { o: 1 }, 1.1);
+  
+  const leftRank = drawRankLabel(p, 200, 150, 2);
+  tw(leftRank, { o: 1 }, 1.3);
+  
+  // 右边的树（秩为1）
+  const rightRoot = drawNode(p, 600, 200, '2', ROOT_COLOR, true);
+  tw(rightRoot.g, { o: 1 }, 1.5);
+  
+  const rightChild = drawNode(p, 600, 300, '4');
+  tw(rightChild.g, { o: 1 }, 1.7);
+  
+  const rightEdge = drawEdge(p, 600, 270, 600, 230);
+  tw(rightEdge, { o: 1 }, 1.9);
+  
+  const rightRank = drawRankLabel(p, 600, 150, 1);
+  tw(rightRank, { o: 1 }, 2.1);
+  
+  T(p, '合并前：两棵独立的树', { x: 400, y: 380, size: 24, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
+  
+  // 比较秩
+  const compare = mk('rect', { 
+    x: 350, y: 420, width: 100, height: 40, 
+    fill: RANK_COLOR, opacity: 0.2, rx: 8, o: 0 
+  }, p);
+  tw(compare, { o: 1 }, 2.5);
+  
+  T(p, '比较秩：2 > 1', { x: 400, y: 440, size: 22, weight: 600, fill: RANK_COLOR, anchor: 'middle', o: 0 });
+  
+  // 高亮小树
+  tw(rightRoot.circle, { stroke: HIGHLIGHT, 'stroke-width': 5 }, 3.0);
+  tw(rightChild.circle, { stroke: HIGHLIGHT, 'stroke-width': 5 }, 3.2);
+  
+  T(p, '把小树（秩1）接到大树（秩2）', { x: 400, y: 490, size: 22, fill: HIGHLIGHT, anchor: 'middle', o: 0 });
+  
+  // 移动右边的树
+  tw(rightRoot.g, { x: 250, y: 300 }, 4.0);
+  tw(rightChild.g, { x: 250, y: 400 }, 4.0);
+  tw(rightEdge, { x1: 250, y1: 370, x2: 250, y2: 330 }, 4.0);
+  tw(rightRank, { x: 250, y: 250 }, 4.0);
+  
+  // 连接到左边的根
+  const newEdge = drawEdge(p, 250, 270, 200, 230, SUCCESS, 4);
+  tw(newEdge, { o: 1 }, 4.5);
+  
+  // 更新颜色
+  tw(rightRoot.circle, { fill: NODE_COLOR, stroke: TEXT_COLOR, 'stroke-width': 2 }, 5.0);
+  tw(rightChild.circle, { fill: NODE_COLOR, stroke: TEXT_COLOR, 'stroke-width': 2 }, 5.0);
+  tw(leftChild1.circle, { fill: SUCCESS }, 5.2);
+  tw(leftChild2.circle, { fill: SUCCESS }, 5.4);
+  tw(rightRoot.circle, { fill: SUCCESS }, 5.6);
+  tw(rightChild.circle, { fill: SUCCESS }, 5.8);
+  
+  // 秩不变
+  const rankNote = T(p, '合并后秩仍为 2（高度没增加）', { 
+    x: 400, y: 530, size: 24, weight: 600, fill: SUCCESS, anchor: 'middle', o: 0 
+  });
+  tw(rankNote, { o: 1 }, 6.0);
+  
+  // 显示代码
+  const code = T(p, 'if rank[x] < rank[y]: parent[x] = y', { 
+    x: 400, y: 560, size: 19, family: 'monospace', fill: TEXT_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(code, { o: 1 }, 6.5);
+  
+}, { audio: 'union-by-rank' }],
+
+['implementation', '完整实现', () => {
+  const p = panel(0);
+
+  T(p, '并查集完整实现', { x: 400, y: 70, size: 42, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const code = `class UnionFind:
+    def __init__(self, n):
+        self.parent = list(range(n))
+        self.rank = [0] * n
+    
+    def find(self, x):
+        if self.parent[x] != x:
+            self.parent[x] = self.find(self.parent[x])  # 路径压缩
+        return self.parent[x]
+    
+    def union(self, x, y):
+        root_x = self.find(x)
+        root_y = self.find(y)
+        
+        if root_x == root_y:
+            return  # 已在同一集合
+        
+        # 按秩合并
+        if self.rank[root_x] < self.rank[root_y]:
+            self.parent[root_x] = root_y
+        elif self.rank[root_x] > self.rank[root_y]:
+            self.parent[root_y] = root_x
+        else:
+            self.parent[root_y] = root_x
+            self.rank[root_x] += 1
+    
+    def connected(self, x, y):
+        return self.find(x) == self.find(y)`;
+  
+  const lines = code.split('\n');
+  lines.forEach((line, i) => {
+    const text = T(p, line, { 
+      x: 60, y: 130 + i * 18, size: 15, fill: TEXT_COLOR, family: 'monospace', o: 0 
+    });
+    tw(text, { o: 1 }, 0.2 + i * 0.08);
+  });
+  
+}, { audio: 'implementation' }],
+
+['complexity', '复杂度分析', () => {
+  const p = panel(0);
+
+  T(p, '时间复杂度分析', { x: 400, y: 80, size: 42, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const analyses = [
+    { method: '只用路径压缩', complexity: 'O(log n)', color: NODE_COLOR, y: 180 },
+    { method: '只用按秩合并', complexity: 'O(log n)', color: RANK_COLOR, y: 270 },
+    { method: '两个都用', complexity: 'O(α(n)) ≈ O(1)', color: SUCCESS, y: 360 }
+  ];
+  
+  analyses.forEach(({ method, complexity, color, y }, i) => {
+    const box = mk('rect', { 
+      x: 100, y: y - 30, width: 600, height: 70, 
+      fill: color, opacity: 0.15, rx: 10, o: 0 
+    }, p);
+    tw(box, { o: 1 }, 0.5 + i * 0.6);
+    
+    const methodText = T(p, method, { 
+      x: 130, y: y, size: 28, weight: 600, fill: TEXT_COLOR, o: 0 
+    });
+    tw(methodText, { o: 1 }, 0.7 + i * 0.6);
+    
+    const complexityText = T(p, complexity, { 
+      x: 550, y: y, size: 30, weight: 700, fill: color, family: 'monospace', o: 0 
+    });
+    tw(complexityText, { o: 1 }, 0.9 + i * 0.6);
+  });
+  
+  const note1 = T(p, 'α(n) 是反阿克曼函数，增长极慢', { 
+    x: 400, y: 480, size: 24, fill: TEXT_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(note1, { o: 1 }, 2.5);
+  
+  const note2 = T(p, '对于任何实际问题，α(n) ≤ 5', { 
+    x: 400, y: 520, size: 24, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+  });
+  tw(note2, { o: 1 }, 3.0);
+  
+  const note3 = T(p, '可以认为操作是常数时间！', { 
+    x: 400, y: 560, size: 28, weight: 600, fill: SUCCESS, anchor: 'middle', o: 0 
+  });
+  tw(note3, { o: 1 }, 3.5);
+}, { audio: 'complexity' }],
+
+['kruskal', 'Kruskal 最小生成树', () => {
+  const p = panel(0);
+
+  T(p, 'Kruskal 最小生成树算法', { x: 400, y: 70, size: 42, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  // 图的顶点
+  const vertices = [
+    { x: 200, y: 200, label: 'A' },
+    { x: 400, y: 200, label: 'B' },
+    { x: 600, y: 200, label: 'C' },
+    { x: 200, y: 350, label: 'D' },
+    { x: 400, y: 350, label: 'E' },
+    { x: 600, y: 350, label: 'F' }
+  ];
+  
+  vertices.forEach((v, i) => {
+    const node = drawNode(p, v.x, v.y, v.label);
+    tw(node.g, { o: 1 }, 0.3 + i * 0.1);
+  });
+  
+  // 边（权重）
+  const edges = [
+    { from: 0, to: 1, weight: 4, y: 140 },
+    { from: 1, to: 2, weight: 2, y: 140 },
+    { from: 0, to: 3, weight: 3, y: 275 },
+    { from: 1, to: 4, weight: 1, y: 275 },
+    { from: 2, to: 5, weight: 5, y: 275 },
+    { from: 3, to: 4, weight: 6, y: 410 },
+    { from: 4, to: 5, weight: 7, y: 410 }
+  ];
+  
+  drawArrow(p);
+  
+  edges.forEach((edge, i) => {
+    const v1 = vertices[edge.from];
+    const v2 = vertices[edge.to];
+    const line = mk('line', {
+      x1: v1.x, y1: v1.y,
+      x2: v2.x, y2: v2.y,
+      stroke: '#bdc3c7',
+      'stroke-width': 2,
+      o: 0
+    }, p);
+    tw(line, { o: 0.5 }, 1.0 + i * 0.1);
+    
+    const midX = (v1.x + v2.x) / 2;
+    const midY = (v1.y + v2.y) / 2;
+    const weightText = T(p, String(edge.weight), {
+      x: midX, y: midY - 15,
+      size: 20, weight: 700,
+      fill: HIGHLIGHT,
+      anchor: 'middle',
+      o: 0
+    });
+    tw(weightText, { o: 1 }, 1.2 + i * 0.1);
+  });
+  
+  const steps = [
+    '1. 按权重排序所有边',
+    '2. 从小到大遍历每条边',
+    '3. 用并查集判断两端点是否连通',
+    '4. 不连通则加入这条边，并合并两个集合'
+  ];
+  
+  steps.forEach((text, i) => {
+    const t = T(p, text, { x: 80, y: 460 + i * 30, size: 20, fill: TEXT_COLOR, o: 0 });
+    tw(t, { o: 1 }, 2.5 + i * 0.3);
+  });
+  
+}, { audio: 'kruskal' }],
+
+['components', '连通分量统计', () => {
+  const p = panel(0);
+
+  T(p, '统计连通分量', { x: 400, y: 70, size: 42, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  // 三个连通分量
+  const component1 = [
+    { x: 150, y: 200, label: '1' },
+    { x: 100, y: 300, label: '2' },
+    { x: 200, y: 300, label: '3' }
+  ];
+  
+  const component2 = [
+    { x: 400, y: 200, label: '4' },
+    { x: 400, y: 300, label: '5' }
+  ];
+  
+  const component3 = [
+    { x: 650, y: 200, label: '6' },
+    { x: 600, y: 300, label: '7' },
+    { x: 700, y: 300, label: '8' }
+  ];
+  
+  const colors = [ROOT_COLOR, NODE_COLOR, SUCCESS];
+  
+  [component1, component2, component3].forEach((comp, compIdx) => {
+    comp.forEach((node, nodeIdx) => {
+      const n = drawNode(p, node.x, node.y, node.label, colors[compIdx]);
+      tw(n.g, { o: 1 }, 0.5 + compIdx * 0.5 + nodeIdx * 0.2);
+    });
+    
+    // 连接边
+    if (comp.length > 1) {
+      for (let i = 1; i < comp.length; i++) {
+        const line = mk('line', {
+          x1: comp[i].x, y1: comp[i].y,
+          x2: comp[0].x, y2: comp[0].y,
+          stroke: colors[compIdx],
+          'stroke-width': 3,
+          o: 0
+        }, p);
+        tw(line, { o: 0.7 }, 0.8 + compIdx * 0.5 + i * 0.2);
+      }
+    }
+  });
+  
+  const labels = [
+    { text: '分量 1', x: 150, y: 370, color: ROOT_COLOR },
+    { text: '分量 2', x: 400, y: 370, color: NODE_COLOR },
+    { text: '分量 3', x: 650, y: 370, color: SUCCESS }
+  ];
+  
+  labels.forEach(({ text, x, y, color }, i) => {
+    const t = T(p, text, { x, y, size: 24, weight: 600, fill: color, anchor: 'middle', o: 0 });
+    tw(t, { o: 1 }, 2.0 + i * 0.3);
+  });
+  
+  const result = T(p, '共 3 个连通分量', { 
+    x: 400, y: 450, size: 32, weight: 700, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+  });
+  tw(result, { o: 1 }, 3.0);
+  
+  const algorithm = [
+    '算法：遍历所有边，合并端点',
+    '时间复杂度：O(E · α(n)) ≈ O(E)'
+  ];
+  
+  algorithm.forEach((text, i) => {
+    const t = T(p, text, { x: 400, y: 510 + i * 35, size: 22, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
+    tw(t, { o: 1 }, 3.5 + i * 0.4);
+  });
+}, { audio: 'components' }],
+
+['applications', '应用场景', () => {
+  const p = panel(0);
+
+  T(p, '并查集的应用场景', { x: 400, y: 70, size: 42, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const applications = [
+    { icon: '🌲', title: '最小生成树', desc: 'Kruskal 算法', color: SUCCESS, y: 160 },
+    { icon: '👥', title: '社交网络', desc: '朋友圈判断和统计', color: NODE_COLOR, y: 250 },
+    { icon: '🖼️', title: '图像处理', desc: '连通区域标记', color: RANK_COLOR, y: 340 },
+    { icon: '🌐', title: '网络连通', desc: '设备连通性判断', color: ROOT_COLOR, y: 430 },
+    { icon: '🎮', title: '游戏开发', desc: '地图区域连通判断', color: HIGHLIGHT, y: 520 }
+  ];
+  
+  applications.forEach(({ icon, title, desc, color, y }, i) => {
+    const box = mk('rect', { 
+      x: 80, y: y - 35, width: 640, height: 70, 
+      fill: color, opacity: 0.15, rx: 10, o: 0 
+    }, p);
+    tw(box, { o: 1 }, 0.4 + i * 0.4);
+    
+    const iconText = T(p, icon, { x: 120, y, size: 36, anchor: 'middle', o: 0 });
+    tw(iconText, { o: 1 }, 0.5 + i * 0.4);
+    
+    const titleText = T(p, title, { x: 180, y: y - 8, size: 26, weight: 700, fill: color, o: 0 });
+    tw(titleText, { o: 1 }, 0.6 + i * 0.4);
+    
+    const descText = T(p, desc, { x: 180, y: y + 18, size: 20, fill: TEXT_COLOR, o: 0 });
+    tw(descText, { o: 1 }, 0.7 + i * 0.4);
+  });
+}, { audio: 'applications' }],
+
+['variants', '并查集变体', () => {
+  const p = panel(0);
+
+  T(p, '并查集的变体', { x: 400, y: 80, size: 42, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const variants = [
+    { 
+      name: '带权并查集',
+      desc: '维护节点到根的距离或关系',
+      use: '用途：判断相等、大小关系',
+      color: NODE_COLOR,
+      y: 190
+    },
+    { 
+      name: '可撤销并查集',
+      desc: '支持撤销操作，恢复到之前状态',
+      use: '用途：回溯算法、时光倒流',
+      color: RANK_COLOR,
+      y: 320
+    },
+    { 
+      name: '持久化并查集',
+      desc: '支持查询历史版本',
+      use: '用途：版本控制、时间旅行查询',
+      color: SUCCESS,
+      y: 450
+    }
+  ];
+  
+  variants.forEach(({ name, desc, use, color, y }, i) => {
+    const box = mk('rect', { 
+      x: 60, y: y - 45, width: 680, height: 110, 
+      fill: color, opacity: 0.15, rx: 12, o: 0 
+    }, p);
+    tw(box, { o: 1 }, 0.5 + i * 0.8);
+    
+    const nameText = T(p, name, { 
+      x: 100, y: y - 15, size: 30, weight: 700, fill: color, o: 0 
+    });
+    tw(nameText, { o: 1 }, 0.7 + i * 0.8);
+    
+    const descText = T(p, desc, { 
+      x: 100, y: y + 15, size: 22, fill: TEXT_COLOR, o: 0 
+    });
+    tw(descText, { o: 1 }, 0.9 + i * 0.8);
+    
+    const useText = T(p, use, { 
+      x: 100, y: y + 42, size: 20, fill: color, o: 0 
+    });
+    tw(useText, { o: 1 }, 1.1 + i * 0.8);
+  });
+}, { audio: 'variants' }],
+
+['finish', '总结', () => {
+  const p = panel(0);
+
+  T(p, '并查集：优雅而高效', { x: 400, y: 70, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const summary = [
+    { icon: '🌳', text: '用树形结构表示集合', y: 150 },
+    { icon: '⚡', text: '路径压缩让树变扁平', y: 220 },
+    { icon: '⚖️', text: '按秩合并保持平衡', y: 290 },
+    { icon: '🚀', text: '两个优化结合，操作接近 O(1)', y: 360 },
+    { icon: '🔧', text: 'find、union、connected 三个核心操作', y: 430 },
+    { icon: '🎯', text: '解决动态连通性问题的利器', y: 500 }
+  ];
+  
+  summary.forEach(({ icon, text, y }, i) => {
+    const g = G(p, { x: 150, y, o: 0 });
+    T(g, icon, { x: 0, y: 0, size: 36, anchor: 'middle' });
+    T(g, text, { x: 70, y: 0, size: 26, fill: TEXT_COLOR, anchor: 'start' });
+    tw(g, { o: 1 }, 0.5 + i * 0.4);
+  });
+  
+  const closing = T(p, '掌握并查集，掌握连通性问题的解决之道！', { 
+    x: 400, y: 565, size: 28, weight: 600, fill: SUCCESS, anchor: 'middle', o: 0 
+  });
+  tw(closing, { o: 1 }, 3.5);
+}, { audio: 'finish' }]
+
+]; // end BEATS
+
+// 标准化 beats
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
+window.CHAPTER = CHAPTER;
+window.ROOT_COLOR = ROOT_COLOR;
+window.NODE_COLOR = NODE_COLOR;
+window.HIGHLIGHT = HIGHLIGHT;
+window.SUCCESS = SUCCESS;
+window.TEXT_COLOR = TEXT_COLOR;
+window.RANK_COLOR = RANK_COLOR;
+window.drawNode = drawNode;
+window.drawEdge = drawEdge;
+window.drawArrow = drawArrow;
+window.drawRankLabel = drawRankLabel;
+boot();
+</script>
+</body>
+</html>

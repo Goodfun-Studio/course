@@ -492,65 +492,96 @@ window.BEATS = [
   positions.forEach((pos, i) => {
     const node = drawBITNode(p, pos.x, pos.y, pos.index, pos.value);
     nodes.push(node);
-    tw(node.g, { o: 1 }, 0.5, 0.4);
+    tw(node.g, { o: 1 }, 0.5 + i * 0.1, 0.4);
   });
   
-  let t = 2;
+  let t = 2.5;
   let sum = 0;
+  
+  // 累加器显示
+  const sumBox = G(p, { x: 50, y: 100, o: 0 });
+  mk('rect', { x: 0, y: 0, width: 120, height: 60, fill: WARNING_COLOR, stroke: DARK_COLOR, 'stroke-width': 2, rx: 5 }, sumBox);
+  const sumLabel = T(sumBox, 'sum', { x: 60, y: 20, size: 18, weight: 600, fill: '#fff', anchor: 'middle' });
+  const sumValue = T(sumBox, '0', { x: 60, y: 45, size: 24, weight: 700, fill: '#fff', anchor: 'middle' });
+  tw(sumBox, { o: 1 }, t, 0.5);
+  t += 0.8;
   
   // 步骤1：访问位置7
   const step1 = T(p, '步骤1：sum += tree[7] = 7', { 
-    x: 100, y: 480, size: 22, weight: 600, fill: PROCESS_COLOR, o: 0 
+    x: 100, y: 500, size: 22, weight: 600, fill: PROCESS_COLOR, o: 0 
   });
   tw(step1, { o: 1 }, t, 0.4);
-  tw(nodes[6].rect, { fill: PROCESS_COLOR }, t, 0.3);
-  sum += 7;
-  tw(step1, { o: 0 }, t + 2, 0.3);
-  t += 0.6;
+  tw(nodes[6].rect, { fill: PROCESS_COLOR, 'stroke-width': 4 }, t, 0.3);
+  tw(nodes[6].g, { x: positions[6].x, y: positions[6].y - 10 }, t + 0.2, 0.3); // 跳动
+  tw(nodes[6].g, { x: positions[6].x, y: positions[6].y }, t + 0.5, 0.3);
+  t += 0.8;
   
-  tw(nodes[6].rect, { fill: SUCCESS_COLOR }, t, 0.3);
-  t += 1;
+  sum += 7;
+  sumValue.textContent = sum.toString();
+  tw(sumValue, { o: 0 }, t, 0.2);
+  tw(sumValue, { o: 1 }, t + 0.2, 0.2);
+  tw(nodes[6].rect, { fill: SUCCESS_COLOR, 'stroke-width': 2 }, t + 0.3, 0.3);
+  tw(step1, { o: 0 }, t + 1.2, 0.3);
+  t += 1.4;
   
   // 箭头7 -> 6
   const arrow1 = drawArrow(p, positions[6].x, positions[6].y, positions[5].x, positions[5].y, HIGHLIGHT_COLOR, 'i -= lowbit(i)');
   tw(arrow1.g, { o: 1 }, t, 0.4);
-  t += 0.8;
+  tw(arrow1.line, { 'stroke-width': 3 }, t, 0.3);
+  tw(arrow1.line, { 'stroke-width': 2 }, t + 0.4, 0.3);
+  t += 0.9;
   
   // 步骤2：访问位置6
   const step2 = T(p, '步骤2：sum += tree[6] = 7+11', { 
-    x: 100, y: 480, size: 22, weight: 600, fill: PROCESS_COLOR, o: 0 
+    x: 100, y: 500, size: 22, weight: 600, fill: PROCESS_COLOR, o: 0 
   });
   tw(step2, { o: 1 }, t, 0.4);
-  tw(nodes[5].rect, { fill: PROCESS_COLOR }, t, 0.3);
-  sum += 11;
-  tw(step2, { o: 0 }, t + 2, 0.3);
-  t += 0.6;
+  tw(nodes[5].rect, { fill: PROCESS_COLOR, 'stroke-width': 4 }, t, 0.3);
+  tw(nodes[5].g, { x: positions[5].x, y: positions[5].y - 10 }, t + 0.2, 0.3);
+  tw(nodes[5].g, { x: positions[5].x, y: positions[5].y }, t + 0.5, 0.3);
+  t += 0.8;
   
-  tw(nodes[5].rect, { fill: SUCCESS_COLOR }, t, 0.3);
-  t += 1;
+  sum += 11;
+  sumValue.textContent = sum.toString();
+  tw(sumValue, { o: 0 }, t, 0.2);
+  tw(sumValue, { o: 1 }, t + 0.2, 0.2);
+  tw(nodes[5].rect, { fill: SUCCESS_COLOR, 'stroke-width': 2 }, t + 0.3, 0.3);
+  tw(step2, { o: 0 }, t + 1.2, 0.3);
+  t += 1.4;
   
   // 箭头6 -> 4
   const arrow2 = drawArrow(p, positions[5].x, positions[5].y, positions[3].x, positions[3].y, HIGHLIGHT_COLOR, 'i -= lowbit(i)');
   tw(arrow2.g, { o: 1 }, t, 0.4);
-  t += 0.8;
+  tw(arrow2.line, { 'stroke-width': 3 }, t, 0.3);
+  tw(arrow2.line, { 'stroke-width': 2 }, t + 0.4, 0.3);
+  t += 0.9;
   
   // 步骤3：访问位置4
   const step3 = T(p, '步骤3：sum += tree[4] = 18+10', { 
-    x: 100, y: 480, size: 22, weight: 600, fill: PROCESS_COLOR, o: 0 
+    x: 100, y: 500, size: 22, weight: 600, fill: PROCESS_COLOR, o: 0 
   });
   tw(step3, { o: 1 }, t, 0.4);
-  tw(nodes[3].rect, { fill: PROCESS_COLOR }, t, 0.3);
-  sum += 10;
-  tw(step3, { o: 0 }, t + 2, 0.3);
-  t += 0.6;
+  tw(nodes[3].rect, { fill: PROCESS_COLOR, 'stroke-width': 4 }, t, 0.3);
+  tw(nodes[3].g, { x: positions[3].x, y: positions[3].y - 10 }, t + 0.2, 0.3);
+  tw(nodes[3].g, { x: positions[3].x, y: positions[3].y }, t + 0.5, 0.3);
+  t += 0.8;
   
-  tw(nodes[3].rect, { fill: SUCCESS_COLOR }, t, 0.3);
-  t += 1;
+  sum += 10;
+  sumValue.textContent = sum.toString();
+  tw(sumValue, { o: 0 }, t, 0.2);
+  tw(sumValue, { o: 1 }, t + 0.2, 0.2);
+  tw(nodes[3].rect, { fill: SUCCESS_COLOR, 'stroke-width': 2 }, t + 0.3, 0.3);
+  tw(step3, { o: 0 }, t + 1.2, 0.3);
+  t += 1.4;
+  
+  // 最终结果高亮
+  tw(sumBox, { x: 50, y: 90 }, t, 0.3);
+  tw(sumBox, { x: 50, y: 100 }, t + 0.3, 0.3);
   
   const result = T(p, `结果：sum(1 到 7) = ${sum}`, { 
-    x: 400, y: 520, size: 28, weight: 700, fill: HIGHLIGHT_COLOR, anchor: 'middle', o: 0 
+    x: 400, y: 540, size: 28, weight: 700, fill: HIGHLIGHT_COLOR, anchor: 'middle', o: 0 
   });
-  tw(result, { o: 1 }, t, 0.8);
+  tw(result, { o: 1 }, t + 0.5, 0.8);
 }],
 
 ['query-code', '区间查询代码', () => {
@@ -803,6 +834,12 @@ window.BEATS = [
 }]
 
 ];
+
+/* ---------- Boot ---------- */
+function boot() {
+  const bg = mk('rect', { x: 0, y: 0, width: 800, height: 600, fill: LIGHT_BG }, panel(0));
+  bg.style.pointerEvents = 'none';
+}
 
 boot();
 </script>

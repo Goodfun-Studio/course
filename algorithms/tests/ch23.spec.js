@@ -35,7 +35,7 @@ test.describe('Chapter 23: Strongly Connected Components', () => {
     await page.waitForTimeout(1000);
     
     const beats = await page.evaluate(() => {
-      return window.BEATS ? window.BEATS.map(b => b[0]) : [];
+      return window.BEATS ? window.BEATS.map(b => b.id || b[0]) : [];
     });
     
     const requiredBeats = ['intro', 'definition', 'scc-concept', 'kosaraju-overview',
@@ -56,8 +56,8 @@ test.describe('Chapter 23: Strongly Connected Components', () => {
     
     const result = await page.evaluate(() => {
       if (!window.BEATS) return null;
-      const beat = window.BEATS.find(b => b[0] === 'kosaraju-demo');
-      if (!beat || !beat[2]) return null;
+      const beat = window.BEATS.find(b => (b.id || b[0]) === 'kosaraju-demo');
+      if (!beat || !beat.run) return null;
       
       // 模拟执行beat函数，计算tw调用次数
       let twCount = 0;
@@ -75,7 +75,7 @@ test.describe('Chapter 23: Strongly Connected Components', () => {
       window.tw = mockTw;
       
       try {
-        beat[2]();
+        beat.run();
       } catch (e) {
         console.error('Beat execution error:', e);
       }
@@ -98,8 +98,8 @@ test.describe('Chapter 23: Strongly Connected Components', () => {
     
     const result = await page.evaluate(() => {
       if (!window.BEATS) return null;
-      const beat = window.BEATS.find(b => b[0] === 'tarjan-demo');
-      if (!beat || !beat[2]) return null;
+      const beat = window.BEATS.find(b => (b.id || b[0]) === 'tarjan-demo');
+      if (!beat || !beat.run) return null;
       
       let twCount = 0;
       let maxTime = 0;
@@ -115,7 +115,7 @@ test.describe('Chapter 23: Strongly Connected Components', () => {
       window.tw = mockTw;
       
       try {
-        beat[2]();
+        beat.run();
       } catch (e) {
         console.error('Beat execution error:', e);
       }
@@ -203,8 +203,8 @@ test.describe('Chapter 23: Strongly Connected Components', () => {
       let usesPanel800 = false;
       
       BEATS.forEach(beat => {
-        if (beat[2]) {
-          const funcStr = beat[2].toString();
+        if (beat.run) {
+          const funcStr = beat.run.toString();
           if (funcStr.includes('panel(0)')) usesPanel0 = true;
           if (funcStr.includes('panel(800)')) usesPanel800 = true;
         }
@@ -247,9 +247,8 @@ test.describe('Chapter 23: Strongly Connected Components', () => {
       if (!window.BEATS) return null;
       
       const results = BEATS.map(beat => {
-        const id = beat[0];
-        const options = beat[3] || beat[2];
-        const hasAudio = options && typeof options === 'object' && options.audio;
+        const id = beat.id || beat[0];
+        const hasAudio = beat && typeof beat === 'object' && beat.audio;
         return { id, hasAudio };
       });
       
@@ -272,14 +271,14 @@ test.describe('Chapter 23: Strongly Connected Components', () => {
     await page.waitForTimeout(1000);
     
     const algoCheck = await page.evaluate(() => {
-      const kosaraju = window.BEATS.find(b => b[0] === 'kosaraju-demo');
-      const tarjan = window.BEATS.find(b => b[0] === 'tarjan-demo');
+      const kosaraju = window.BEATS.find(b => (b.id || b[0]) === 'kosaraju-demo');
+      const tarjan = window.BEATS.find(b => (b.id || b[0]) === 'tarjan-demo');
       
       return {
         hasKosaraju: !!kosaraju,
         hasTarjan: !!tarjan,
-        kosaraujuTitle: kosaraju ? kosaraju[1] : null,
-        tarjanTitle: tarjan ? tarjan[1] : null
+        kosaraujuTitle: kosaraju ? (kosaraju.title || kosaraju[1]) : null,
+        tarjanTitle: tarjan ? (tarjan.title || tarjan[1]) : null
       };
     });
     

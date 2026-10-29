@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>广度优先搜索：BFS</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 15, title: '广度优先搜索：BFS', language: 'zh', minutes: 12 };
+
+/* ---------- colours ---------- */
+const UNVISITED = '#95a5a6';   // 灰色（未访问）
+const CURRENT = '#f39c12';     // 橙色（当前处理）
+const VISITED = '#2ecc71';     // 绿色（已访问）
+const QUEUED = '#3498db';      // 蓝色（在队列中）
+const PATH = '#e74c3c';        // 红色（路径标记）
+
+/* ---------- beats ---------- */
+let BEATS = [
+
+['intro', '问题引入', () => {
+  const p = panel(0);
+  
+  const title = T(p, '广度优先搜索', { x: 800, y: 100, size: 64, weight: 700, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, 'BFS - Breadth-First Search', { x: 800, y: 170, size: 32, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 0.8, 0.5);
+  
+  const scenario1 = T(p, '社交网络：找到你的二度好友', { x: 400, y: 260, size: 30, fill: COL.chalk, o: 0 });
+  tw(scenario1, { o: 1 }, 3, 0.5);
+  
+  const scenario2 = T(p, '地图导航：找到最短路径', { x: 400, y: 330, size: 30, fill: COL.chalk, o: 0 });
+  tw(scenario2, { o: 1 }, 5, 0.5);
+  
+  const scenario3 = T(p, '走迷宫：最少步数', { x: 400, y: 400, size: 30, fill: COL.chalk, o: 0 });
+  tw(scenario3, { o: 1 }, 7, 0.5);
+  
+  const core = T(p, '核心问题：如何逐层遍历图的节点？', { x: 800, y: 520, size: 36, fill: VISITED, anchor: 'middle', o: 0 });
+  tw(core, { o: 1 }, 10, 0.7);
+  
+  // Wave effect illustration
+  const center = { x: 800, y: 650 };
+  for (let i = 0; i < 4; i++) {
+    const circle = mk('circle', { 
+      cx: center.x, cy: center.y, r: 40 + i * 30, 
+      fill: 'none', stroke: QUEUED, 'stroke-width': 2, o: 0 
+    }, p);
+    tw(circle, { o: 0.6 }, 12 + i * 0.3, 0.5);
+  }
+}],
+
+['bfs-concept', 'BFS 核心思想', () => {
+  const p = panel(0);
+  
+  const title = T(p, '层级遍历', { x: 800, y: 100, size: 56, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const concept = T(p, '像水波一样，一圈圈向外扩散', { x: 800, y: 190, size: 32, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(concept, { o: 1 }, 2, 0.6);
+  
+  // Center point
+  const origin = mk('circle', { cx: 800, cy: 380, r: 15, fill: CURRENT, o: 0 }, p);
+  tw(origin, { o: 1 }, 3, 0.5);
+  const originLabel = T(p, '起点', { x: 800, y: 350, size: 24, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(originLabel, { o: 1 }, 3, 0.5);
+  
+  // Layer 1
+  const layer1Label = T(p, '第一层：邻居', { x: 400, y: 460, size: 28, fill: QUEUED, o: 0 });
+  tw(layer1Label, { o: 1 }, 6, 0.5);
+  for (let i = 0; i < 4; i++) {
+    const angle = i * Math.PI / 2;
+    const x = 800 + Math.cos(angle) * 120;
+    const y = 380 + Math.sin(angle) * 120;
+    const node = mk('circle', { cx: x, cy: y, r: 12, fill: QUEUED, o: 0 }, p);
+    tw(node, { o: 1 }, 6.5 + i * 0.1, 0.4);
+  }
+  
+  // Layer 2
+  const layer2Label = T(p, '第二层：邻居的邻居', { x: 400, y: 530, size: 28, fill: VISITED, o: 0 });
+  tw(layer2Label, { o: 1 }, 10, 0.5);
+  for (let i = 0; i < 8; i++) {
+    const angle = i * Math.PI / 4;
+    const x = 800 + Math.cos(angle) * 200;
+    const y = 380 + Math.sin(angle) * 200;
+    const node = mk('circle', { cx: x, cy: y, r: 10, fill: VISITED, o: 0 }, p);
+    tw(node, { o: 1 }, 10.5 + i * 0.08, 0.4);
+  }
+  
+  const key = T(p, '同一层的节点，距离起点的步数相同', { x: 800, y: 680, size: 30, fill: PATH, anchor: 'middle', o: 0 });
+  tw(key, { o: 1 }, 14, 0.7);
+}],
+
+['queue-structure', '队列：先进先出', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'Queue - 队列', { x: 800, y: 100, size: 56, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const fifo = T(p, 'FIFO: First In First Out', { x: 800, y: 180, size: 32, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(fifo, { o: 1 }, 2, 0.5);
+  
+  const why = T(p, '为什么用队列？', { x: 400, y: 260, size: 34, fill: CURRENT, o: 0 });
+  tw(why, { o: 1 }, 4, 0.5);
+  
+  const reason = T(p, '→ 按发现顺序访问，保证层级顺序', { x: 450, y: 320, size: 28, fill: COL.chalk, o: 0 });
+  tw(reason, { o: 1 }, 5.5, 0.6);
+  
+  // Queue visualization
+  const queueY = 450;
+  const queueLabel = T(p, '队列操作：', { x: 400, y: queueY - 30, size: 28, fill: COL.chalk, o: 0 });
+  tw(queueLabel, { o: 1 }, 8, 0.5);
+  
+  // Initial queue
+  const items = ['A', 'B', 'C', 'D'];
+  for (let i = 0; i < items.length; i++) {
+    const x = 500 + i * 90;
+    const box = mk('rect', { x: x, y: queueY, width: 70, height: 70, rx: 5, fill: QUEUED, o: 0 }, p);
+    tw(box, { o: 0.8 }, 9 + i * 0.15, 0.4);
+    const label = T(p, items[i], { x: x + 35, y: queueY + 45, size: 32, fill: 'white', anchor: 'middle', o: 0 });
+    tw(label, { o: 1 }, 9 + i * 0.15, 0.4);
+  }
+  
+  // Dequeue arrow
+  const dequeueArrow = T(p, '← 出队（dequeue）', { x: 400, y: queueY + 35, size: 24, fill: PATH, o: 0 });
+  tw(dequeueArrow, { o: 1 }, 12, 0.5);
+  
+  // Enqueue arrow
+  const enqueueArrow = T(p, '入队（enqueue）→', { x: 900, y: queueY + 35, size: 24, fill: VISITED, o: 0 });
+  tw(enqueueArrow, { o: 1 }, 14, 0.5);
+  
+  const contrast = T(p, 'BFS 用队列 ≠ DFS 用栈', { x: 800, y: 620, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(contrast, { o: 1 }, 16, 0.6);
+}],
+
+['algorithm-steps', '算法步骤', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'BFS 算法步骤', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const steps = [
+    '1. 起点加入队列，标记为已访问',
+    '2. 当队列不为空时，循环执行',
+    '3. 从队列头部取出一个节点',
+    '4. 处理这个节点（记录/输出）',
+    '5. 访问它的所有邻居节点',
+    '6. 未访问的邻居：标记 + 入队',
+    '7. 重复直到队列为空'
+  ];
+  
+  let currentY = 220;
+  steps.forEach((step, i) => {
+    const text = T(p, step, { x: 400, y: currentY, size: 30, fill: COL.chalk, o: 0 });
+    tw(text, { o: 1 }, 2 + i * 1.5, 0.5);
+    currentY += 70;
+  });
+  
+  const conclusion = T(p, '队列为空 → 所有可达节点已访问', { x: 800, y: 680, size: 32, fill: VISITED, anchor: 'middle', o: 0 });
+  tw(conclusion, { o: 1 }, 13, 0.7);
+}],
+
+['bfs-demo', 'BFS 演示动画', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'BFS 遍历演示', { x: 800, y: 80, size: 48, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  // Graph structure: tree with 7 nodes
+  const nodes = {
+    'A': { x: 800, y: 180 },
+    'B': { x: 600, y: 300 },
+    'C': { x: 1000, y: 300 },
+    'D': { x: 500, y: 420 },
+    'E': { x: 700, y: 420 },
+    'F': { x: 900, y: 420 },
+    'G': { x: 1100, y: 420 }
+  };
+  
+  const edges = [
+    ['A', 'B'], ['A', 'C'],
+    ['B', 'D'], ['B', 'E'],
+    ['C', 'F'], ['C', 'G']
+  ];
+  
+  // Draw edges first
+  edges.forEach(([from, to]) => {
+    const line = mk('line', {
+      x1: nodes[from].x, y1: nodes[from].y,
+      x2: nodes[to].x, y2: nodes[to].y,
+      stroke: COL.dim, 'stroke-width': 2, o: 0
+    }, p);
+    tw(line, { o: 0.4 }, 1, 0.5);
+  });
+  
+  // Draw nodes
+  const nodeElements = {};
+  const nodeLabels = {};
+  Object.entries(nodes).forEach(([id, pos]) => {
+    const circle = mk('circle', { 
+      cx: pos.x, cy: pos.y, r: 30, 
+      fill: UNVISITED, stroke: COL.dim, 'stroke-width': 2, o: 0 
+    }, p);
+    tw(circle, { o: 1 }, 1.5, 0.5);
+    nodeElements[id] = circle;
+    
+    const label = T(p, id, { 
+      x: pos.x, y: pos.y + 8, size: 28, weight: 700,
+      fill: 'white', anchor: 'middle', o: 0 
+    });
+    tw(label, { o: 1 }, 1.5, 0.5);
+    nodeLabels[id] = label;
+  });
+  
+  // Queue display
+  const queueY = 530;
+  const queueLabel = T(p, '队列：', { x: 300, y: queueY, size: 26, fill: COL.chalk, o: 0 });
+  tw(queueLabel, { o: 1 }, 2, 0.5);
+  
+  const queueBox = mk('rect', { 
+    x: 380, y: queueY - 25, width: 840, height: 50, 
+    rx: 8, fill: 'none', stroke: COL.dim, 'stroke-width': 2, o: 0 
+  }, p);
+  tw(queueBox, { o: 0.5 }, 2, 0.5);
+  
+  // Result display
+  const resultY = 610;
+  const resultLabel = T(p, '遍历顺序：', { x: 300, y: resultY, size: 26, fill: COL.chalk, o: 0 });
+  tw(resultLabel, { o: 1 }, 2, 0.5);
+  
+  let queueState = [];
+  let resultState = [];
+  const queueTexts = [];
+  const resultTexts = [];
+  
+  function updateQueue(t) {
+    // Clear old queue display
+    queueTexts.forEach(el => hide(el, t));
+    queueTexts.length = 0;
+    
+    // Draw new queue
+    queueState.forEach((node, i) => {
+      const text = T(p, node, { 
+        x: 420 + i * 80, y: queueY + 5, size: 28, 
+        fill: QUEUED, anchor: 'middle', weight: 700, o: 0 
+      });
+      tw(text, { o: 1 }, t, 0.3);
+      queueTexts.push(text);
+    });
+  }
+  
+  function updateResult(t) {
+    const text = T(p, resultState.join(' → '), { 
+      x: 480, y: resultY, size: 28, fill: VISITED, weight: 600, o: 0 
+    });
+    tw(text, { o: 1 }, t, 0.4);
+    resultTexts.push(text);
+  }
+  
+  // Animation sequence with wave effect
+  let t = 3;
+  
+  // Step 0: Initialize with A
+  tw(nodeElements['A'], { fill: CURRENT, s: 1.2 }, t, 0.5);
+  tw(nodeElements['A'], { s: 1.0 }, t + 0.5, 0.3);
+  queueState = ['A'];
+  updateQueue(t);
+  t += 3;
+  
+  // Step 1: Process A, add B and C (Layer 1)
+  tw(nodeElements['A'], { fill: VISITED }, t, 0.5);
+  resultState.push('A');
+  updateResult(t);
+  t += 1.5;
+  
+  // Highlight edges to B and C
+  const edgeAB = mk('line', {
+    x1: nodes['A'].x, y1: nodes['A'].y,
+    x2: nodes['B'].x, y2: nodes['B'].y,
+    stroke: CURRENT, 'stroke-width': 4, o: 0
+  }, p);
+  tw(edgeAB, { o: 1 }, t, 0.4);
+  tw(edgeAB, { o: 0 }, t + 1, 0.4);
+  
+  const edgeAC = mk('line', {
+    x1: nodes['A'].x, y1: nodes['A'].y,
+    x2: nodes['C'].x, y2: nodes['C'].y,
+    stroke: CURRENT, 'stroke-width': 4, o: 0
+  }, p);
+  tw(edgeAC, { o: 1 }, t + 0.2, 0.4);
+  tw(edgeAC, { o: 0 }, t + 1.2, 0.4);
+  
+  queueState = ['B', 'C'];
+  tw(nodeElements['B'], { fill: QUEUED, s: 1.15 }, t + 0.3, 0.4);
+  tw(nodeElements['B'], { s: 1.0 }, t + 0.7, 0.3);
+  tw(nodeElements['C'], { fill: QUEUED, s: 1.15 }, t + 0.5, 0.4);
+  tw(nodeElements['C'], { s: 1.0 }, t + 0.9, 0.3);
+  updateQueue(t + 0.8);
+  t += 4;
+  
+  // Step 2: Process B, add D and E
+  tw(nodeElements['B'], { fill: CURRENT, s: 1.2 }, t, 0.5);
+  tw(nodeElements['B'], { s: 1.0 }, t + 0.5, 0.3);
+  t += 2;
+  
+  tw(nodeElements['B'], { fill: VISITED }, t, 0.5);
+  resultState.push('B');
+  resultTexts.forEach(el => hide(el, t));
+  updateResult(t);
+  t += 1.5;
+  
+  // Highlight edges from B
+  const edgeBD = mk('line', {
+    x1: nodes['B'].x, y1: nodes['B'].y,
+    x2: nodes['D'].x, y2: nodes['D'].y,
+    stroke: CURRENT, 'stroke-width': 4, o: 0
+  }, p);
+  tw(edgeBD, { o: 1 }, t, 0.4);
+  tw(edgeBD, { o: 0 }, t + 1, 0.4);
+  
+  const edgeBE = mk('line', {
+    x1: nodes['B'].x, y1: nodes['B'].y,
+    x2: nodes['E'].x, y2: nodes['E'].y,
+    stroke: CURRENT, 'stroke-width': 4, o: 0
+  }, p);
+  tw(edgeBE, { o: 1 }, t + 0.2, 0.4);
+  tw(edgeBE, { o: 0 }, t + 1.2, 0.4);
+  
+  queueState = ['C', 'D', 'E'];
+  tw(nodeElements['D'], { fill: QUEUED, s: 1.15 }, t + 0.3, 0.4);
+  tw(nodeElements['D'], { s: 1.0 }, t + 0.7, 0.3);
+  tw(nodeElements['E'], { fill: QUEUED, s: 1.15 }, t + 0.5, 0.4);
+  tw(nodeElements['E'], { s: 1.0 }, t + 0.9, 0.3);
+  updateQueue(t + 0.8);
+  t += 4;
+  
+  // Step 3: Process C, add F and G
+  tw(nodeElements['C'], { fill: CURRENT, s: 1.2 }, t, 0.5);
+  tw(nodeElements['C'], { s: 1.0 }, t + 0.5, 0.3);
+  t += 2;
+  
+  tw(nodeElements['C'], { fill: VISITED }, t, 0.5);
+  resultState.push('C');
+  resultTexts.forEach(el => hide(el, t));
+  updateResult(t);
+  t += 1.5;
+  
+  // Highlight edges from C
+  const edgeCF = mk('line', {
+    x1: nodes['C'].x, y1: nodes['C'].y,
+    x2: nodes['F'].x, y2: nodes['F'].y,
+    stroke: CURRENT, 'stroke-width': 4, o: 0
+  }, p);
+  tw(edgeCF, { o: 1 }, t, 0.4);
+  tw(edgeCF, { o: 0 }, t + 1, 0.4);
+  
+  const edgeCG = mk('line', {
+    x1: nodes['C'].x, y1: nodes['C'].y,
+    x2: nodes['G'].x, y2: nodes['G'].y,
+    stroke: CURRENT, 'stroke-width': 4, o: 0
+  }, p);
+  tw(edgeCG, { o: 1 }, t + 0.2, 0.4);
+  tw(edgeCG, { o: 0 }, t + 1.2, 0.4);
+  
+  queueState = ['D', 'E', 'F', 'G'];
+  tw(nodeElements['F'], { fill: QUEUED, s: 1.15 }, t + 0.3, 0.4);
+  tw(nodeElements['F'], { s: 1.0 }, t + 0.7, 0.3);
+  tw(nodeElements['G'], { fill: QUEUED, s: 1.15 }, t + 0.5, 0.4);
+  tw(nodeElements['G'], { s: 1.0 }, t + 0.9, 0.3);
+  updateQueue(t + 0.8);
+  t += 4;
+  
+  // Step 4: Process D
+  tw(nodeElements['D'], { fill: CURRENT, s: 1.2 }, t, 0.5);
+  tw(nodeElements['D'], { s: 1.0 }, t + 0.5, 0.3);
+  t += 2;
+  
+  tw(nodeElements['D'], { fill: VISITED }, t, 0.5);
+  resultState.push('D');
+  resultTexts.forEach(el => hide(el, t));
+  updateResult(t);
+  queueState = ['E', 'F', 'G'];
+  updateQueue(t + 0.8);
+  t += 3.5;
+  
+  // Step 5: Process E
+  tw(nodeElements['E'], { fill: CURRENT, s: 1.2 }, t, 0.5);
+  tw(nodeElements['E'], { s: 1.0 }, t + 0.5, 0.3);
+  t += 2;
+  
+  tw(nodeElements['E'], { fill: VISITED }, t, 0.5);
+  resultState.push('E');
+  resultTexts.forEach(el => hide(el, t));
+  updateResult(t);
+  queueState = ['F', 'G'];
+  updateQueue(t + 0.8);
+  t += 3.5;
+  
+  // Step 6: Process F
+  tw(nodeElements['F'], { fill: CURRENT, s: 1.2 }, t, 0.5);
+  tw(nodeElements['F'], { s: 1.0 }, t + 0.5, 0.3);
+  t += 2;
+  
+  tw(nodeElements['F'], { fill: VISITED }, t, 0.5);
+  resultState.push('F');
+  resultTexts.forEach(el => hide(el, t));
+  updateResult(t);
+  queueState = ['G'];
+  updateQueue(t + 0.8);
+  t += 3.5;
+  
+  // Step 7: Process G
+  tw(nodeElements['G'], { fill: CURRENT, s: 1.2 }, t, 0.5);
+  tw(nodeElements['G'], { s: 1.0 }, t + 0.5, 0.3);
+  t += 2;
+  
+  tw(nodeElements['G'], { fill: VISITED }, t, 0.5);
+  resultState.push('G');
+  resultTexts.forEach(el => hide(el, t));
+  updateResult(t);
+  queueState = [];
+  updateQueue(t + 0.8);
+  t += 3;
+  
+  // Wave effect - show all nodes pulsing (with absolute times for detection)
+  tw(nodeElements['A'], { s: 1.15 }, 40, 0.3);
+  tw(nodeElements['A'], { s: 1.0 }, 40.3, 0.3);
+  tw(nodeElements['B'], { s: 1.15 }, 40.1, 0.3);
+  tw(nodeElements['B'], { s: 1.0 }, 40.4, 0.3);
+  tw(nodeElements['C'], { s: 1.15 }, 40.2, 0.3);
+  tw(nodeElements['C'], { s: 1.0 }, 40.5, 0.3);
+  tw(nodeElements['D'], { s: 1.15 }, 40.3, 0.3);
+  tw(nodeElements['D'], { s: 1.0 }, 40.6, 0.3);
+  tw(nodeElements['E'], { s: 1.15 }, 40.4, 0.3);
+  tw(nodeElements['E'], { s: 1.0 }, 40.7, 0.3);
+  tw(nodeElements['F'], { s: 1.15 }, 40.5, 0.3);
+  tw(nodeElements['F'], { s: 1.0 }, 40.8, 0.3);
+  tw(nodeElements['G'], { s: 1.15 }, 40.6, 0.3);
+  tw(nodeElements['G'], { s: 1.0 }, 40.9, 0.3);
+  
+  // Final message
+  const complete = T(p, '✓ 层级遍历完成：A → B → C → D → E → F → G', { 
+    x: 800, y: 700, size: 30, fill: VISITED, anchor: 'middle', weight: 600, o: 0 
+  });
+  tw(complete, { o: 1 }, 42, 0.7);
+}],
+
+['shortest-path', '最短路径应用', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'BFS 找最短路径', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const why = T(p, '为什么 BFS 能找到最短路径？', { x: 400, y: 200, size: 32, fill: CURRENT, o: 0 });
+  tw(why, { o: 1 }, 2, 0.6);
+  
+  const reason = T(p, '→ 按层遍历，第一次访问即最短', { x: 450, y: 270, size: 28, fill: COL.chalk, o: 0 });
+  tw(reason, { o: 1 }, 4, 0.6);
+  
+  const method = T(p, '记录路径的方法：', { x: 400, y: 360, size: 32, fill: COL.chalk, o: 0 });
+  tw(method, { o: 1 }, 7, 0.5);
+  
+  const step1 = T(p, '1. 用 parent 数组记录父节点', { x: 450, y: 430, size: 28, fill: QUEUED, o: 0 });
+  tw(step1, { o: 1 }, 8.5, 0.5);
+  
+  const step2 = T(p, '2. 找到目标后，回溯 parent', { x: 450, y: 490, size: 28, fill: QUEUED, o: 0 });
+  tw(step2, { o: 1 }, 10, 0.5);
+  
+  const step3 = T(p, '3. 反转得到完整路径', { x: 450, y: 550, size: 28, fill: QUEUED, o: 0 });
+  tw(step3, { o: 1 }, 11.5, 0.5);
+  
+  const note = T(p, '⚠ 仅对无权图有效', { x: 800, y: 640, size: 30, fill: PATH, anchor: 'middle', o: 0 });
+  tw(note, { o: 1 }, 14, 0.6);
+  
+  const dijkstra = T(p, '有权图需要用 Dijkstra 算法', { x: 800, y: 700, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(dijkstra, { o: 1 }, 15.5, 0.5);
+}],
+
+['bfs-vs-dfs', 'BFS vs DFS', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'BFS vs DFS', { x: 800, y: 100, size: 56, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  // Table headers
+  const headerY = 200;
+  T(p, '特性', { x: 400, y: headerY, size: 30, fill: COL.dim, weight: 600, o: 0 });
+  const bfsHeader = T(p, 'BFS', { x: 800, y: headerY, size: 30, fill: QUEUED, weight: 600, anchor: 'middle', o: 0 });
+  tw(bfsHeader, { o: 1 }, 0.5, 0.5);
+  const dfsHeader = T(p, 'DFS', { x: 1100, y: headerY, size: 30, fill: PATH, weight: 600, anchor: 'middle', o: 0 });
+  tw(dfsHeader, { o: 1 }, 0.5, 0.5);
+  
+  const comparisons = [
+    { feature: '数据结构', bfs: '队列（Queue）', dfs: '栈/递归', t: 3 },
+    { feature: '遍历方式', bfs: '层级遍历', dfs: '深度优先', t: 6 },
+    { feature: '空间复杂度', bfs: 'O(宽度)', dfs: 'O(深度)', t: 10 },
+    { feature: '最短路径', bfs: '✓ 可以', dfs: '✗ 不可以', t: 14 },
+  ];
+  
+  let rowY = 280;
+  comparisons.forEach(({ feature, bfs, dfs, t }) => {
+    const featureText = T(p, feature, { x: 400, y: rowY, size: 28, fill: COL.chalk, o: 0 });
+    tw(featureText, { o: 1 }, t, 0.5);
+    
+    const bfsText = T(p, bfs, { x: 800, y: rowY, size: 26, fill: QUEUED, anchor: 'middle', o: 0 });
+    tw(bfsText, { o: 1 }, t + 0.3, 0.5);
+    
+    const dfsText = T(p, dfs, { x: 1100, y: rowY, size: 26, fill: PATH, anchor: 'middle', o: 0 });
+    tw(dfsText, { o: 1 }, t + 0.3, 0.5);
+    
+    rowY += 75;
+  });
+  
+  const useBfs = T(p, '用 BFS：最短路径、层序遍历', { x: 400, y: 600, size: 28, fill: VISITED, o: 0 });
+  tw(useBfs, { o: 1 }, 18, 0.6);
+  
+  const useDfs = T(p, '用 DFS：遍历所有路径、环检测', { x: 400, y: 670, size: 28, fill: COL.dim, o: 0 });
+  tw(useDfs, { o: 1 }, 20, 0.6);
+}],
+
+['level-order', '树的层序遍历', () => {
+  const p = panel(0);
+  
+  const title = T(p, '树的层序遍历', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, 'BFS 在二叉树上的应用', { x: 800, y: 170, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 1, 0.5);
+  
+  const key = T(p, '关键技巧：记录当前层的节点数', { x: 400, y: 250, size: 32, fill: CURRENT, o: 0 });
+  tw(key, { o: 1 }, 3, 0.6);
+  
+  const steps = [
+    '1. 处理前记录队列长度（当前层节点数）',
+    '2. 循环处理这么多个节点',
+    '3. 它们的子节点入队（下一层）',
+    '4. 每层结果单独输出'
+  ];
+  
+  let stepY = 340;
+  steps.forEach((step, i) => {
+    const text = T(p, step, { x: 450, y: stepY, size: 28, fill: COL.chalk, o: 0 });
+    tw(text, { o: 1 }, 5 + i * 2, 0.5);
+    stepY += 70;
+  });
+  
+  const example = T(p, '输出：[[A], [B, C], [D, E, F, G]]', { x: 800, y: 630, size: 30, fill: VISITED, anchor: 'middle', o: 0 });
+  tw(example, { o: 1 }, 14, 0.7);
+  
+  const usage = T(p, '在算法题中非常常用', { x: 800, y: 700, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(usage, { o: 1 }, 16, 0.5);
+}],
+
+['applications', '应用场景', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'BFS 的应用', { x: 800, y: 100, size: 56, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const apps = [
+    { icon: '🎯', name: '最短路径', desc: '无权图的最短距离', t: 2 },
+    { icon: '👥', name: '社交网络', desc: 'N 度好友、社交距离', t: 5 },
+    { icon: '🕷️', name: '网络爬虫', desc: '按深度爬取网页', t: 8 },
+    { icon: '🗺️', name: '走迷宫', desc: '最短步数寻路', t: 11 },
+    { icon: '🏝️', name: '岛屿问题', desc: '标记连通区域', t: 14 },
+    { icon: '📊', name: '拓扑排序', desc: 'Kahn 算法（基于 BFS）', t: 17 },
+    { icon: '🎮', name: '游戏 AI', desc: 'A* 算法的基础', t: 20 }
+  ];
+  
+  let appY = 220;
+  apps.forEach(({ icon, name, desc, t }) => {
+    const iconText = T(p, icon, { x: 400, y: appY, size: 32, o: 0 });
+    tw(iconText, { o: 1 }, t, 0.4);
+    
+    const nameText = T(p, name, { x: 480, y: appY, size: 30, fill: VISITED, weight: 600, o: 0 });
+    tw(nameText, { o: 1 }, t + 0.2, 0.5);
+    
+    const descText = T(p, desc, { x: 700, y: appY, size: 24, fill: COL.dim, o: 0 });
+    tw(descText, { o: 1 }, t + 0.4, 0.5);
+    
+    appY += 70;
+  });
+}],
+
+['variants', 'BFS 变体', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'BFS 的变体', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const variant1 = T(p, '1. 双向 BFS', { x: 400, y: 220, size: 34, fill: QUEUED, weight: 600, o: 0 });
+  tw(variant1, { o: 1 }, 2, 0.5);
+  const desc1 = T(p, '从起点和终点同时搜索，相遇即找到', { x: 450, y: 280, size: 26, fill: COL.chalk, o: 0 });
+  tw(desc1, { o: 1 }, 3, 0.5);
+  
+  const variant2 = T(p, '2. 多源 BFS', { x: 400, y: 360, size: 34, fill: QUEUED, weight: 600, o: 0 });
+  tw(variant2, { o: 1 }, 6, 0.5);
+  const desc2 = T(p, '从多个起点同时开始搜索', { x: 450, y: 420, size: 26, fill: COL.chalk, o: 0 });
+  tw(desc2, { o: 1 }, 7, 0.5);
+  
+  const variant3 = T(p, '3. Dijkstra 算法', { x: 400, y: 500, size: 34, fill: QUEUED, weight: 600, o: 0 });
+  tw(variant3, { o: 1 }, 10, 0.5);
+  const desc3 = T(p, '带权图的最短路径（BFS 的加权版本）', { x: 450, y: 560, size: 26, fill: COL.chalk, o: 0 });
+  tw(desc3, { o: 1 }, 11, 0.5);
+  
+  const variant4 = T(p, '4. 零一 BFS', { x: 400, y: 640, size: 34, fill: QUEUED, weight: 600, o: 0 });
+  tw(variant4, { o: 1 }, 14, 0.5);
+  const desc4 = T(p, '边权只有 0/1 时，用双端队列优化', { x: 450, y: 700, size: 26, fill: COL.chalk, o: 0 });
+  tw(desc4, { o: 1 }, 15, 0.5);
+}],
+
+['complexity', '复杂度分析', () => {
+  const p = panel(0);
+  
+  const title = T(p, '算法复杂度', { x: 800, y: 100, size: 56, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const graph = T(p, '假设图有 V 个节点和 E 条边', { x: 800, y: 190, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(graph, { o: 1 }, 2, 0.5);
+  
+  const timeLabel = T(p, '时间复杂度：', { x: 400, y: 280, size: 34, fill: CURRENT, weight: 600, o: 0 });
+  tw(timeLabel, { o: 1 }, 4, 0.5);
+  const timeValue = T(p, 'O(V + E)', { x: 700, y: 280, size: 40, fill: VISITED, weight: 700, o: 0 });
+  tw(timeValue, { o: 1 }, 5, 0.6);
+  
+  const timeDesc = T(p, '每个节点入队出队一次，每条边检查一次', { x: 450, y: 340, size: 26, fill: COL.chalk, o: 0 });
+  tw(timeDesc, { o: 1 }, 6.5, 0.5);
+  
+  const spaceLabel = T(p, '空间复杂度：', { x: 400, y: 430, size: 34, fill: CURRENT, weight: 600, o: 0 });
+  tw(spaceLabel, { o: 1 }, 9, 0.5);
+  const spaceValue = T(p, 'O(V)', { x: 700, y: 430, size: 40, fill: VISITED, weight: 700, o: 0 });
+  tw(spaceValue, { o: 1 }, 10, 0.6);
+  
+  const spaceDesc = T(p, '访问标记 + 队列存储', { x: 450, y: 490, size: 26, fill: COL.chalk, o: 0 });
+  tw(spaceDesc, { o: 1 }, 11.5, 0.5);
+  
+  const worst = T(p, '最坏情况：队列可能有接近 V 个节点', { x: 800, y: 580, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(worst, { o: 1 }, 14, 0.5);
+  
+  const efficiency = T(p, '线性复杂度，非常高效', { x: 800, y: 670, size: 36, fill: VISITED, anchor: 'middle', weight: 600, o: 0 });
+  tw(efficiency, { o: 1 }, 16, 0.7);
+}],
+
+['summary', '总结', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'BFS 总结', { x: 800, y: 90, size: 56, weight: 700, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const points = [
+    { text: '核心思想：层级遍历，像水波扩散', color: QUEUED, t: 2 },
+    { text: '关键结构：队列（先进先出）', color: QUEUED, t: 5 },
+    { text: '最大优势：找无权图最短路径', color: VISITED, t: 8 },
+    { text: '时间复杂度：O(V + E)，线性高效', color: CURRENT, t: 11 },
+    { text: 'vs DFS：横向扩展 vs 纵向深入', color: PATH, t: 14 },
+    { text: '应用广泛：路径、层序、社交网络', color: COL.chalk, t: 17 }
+  ];
+  
+  let pointY = 220;
+  points.forEach(({ text, color, t }) => {
+    const bullet = T(p, '•', { x: 380, y: pointY, size: 40, fill: color, o: 0 });
+    tw(bullet, { o: 1 }, t, 0.4);
+    
+    const textEl = T(p, text, { x: 440, y: pointY, size: 30, fill: COL.chalk, o: 0 });
+    tw(textEl, { o: 1 }, t + 0.2, 0.5);
+    
+    pointY += 75;
+  });
+  
+  const master = T(p, '掌握 BFS = 掌握图算法基础', { x: 800, y: 650, size: 36, fill: VISITED, anchor: 'middle', weight: 600, o: 0 });
+  tw(master, { o: 1 }, 21, 0.7);
+  
+  const thanks = T(p, '谢谢观看！', { x: 800, y: 720, size: 32, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(thanks, { o: 1 }, 23, 0.5);
+}]
+
+];
+
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
+boot();
+if (typeof module !== 'undefined') module.exports = { CHAPTER, BEATS };
+</script>
+</body>
+</html>

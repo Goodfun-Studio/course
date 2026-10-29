@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AC自动机</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 34, title: 'AC自动机', language: 'zh', minutes: 13 };
+
+/* ---------- colours ---------- */
+const TRIE_COLOR = '#3498db';      // 蓝色（Trie节点）
+const FAIL_COLOR = '#e74c3c';      // 红色（fail指针）
+const MATCH_COLOR = '#2ecc71';     // 绿色（匹配成功）
+const TEXT_COLOR = '#f39c12';      // 橙色（文本）
+const PATTERN_COLOR = '#9b59b6';   // 紫色（模式串）
+const STATE_COLOR = '#1abc9c';     // 青色（状态转移）
+const DIM_COLOR = '#7f8c8d';       // 灰色（辅助）
+
+/* ---------- beats ---------- */
+let BEATS = [
+
+['intro', '问题引入', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'AC自动机', { x: 800, y: 100, size: 56, weight: 700, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, 'Aho-Corasick Automaton', { x: 800, y: 170, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 0.8, 0.5);
+  
+  const problem1 = T(p, '场景一：敏感词过滤', { x: 300, y: 260, size: 34, fill: PATTERN_COLOR, o: 0 });
+  tw(problem1, { o: 1 }, 3, 0.6);
+  
+  const desc1 = T(p, '需要同时检测几千个敏感词', { x: 350, y: 320, size: 28, fill: COL.chalk, o: 0 });
+  tw(desc1, { o: 1 }, 4.5, 0.5);
+  
+  const problem2 = T(p, '场景二：病毒扫描', { x: 300, y: 410, size: 34, fill: PATTERN_COLOR, o: 0 });
+  tw(problem2, { o: 1 }, 6.5, 0.6);
+  
+  const desc2 = T(p, '在文件中查找多个病毒特征码', { x: 350, y: 470, size: 28, fill: COL.chalk, o: 0 });
+  tw(desc2, { o: 1 }, 8, 0.5);
+  
+  const question = T(p, '问题：如何高效地进行多模式匹配？', { x: 800, y: 580, size: 36, fill: MATCH_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(question, { o: 1 }, 10.5, 0.7);
+  
+  const core = T(p, '一次扫描，找出所有匹配', { x: 800, y: 660, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(core, { o: 1 }, 12.5, 0.6);
+}],
+
+['multi-pattern', '多模式匹配', () => {
+  const p = panel(0);
+  
+  const title = T(p, '多模式匹配问题', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const textLabel = T(p, '文本串：', { x: 300, y: 220, size: 32, fill: TEXT_COLOR, weight: 600, o: 0 });
+  tw(textLabel, { o: 1 }, 2, 0.5);
+  
+  const text = T(p, '"ushers"', { x: 460, y: 220, size: 32, fill: COL.chalk, family: 'monospace', o: 0 });
+  tw(text, { o: 1 }, 2.5, 0.5);
+  
+  const patternsLabel = T(p, '模式串集合：', { x: 300, y: 310, size: 32, fill: PATTERN_COLOR, weight: 600, o: 0 });
+  tw(patternsLabel, { o: 1 }, 4, 0.5);
+  
+  const p1 = T(p, '"she"', { x: 360, y: 380, size: 28, fill: PATTERN_COLOR, family: 'monospace', o: 0 });
+  tw(p1, { o: 1 }, 5, 0.4);
+  
+  const p2 = T(p, '"he"', { x: 360, y: 440, size: 28, fill: PATTERN_COLOR, family: 'monospace', o: 0 });
+  tw(p2, { o: 1 }, 5.5, 0.4);
+  
+  const p3 = T(p, '"say"', { x: 360, y: 500, size: 28, fill: PATTERN_COLOR, family: 'monospace', o: 0 });
+  tw(p3, { o: 1 }, 6, 0.4);
+  
+  const p4 = T(p, '"her"', { x: 360, y: 560, size: 28, fill: PATTERN_COLOR, family: 'monospace', o: 0 });
+  tw(p4, { o: 1 }, 6.5, 0.4);
+  
+  const goal = T(p, '目标：找出所有出现的模式串', { x: 800, y: 660, size: 34, fill: MATCH_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(goal, { o: 1 }, 8.5, 0.7);
+}],
+
+['naive-approach', '朴素方法', () => {
+  const p = panel(0);
+  
+  const title = T(p, '朴素方法：多次KMP', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const idea = T(p, '想法：对每个模式串跑一次KMP', { x: 400, y: 230, size: 34, fill: COL.chalk, o: 0 });
+  tw(idea, { o: 1 }, 2.5, 0.6);
+  
+  const step1 = T(p, '1. KMP(text, "she")', { x: 450, y: 310, size: 30, fill: PATTERN_COLOR, family: 'monospace', o: 0 });
+  tw(step1, { o: 1 }, 4, 0.5);
+  
+  const step2 = T(p, '2. KMP(text, "he")', { x: 450, y: 380, size: 30, fill: PATTERN_COLOR, family: 'monospace', o: 0 });
+  tw(step2, { o: 1 }, 5, 0.5);
+  
+  const step3 = T(p, '3. KMP(text, "say")', { x: 450, y: 450, size: 30, fill: PATTERN_COLOR, family: 'monospace', o: 0 });
+  tw(step3, { o: 1 }, 6, 0.5);
+  
+  const step4 = T(p, '4. KMP(text, "her")', { x: 450, y: 520, size: 30, fill: PATTERN_COLOR, family: 'monospace', o: 0 });
+  tw(step4, { o: 1 }, 7, 0.5);
+  
+  const complexity = T(p, '时间复杂度：O(n × k)', { x: 400, y: 610, size: 32, fill: TEXT_COLOR, weight: 600, o: 0 });
+  tw(complexity, { o: 1 }, 9, 0.6);
+  
+  const desc = T(p, 'n = 文本长度，k = 模式串数量', { x: 450, y: 670, size: 26, fill: DIM_COLOR, o: 0 });
+  tw(desc, { o: 1 }, 10, 0.5);
+  
+  const problem = T(p, '✗ 模式串很多时效率低', { x: 800, y: 740, size: 30, fill: FAIL_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(problem, { o: 1 }, 11.5, 0.6);
+}],
+
+['ac-idea', 'AC自动机思想', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'AC自动机思想', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const key = T(p, '核心思想：Trie + KMP的fail指针', { x: 800, y: 230, size: 38, fill: MATCH_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(key, { o: 1 }, 2.5, 0.8);
+  
+  const part1 = T(p, '第一部分：Trie树', { x: 350, y: 340, size: 34, fill: TRIE_COLOR, weight: 600, o: 0 });
+  tw(part1, { o: 1 }, 4.5, 0.6);
+  
+  const desc1 = T(p, '→ 存储所有模式串', { x: 400, y: 400, size: 28, fill: COL.chalk, o: 0 });
+  tw(desc1, { o: 1 }, 5.5, 0.5);
+  
+  const part2 = T(p, '第二部分：fail指针', { x: 350, y: 490, size: 34, fill: FAIL_COLOR, weight: 600, o: 0 });
+  tw(part2, { o: 1 }, 7, 0.6);
+  
+  const desc2 = T(p, '→ 失配时的跳转', { x: 400, y: 550, size: 28, fill: COL.chalk, o: 0 });
+  tw(desc2, { o: 1 }, 8, 0.5);
+  
+  const desc3 = T(p, '→ 类似KMP的next数组', { x: 400, y: 610, size: 28, fill: COL.chalk, o: 0 });
+  tw(desc3, { o: 1 }, 9, 0.5);
+  
+  const result = T(p, '一次扫描，O(n + m + z)', { x: 800, y: 710, size: 34, fill: STATE_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(result, { o: 1 }, 11, 0.7);
+}],
+
+['build-trie', '构建Trie树', () => {
+  const p = panel(0);
+  
+  const title = T(p, '第一步：构建Trie树', { x: 800, y: 80, size: 48, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const patterns = T(p, '模式串：she, he, say, her', { x: 800, y: 150, size: 28, fill: PATTERN_COLOR, anchor: 'middle', o: 0 });
+  tw(patterns, { o: 1 }, 1.5, 0.5);
+  
+  // Root node
+  const root = C(p, 800, 250, 30, { fill: TRIE_COLOR, o: 0 });
+  tw(root, { o: 1 }, 2.5, 0.4);
+  const rootLabel = T(p, 'root', { x: 800, y: 255, size: 20, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(rootLabel, { o: 1 }, 2.5, 0.4);
+  
+  // Insert "she"
+  const nodeS = C(p, 650, 350, 28, { fill: TRIE_COLOR, o: 0 });
+  tw(nodeS, { o: 1 }, 3.5, 0.4);
+  const labelS = T(p, 's', { x: 650, y: 355, size: 20, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(labelS, { o: 1 }, 3.5, 0.4);
+  const edgeS = L(p, 800, 280, 665, 325, { stroke: DIM_COLOR, 'stroke-width': 2, o: 0 });
+  tw(edgeS, { o: 1 }, 3.5, 0.4);
+  
+  const nodeH1 = C(p, 600, 450, 28, { fill: TRIE_COLOR, o: 0 });
+  tw(nodeH1, { o: 1 }, 4.5, 0.4);
+  const labelH1 = T(p, 'h', { x: 600, y: 455, size: 20, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(labelH1, { o: 1 }, 4.5, 0.4);
+  const edgeH1 = L(p, 650, 378, 610, 425, { stroke: DIM_COLOR, 'stroke-width': 2, o: 0 });
+  tw(edgeH1, { o: 1 }, 4.5, 0.4);
+  
+  const nodeE1 = C(p, 550, 550, 28, { fill: MATCH_COLOR, o: 0 });
+  tw(nodeE1, { o: 1 }, 5.5, 0.4);
+  const labelE1 = T(p, 'e', { x: 550, y: 555, size: 20, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(labelE1, { o: 1 }, 5.5, 0.4);
+  const edgeE1 = L(p, 600, 478, 560, 525, { stroke: DIM_COLOR, 'stroke-width': 2, o: 0 });
+  tw(edgeE1, { o: 1 }, 5.5, 0.4);
+  const sheEnd = T(p, '"she"', { x: 480, y: 555, size: 18, fill: MATCH_COLOR, o: 0 });
+  tw(sheEnd, { o: 1 }, 6, 0.4);
+  
+  // Insert "he"
+  const nodeH2 = C(p, 800, 350, 28, { fill: TRIE_COLOR, o: 0 });
+  tw(nodeH2, { o: 1 }, 7, 0.4);
+  const labelH2 = T(p, 'h', { x: 800, y: 355, size: 20, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(labelH2, { o: 1 }, 7, 0.4);
+  const edgeH2 = L(p, 800, 280, 800, 322, { stroke: DIM_COLOR, 'stroke-width': 2, o: 0 });
+  tw(edgeH2, { o: 1 }, 7, 0.4);
+  
+  const nodeE2 = C(p, 750, 450, 28, { fill: MATCH_COLOR, o: 0 });
+  tw(nodeE2, { o: 1 }, 8, 0.4);
+  const labelE2 = T(p, 'e', { x: 750, y: 455, size: 20, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(labelE2, { o: 1 }, 8, 0.4);
+  const edgeE2 = L(p, 800, 378, 760, 425, { stroke: DIM_COLOR, 'stroke-width': 2, o: 0 });
+  tw(edgeE2, { o: 1 }, 8, 0.4);
+  const heEnd = T(p, '"he"', { x: 680, y: 455, size: 18, fill: MATCH_COLOR, o: 0 });
+  tw(heEnd, { o: 1 }, 8.5, 0.4);
+  
+  // Insert "say"
+  const nodeS2 = C(p, 950, 350, 28, { fill: TRIE_COLOR, o: 0 });
+  tw(nodeS2, { o: 1 }, 9.5, 0.4);
+  const labelS2 = T(p, 's', { x: 950, y: 355, size: 20, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(labelS2, { o: 1 }, 9.5, 0.4);
+  const edgeS2 = L(p, 800, 280, 935, 325, { stroke: DIM_COLOR, 'stroke-width': 2, o: 0 });
+  tw(edgeS2, { o: 1 }, 9.5, 0.4);
+  
+  const nodeA = C(p, 1000, 450, 28, { fill: TRIE_COLOR, o: 0 });
+  tw(nodeA, { o: 1 }, 10.5, 0.4);
+  const labelA = T(p, 'a', { x: 1000, y: 455, size: 20, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(labelA, { o: 1 }, 10.5, 0.4);
+  const edgeA = L(p, 950, 378, 990, 425, { stroke: DIM_COLOR, 'stroke-width': 2, o: 0 });
+  tw(edgeA, { o: 1 }, 10.5, 0.4);
+  
+  const nodeY = C(p, 1050, 550, 28, { fill: MATCH_COLOR, o: 0 });
+  tw(nodeY, { o: 1 }, 11.5, 0.4);
+  const labelY = T(p, 'y', { x: 1050, y: 555, size: 20, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(labelY, { o: 1 }, 11.5, 0.4);
+  const edgeY = L(p, 1000, 478, 1040, 525, { stroke: DIM_COLOR, 'stroke-width': 2, o: 0 });
+  tw(edgeY, { o: 1 }, 11.5, 0.4);
+  const sayEnd = T(p, '"say"', { x: 1090, y: 555, size: 18, fill: MATCH_COLOR, o: 0 });
+  tw(sayEnd, { o: 1 }, 12, 0.4);
+  
+  // Insert "her"
+  const nodeR = C(p, 700, 550, 28, { fill: MATCH_COLOR, o: 0 });
+  tw(nodeR, { o: 1 }, 13, 0.4);
+  const labelR = T(p, 'r', { x: 700, y: 555, size: 20, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(labelR, { o: 1 }, 13, 0.4);
+  const edgeR = L(p, 750, 478, 710, 525, { stroke: DIM_COLOR, 'stroke-width': 2, o: 0 });
+  tw(edgeR, { o: 1 }, 13, 0.4);
+  const herEnd = T(p, '"her"', { x: 740, y: 555, size: 18, fill: MATCH_COLOR, o: 0 });
+  tw(herEnd, { o: 1 }, 13.5, 0.4);
+  
+  const summary = T(p, 'Trie树构建完成', { x: 800, y: 660, size: 32, fill: TRIE_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(summary, { o: 1 }, 14.5, 0.6);
+}],
+
+['build-fail', '构建fail指针', () => {
+  const p = panel(0);
+  
+  const title = T(p, '第二步：构建fail指针', { x: 800, y: 60, size: 48, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, '使用BFS层序遍历', { x: 800, y: 120, size: 26, fill: DIM_COLOR, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 1, 0.4);
+  
+  // Trie structure (reuse from previous beat)
+  const root = C(p, 800, 200, 26, { fill: TRIE_COLOR, o: 0 });
+  tw(root, { o: 1 }, 1.5, 0.3);
+  const rootLabel = T(p, 'root', { x: 800, y: 203, size: 16, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(rootLabel, { o: 1 }, 1.5, 0.3);
+  
+  // Layer 1 nodes
+  const nodeS1 = C(p, 650, 280, 24, { fill: TRIE_COLOR, o: 0 });
+  tw(nodeS1, { o: 1 }, 2, 0.3);
+  const labelS1 = T(p, 's', { x: 650, y: 283, size: 16, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(labelS1, { o: 1 }, 2, 0.3);
+  L(p, 800, 225, 660, 260, { stroke: DIM_COLOR, 'stroke-width': 2, o: 1 });
+  
+  const nodeH1 = C(p, 800, 280, 24, { fill: TRIE_COLOR, o: 0 });
+  tw(nodeH1, { o: 1 }, 2, 0.3);
+  const labelH1 = T(p, 'h', { x: 800, y: 283, size: 16, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(labelH1, { o: 1 }, 2, 0.3);
+  L(p, 800, 225, 800, 256, { stroke: DIM_COLOR, 'stroke-width': 2, o: 1 });
+  
+  const nodeS2 = C(p, 950, 280, 24, { fill: TRIE_COLOR, o: 0 });
+  tw(nodeS2, { o: 1 }, 2, 0.3);
+  const labelS2 = T(p, 's', { x: 950, y: 283, size: 16, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(labelS2, { o: 1 }, 2, 0.3);
+  L(p, 800, 225, 940, 260, { stroke: DIM_COLOR, 'stroke-width': 2, o: 1 });
+  
+  // Layer 2 nodes
+  const nodeSH = C(p, 600, 360, 24, { fill: TRIE_COLOR, o: 0 });
+  tw(nodeSH, { o: 1 }, 2.5, 0.3);
+  const labelSH = T(p, 'h', { x: 600, y: 363, size: 16, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(labelSH, { o: 1 }, 2.5, 0.3);
+  L(p, 650, 304, 610, 340, { stroke: DIM_COLOR, 'stroke-width': 2, o: 1 });
+  
+  const nodeHE = C(p, 750, 360, 24, { fill: TRIE_COLOR, o: 0 });
+  tw(nodeHE, { o: 1 }, 2.5, 0.3);
+  const labelHE = T(p, 'e', { x: 750, y: 363, size: 16, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(labelHE, { o: 1 }, 2.5, 0.3);
+  L(p, 800, 304, 760, 340, { stroke: DIM_COLOR, 'stroke-width': 2, o: 1 });
+  
+  const nodeSA = C(p, 1000, 360, 24, { fill: TRIE_COLOR, o: 0 });
+  tw(nodeSA, { o: 1 }, 2.5, 0.3);
+  const labelSA = T(p, 'a', { x: 1000, y: 363, size: 16, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(labelSA, { o: 1 }, 2.5, 0.3);
+  L(p, 950, 304, 990, 340, { stroke: DIM_COLOR, 'stroke-width': 2, o: 1 });
+  
+  // Layer 3 nodes
+  const nodeSHE = C(p, 550, 440, 24, { fill: MATCH_COLOR, o: 0 });
+  tw(nodeSHE, { o: 1 }, 3, 0.3);
+  const labelSHE = T(p, 'e', { x: 550, y: 443, size: 16, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(labelSHE, { o: 1 }, 3, 0.3);
+  L(p, 600, 384, 560, 420, { stroke: DIM_COLOR, 'stroke-width': 2, o: 1 });
+  
+  const nodeHER = C(p, 700, 440, 24, { fill: MATCH_COLOR, o: 0 });
+  tw(nodeHER, { o: 1 }, 3, 0.3);
+  const labelHER = T(p, 'r', { x: 700, y: 443, size: 16, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(labelHER, { o: 1 }, 3, 0.3);
+  L(p, 750, 384, 710, 420, { stroke: DIM_COLOR, 'stroke-width': 2, o: 1 });
+  
+  const nodeSAY = C(p, 1050, 440, 24, { fill: MATCH_COLOR, o: 0 });
+  tw(nodeSAY, { o: 1 }, 3, 0.3);
+  const labelSAY = T(p, 'y', { x: 1050, y: 443, size: 16, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(labelSAY, { o: 1 }, 3, 0.3);
+  L(p, 1000, 384, 1040, 420, { stroke: DIM_COLOR, 'stroke-width': 2, o: 1 });
+  
+  // Build fail pointers with animations
+  const stepLabel = T(p, '当前处理节点：', { x: 200, y: 550, size: 24, fill: COL.chalk, o: 0 });
+  tw(stepLabel, { o: 1 }, 3.5, 0.4);
+  
+  // Layer 1 fail pointers → root
+  const failS1 = drawArrow(p, 650, 260, 790, 220, FAIL_COLOR, 0);
+  tw(failS1.line, { o: 0.8 }, 4.5, 0.5);
+  tw(failS1.head, { o: 0.8 }, 4.5, 0.5);
+  const stepS1 = T(p, 's → root', { x: 360, y: 550, size: 24, fill: FAIL_COLOR, family: 'monospace', o: 0 });
+  tw(stepS1, { o: 1 }, 4.5, 0.5);
+  tw(stepS1, { o: 0 }, 5.5, 0.3);
+  
+  const failH1 = drawArrow(p, 780, 265, 780, 225, FAIL_COLOR, 0);
+  tw(failH1.line, { o: 0.8 }, 5.5, 0.5);
+  tw(failH1.head, { o: 0.8 }, 5.5, 0.5);
+  const stepH1 = T(p, 'h → root', { x: 360, y: 550, size: 24, fill: FAIL_COLOR, family: 'monospace', o: 0 });
+  tw(stepH1, { o: 1 }, 5.5, 0.5);
+  tw(stepH1, { o: 0 }, 6.5, 0.3);
+  
+  const failS2 = drawArrow(p, 950, 260, 820, 220, FAIL_COLOR, 0);
+  tw(failS2.line, { o: 0.8 }, 6.5, 0.5);
+  tw(failS2.head, { o: 0.8 }, 6.5, 0.5);
+  const stepS2 = T(p, 's → root', { x: 360, y: 550, size: 24, fill: FAIL_COLOR, family: 'monospace', o: 0 });
+  tw(stepS2, { o: 1 }, 6.5, 0.5);
+  tw(stepS2, { o: 0 }, 7.5, 0.3);
+  
+  // Layer 2 fail pointers
+  const failSH = drawArrow(p, 600, 340, 800, 300, FAIL_COLOR, 0);
+  tw(failSH.line, { o: 0.8 }, 7.8, 0.5);
+  tw(failSH.head, { o: 0.8 }, 7.8, 0.5);
+  const stepSH = T(p, 'sh → h', { x: 360, y: 550, size: 24, fill: FAIL_COLOR, family: 'monospace', o: 0 });
+  tw(stepSH, { o: 1 }, 7.8, 0.5);
+  tw(stepSH, { o: 0 }, 9, 0.3);
+  
+  const failHE = drawArrow(p, 740, 340, 790, 220, FAIL_COLOR, 0);
+  tw(failHE.line, { o: 0.8 }, 9, 0.5);
+  tw(failHE.head, { o: 0.8 }, 9, 0.5);
+  const stepHE = T(p, 'he → root', { x: 360, y: 550, size: 24, fill: FAIL_COLOR, family: 'monospace', o: 0 });
+  tw(stepHE, { o: 1 }, 9, 0.5);
+  tw(stepHE, { o: 0 }, 10.2, 0.3);
+  
+  const failSA = drawArrow(p, 990, 340, 810, 220, FAIL_COLOR, 0);
+  tw(failSA.line, { o: 0.8 }, 10.2, 0.5);
+  tw(failSA.head, { o: 0.8 }, 10.2, 0.5);
+  const stepSA = T(p, 'sa → root', { x: 360, y: 550, size: 24, fill: FAIL_COLOR, family: 'monospace', o: 0 });
+  tw(stepSA, { o: 1 }, 10.2, 0.5);
+  tw(stepSA, { o: 0 }, 11.5, 0.3);
+  
+  // Layer 3 fail pointers
+  const failSHE = drawArrow(p, 550, 420, 750, 378, FAIL_COLOR, 0);
+  tw(failSHE.line, { o: 0.8 }, 11.8, 0.6);
+  tw(failSHE.head, { o: 0.8 }, 11.8, 0.6);
+  const stepSHE = T(p, 'she → he (匹配!)', { x: 360, y: 550, size: 24, fill: MATCH_COLOR, family: 'monospace', o: 0 });
+  tw(stepSHE, { o: 1 }, 11.8, 0.6);
+  tw(stepSHE, { o: 0 }, 13, 0.3);
+  
+  const failHER = drawArrow(p, 690, 420, 810, 220, FAIL_COLOR, 0);
+  tw(failHER.line, { o: 0.8 }, 13.2, 0.6);
+  tw(failHER.head, { o: 0.8 }, 13.2, 0.6);
+  const stepHER = T(p, 'her → root', { x: 360, y: 550, size: 24, fill: FAIL_COLOR, family: 'monospace', o: 0 });
+  tw(stepHER, { o: 1 }, 13.2, 0.6);
+  tw(stepHER, { o: 0 }, 14.5, 0.3);
+  
+  const failSAY = drawArrow(p, 1040, 420, 820, 220, FAIL_COLOR, 0);
+  tw(failSAY.line, { o: 0.8 }, 14.8, 0.6);
+  tw(failSAY.head, { o: 0.8 }, 14.8, 0.6);
+  const stepSAY = T(p, 'say → root', { x: 360, y: 550, size: 24, fill: FAIL_COLOR, family: 'monospace', o: 0 });
+  tw(stepSAY, { o: 1 }, 14.8, 0.6);
+  
+  const summary = T(p, 'fail指针构建完成', { x: 800, y: 650, size: 32, fill: FAIL_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(summary, { o: 1 }, 16.5, 0.7);
+  
+  const principle = T(p, 'fail指针：失配时跳转到最长公共后缀', { x: 800, y: 710, size: 26, fill: DIM_COLOR, anchor: 'middle', o: 0 });
+  tw(principle, { o: 1 }, 17.5, 0.6);
+}],
+
+['match-demo', '多模式匹配演示', () => {
+  const p = panel(0);
+  
+  const title = T(p, '第三步：多模式匹配', { x: 800, y: 60, size: 48, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  // Text display
+  const textLabel = T(p, '文本：', { x: 200, y: 150, size: 28, fill: TEXT_COLOR, weight: 600, o: 0 });
+  tw(textLabel, { o: 1 }, 1.5, 0.4);
+  
+  const text = "ushers";
+  const chars = [];
+  for (let i = 0; i < text.length; i++) {
+    const ch = T(p, text[i], { x: 350 + i * 50, y: 150, size: 32, fill: COL.chalk, family: 'monospace', o: 0 });
+    tw(ch, { o: 1 }, 2 + i * 0.2, 0.3);
+    chars.push(ch);
+  }
+  
+  // Current position pointer
+  const pointer = T(p, '↑', { x: 350, y: 190, size: 36, fill: STATE_COLOR, anchor: 'middle', o: 0 });
+  tw(pointer, { o: 1 }, 2.5, 0.4);
+  
+  // State indicator
+  const stateLabel = T(p, '当前状态：', { x: 200, y: 250, size: 26, fill: COL.chalk, o: 0 });
+  tw(stateLabel, { o: 1 }, 3, 0.4);
+  const stateText = T(p, 'root', { x: 380, y: 250, size: 26, fill: STATE_COLOR, family: 'monospace', o: 0 });
+  tw(stateText, { o: 1 }, 3, 0.4);
+  
+  // Matches found
+  const matchLabel = T(p, '找到匹配：', { x: 200, y: 310, size: 26, fill: MATCH_COLOR, weight: 600, o: 0 });
+  tw(matchLabel, { o: 1 }, 3.5, 0.4);
+  
+  // Simplified trie visualization (smaller, at bottom)
+  const trieY = 450;
+  const root = C(p, 800, trieY, 22, { fill: TRIE_COLOR, o: 0 });
+  tw(root, { o: 1 }, 4, 0.3);
+  T(p, 'root', { x: 800, y: trieY + 3, size: 14, fill: '#fff', anchor: 'middle', o: 1 });
+  
+  // Simplified nodes
+  const nodeS = C(p, 700, trieY + 60, 20, { fill: TRIE_COLOR, o: 1 });
+  T(p, 's', { x: 700, y: trieY + 63, size: 14, fill: '#fff', anchor: 'middle', o: 1 });
+  L(p, 800, trieY + 20, 710, trieY + 45, { stroke: DIM_COLOR, 'stroke-width': 1.5, o: 1 });
+  
+  const nodeH = C(p, 800, trieY + 60, 20, { fill: TRIE_COLOR, o: 1 });
+  T(p, 'h', { x: 800, y: trieY + 63, size: 14, fill: '#fff', anchor: 'middle', o: 1 });
+  L(p, 800, trieY + 20, 800, trieY + 42, { stroke: DIM_COLOR, 'stroke-width': 1.5, o: 1 });
+  
+  const nodeSH = C(p, 660, trieY + 120, 20, { fill: TRIE_COLOR, o: 1 });
+  T(p, 'h', { x: 660, y: trieY + 123, size: 14, fill: '#fff', anchor: 'middle', o: 1 });
+  L(p, 700, trieY + 78, 670, trieY + 105, { stroke: DIM_COLOR, 'stroke-width': 1.5, o: 1 });
+  
+  const nodeHE = C(p, 760, trieY + 120, 20, { fill: MATCH_COLOR, o: 1 });
+  T(p, 'e', { x: 760, y: trieY + 123, size: 14, fill: '#fff', anchor: 'middle', o: 1 });
+  L(p, 800, trieY + 78, 770, trieY + 105, { stroke: DIM_COLOR, 'stroke-width': 1.5, o: 1 });
+  
+  const nodeSHE = C(p, 620, trieY + 180, 20, { fill: MATCH_COLOR, o: 1 });
+  T(p, 'e', { x: 620, y: trieY + 183, size: 14, fill: '#fff', anchor: 'middle', o: 1 });
+  L(p, 660, trieY + 138, 630, trieY + 165, { stroke: DIM_COLOR, 'stroke-width': 1.5, o: 1 });
+  
+  const nodeHER = C(p, 710, trieY + 180, 20, { fill: MATCH_COLOR, o: 1 });
+  T(p, 'r', { x: 710, y: trieY + 183, size: 14, fill: '#fff', anchor: 'middle', o: 1 });
+  L(p, 760, trieY + 138, 720, trieY + 165, { stroke: DIM_COLOR, 'stroke-width': 1.5, o: 1 });
+  
+  // Matching process simulation
+  let t = 4.5;
+  const logY = 310;
+  
+  // Step 0: u (no match, stay at root)
+  tw(pointer, { x: 350 }, t, 0.3);
+  tw(chars[0], { fill: TEXT_COLOR }, t, 0.3);
+  tw(stateText, { o: 0 }, t, 0.1);
+  const state0 = T(p, 'root', { x: 380, y: 250, size: 26, fill: STATE_COLOR, family: 'monospace', o: 0 });
+  tw(state0, { o: 1 }, t, 0.3);
+  t += 1;
+  tw(chars[0], { fill: DIM_COLOR }, t, 0.2);
+  
+  // Step 1: s
+  tw(pointer, { x: 400 }, t, 0.3);
+  tw(chars[1], { fill: TEXT_COLOR }, t, 0.3);
+  tw(state0, { o: 0 }, t, 0.1);
+  const state1 = T(p, 's', { x: 380, y: 250, size: 26, fill: STATE_COLOR, family: 'monospace', o: 0 });
+  tw(state1, { o: 1 }, t, 0.3);
+  tw(nodeS, { fill: STATE_COLOR }, t, 0.3);
+  t += 1;
+  tw(chars[1], { fill: DIM_COLOR }, t, 0.2);
+  tw(nodeS, { fill: TRIE_COLOR }, t, 0.2);
+  
+  // Step 2: h
+  tw(pointer, { x: 450 }, t, 0.3);
+  tw(chars[2], { fill: TEXT_COLOR }, t, 0.3);
+  tw(state1, { o: 0 }, t, 0.1);
+  const state2 = T(p, 'sh', { x: 380, y: 250, size: 26, fill: STATE_COLOR, family: 'monospace', o: 0 });
+  tw(state2, { o: 1 }, t, 0.3);
+  tw(nodeSH, { fill: STATE_COLOR }, t, 0.3);
+  t += 1;
+  tw(chars[2], { fill: DIM_COLOR }, t, 0.2);
+  tw(nodeSH, { fill: TRIE_COLOR }, t, 0.2);
+  
+  // Step 3: e (match "she" and "he")
+  tw(pointer, { x: 500 }, t, 0.3);
+  tw(chars[3], { fill: TEXT_COLOR }, t, 0.3);
+  tw(state2, { o: 0 }, t, 0.1);
+  const state3 = T(p, 'she', { x: 380, y: 250, size: 26, fill: MATCH_COLOR, family: 'monospace', o: 0 });
+  tw(state3, { o: 1 }, t, 0.3);
+  tw(nodeSHE, { fill: MATCH_COLOR, stroke: MATCH_COLOR, 'stroke-width': 3 }, t, 0.4);
+  const match1 = T(p, '"she" (位置1-3)', { x: 380, y: logY + 30, size: 24, fill: MATCH_COLOR, o: 0 });
+  tw(match1, { o: 1 }, t + 0.5, 0.5);
+  t += 1.5;
+  
+  // Also report "he" via fail pointer
+  const match2 = T(p, '"he" (位置2-3)', { x: 380, y: logY + 65, size: 24, fill: MATCH_COLOR, o: 0 });
+  tw(match2, { o: 1 }, t, 0.5);
+  tw(nodeHE, { fill: MATCH_COLOR, stroke: MATCH_COLOR, 'stroke-width': 3 }, t, 0.4);
+  t += 1.2;
+  tw(chars[3], { fill: DIM_COLOR }, t, 0.2);
+  tw(nodeSHE, { stroke: 'none' }, t, 0.2);
+  tw(nodeHE, { stroke: 'none' }, t, 0.2);
+  
+  // Step 4: r (match "her")
+  tw(pointer, { x: 550 }, t, 0.3);
+  tw(chars[4], { fill: TEXT_COLOR }, t, 0.3);
+  tw(state3, { o: 0 }, t, 0.1);
+  const state4 = T(p, 'her', { x: 380, y: 250, size: 26, fill: MATCH_COLOR, family: 'monospace', o: 0 });
+  tw(state4, { o: 1 }, t, 0.3);
+  tw(nodeHER, { fill: MATCH_COLOR, stroke: MATCH_COLOR, 'stroke-width': 3 }, t, 0.4);
+  const match3 = T(p, '"her" (位置2-4)', { x: 380, y: logY + 100, size: 24, fill: MATCH_COLOR, o: 0 });
+  tw(match3, { o: 1 }, t + 0.5, 0.5);
+  t += 1.5;
+  tw(chars[4], { fill: DIM_COLOR }, t, 0.2);
+  tw(nodeHER, { stroke: 'none' }, t, 0.2);
+  
+  // Step 5: s (back to 's')
+  tw(pointer, { x: 600 }, t, 0.3);
+  tw(chars[5], { fill: TEXT_COLOR }, t, 0.3);
+  tw(state4, { o: 0 }, t, 0.1);
+  const state5 = T(p, 's', { x: 380, y: 250, size: 26, fill: STATE_COLOR, family: 'monospace', o: 0 });
+  tw(state5, { o: 1 }, t, 0.3);
+  tw(nodeS, { fill: STATE_COLOR }, t, 0.3);
+  t += 1;
+  tw(chars[5], { fill: DIM_COLOR }, t, 0.2);
+  tw(nodeS, { fill: TRIE_COLOR }, t, 0.2);
+  
+  // Summary
+  const summary = T(p, '✓ 一次扫描，找到3个匹配', { x: 800, y: 730, size: 32, fill: MATCH_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(summary, { o: 1 }, t + 1, 0.7);
+}],
+
+['algorithm', '算法实现', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'AC自动机实现', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const step1 = T(p, '步骤一：构建Trie树', { x: 300, y: 220, size: 34, fill: TRIE_COLOR, weight: 600, o: 0 });
+  tw(step1, { o: 1 }, 2, 0.6);
+  
+  const code1 = T(p, 'for pattern in patterns:', { x: 350, y: 280, size: 26, fill: COL.chalk, family: 'monospace', o: 0 });
+  tw(code1, { o: 1 }, 3, 0.4);
+  
+  const code2 = T(p, '    insert_trie(pattern)', { x: 370, y: 330, size: 26, fill: COL.chalk, family: 'monospace', o: 0 });
+  tw(code2, { o: 1 }, 3.5, 0.4);
+  
+  const step2 = T(p, '步骤二：构建fail指针', { x: 300, y: 410, size: 34, fill: FAIL_COLOR, weight: 600, o: 0 });
+  tw(step2, { o: 1 }, 5, 0.6);
+  
+  const code3 = T(p, 'queue = [root]', { x: 350, y: 470, size: 26, fill: COL.chalk, family: 'monospace', o: 0 });
+  tw(code3, { o: 1 }, 6, 0.4);
+  
+  const code4 = T(p, 'while queue:', { x: 350, y: 520, size: 26, fill: COL.chalk, family: 'monospace', o: 0 });
+  tw(code4, { o: 1 }, 6.5, 0.4);
+  
+  const code5 = T(p, '    node = queue.pop()', { x: 370, y: 570, size: 26, fill: COL.chalk, family: 'monospace', o: 0 });
+  tw(code5, { o: 1 }, 7, 0.4);
+  
+  const code6 = T(p, '    build_fail(node)', { x: 370, y: 620, size: 26, fill: COL.chalk, family: 'monospace', o: 0 });
+  tw(code6, { o: 1 }, 7.5, 0.4);
+  
+  const step3 = T(p, '步骤三：匹配搜索', { x: 900, y: 220, size: 34, fill: MATCH_COLOR, weight: 600, o: 0 });
+  tw(step3, { o: 1 }, 9, 0.6);
+  
+  const code7 = T(p, 'node = root', { x: 950, y: 280, size: 26, fill: COL.chalk, family: 'monospace', o: 0 });
+  tw(code7, { o: 1 }, 10, 0.4);
+  
+  const code8 = T(p, 'for char in text:', { x: 950, y: 330, size: 26, fill: COL.chalk, family: 'monospace', o: 0 });
+  tw(code8, { o: 1 }, 10.5, 0.4);
+  
+  const code9 = T(p, '    while no_child(node, char):', { x: 970, y: 380, size: 26, fill: COL.chalk, family: 'monospace', o: 0 });
+  tw(code9, { o: 1 }, 11, 0.4);
+  
+  const code10 = T(p, '        node = fail[node]', { x: 990, y: 430, size: 26, fill: FAIL_COLOR, family: 'monospace', o: 0 });
+  tw(code10, { o: 1 }, 11.5, 0.4);
+  
+  const code11 = T(p, '    node = child(node, char)', { x: 970, y: 480, size: 26, fill: COL.chalk, family: 'monospace', o: 0 });
+  tw(code11, { o: 1 }, 12, 0.4);
+  
+  const code12 = T(p, '    report_matches(node)', { x: 970, y: 530, size: 26, fill: MATCH_COLOR, family: 'monospace', o: 0 });
+  tw(code12, { o: 1 }, 12.5, 0.4);
+  
+  const summary = T(p, '清晰简洁，易于实现', { x: 800, y: 700, size: 32, fill: STATE_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(summary, { o: 1 }, 14, 0.6);
+}],
+
+['complexity', '复杂度分析', () => {
+  const p = panel(0);
+  
+  const title = T(p, '时间复杂度分析', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const part1 = T(p, '预处理：构建AC自动机', { x: 300, y: 230, size: 36, fill: TRIE_COLOR, weight: 600, o: 0 });
+  tw(part1, { o: 1 }, 2, 0.6);
+  
+  const time1 = T(p, 'O(m)', { x: 350, y: 300, size: 40, fill: TRIE_COLOR, family: 'monospace', weight: 600, o: 0 });
+  tw(time1, { o: 1 }, 3, 0.6);
+  
+  const desc1 = T(p, 'm = 所有模式串的总长度', { x: 400, y: 370, size: 28, fill: DIM_COLOR, o: 0 });
+  tw(desc1, { o: 1 }, 4, 0.5);
+  
+  const part2 = T(p, '匹配：扫描文本串', { x: 300, y: 460, size: 36, fill: MATCH_COLOR, weight: 600, o: 0 });
+  tw(part2, { o: 1 }, 6, 0.6);
+  
+  const time2 = T(p, 'O(n + z)', { x: 350, y: 530, size: 40, fill: MATCH_COLOR, family: 'monospace', weight: 600, o: 0 });
+  tw(time2, { o: 1 }, 7, 0.6);
+  
+  const desc2 = T(p, 'n = 文本串长度', { x: 400, y: 600, size: 28, fill: DIM_COLOR, o: 0 });
+  tw(desc2, { o: 1 }, 8, 0.5);
+  
+  const desc3 = T(p, 'z = 匹配次数', { x: 400, y: 650, size: 28, fill: DIM_COLOR, o: 0 });
+  tw(desc3, { o: 1 }, 8.5, 0.5);
+  
+  const total = T(p, '总时间：O(n + m + z)', { x: 800, y: 740, size: 38, fill: STATE_COLOR, anchor: 'middle', weight: 700, o: 0 });
+  tw(total, { o: 1 }, 10.5, 0.8);
+  
+  const note = T(p, '无论多少个模式串，只需一次扫描！', { x: 800, y: 800, size: 28, fill: MATCH_COLOR, anchor: 'middle', o: 0 });
+  tw(note, { o: 1 }, 12, 0.6);
+}],
+
+['applications', '应用场景', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'AC自动机的应用', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const app1 = T(p, '1. 敏感词过滤', { x: 300, y: 230, size: 36, fill: PATTERN_COLOR, weight: 600, o: 0 });
+  tw(app1, { o: 1 }, 2, 0.6);
+  
+  const desc1 = T(p, '论坛、社交网络的内容审核', { x: 350, y: 290, size: 28, fill: COL.chalk, o: 0 });
+  tw(desc1, { o: 1 }, 3, 0.5);
+  
+  const app2 = T(p, '2. 病毒扫描', { x: 300, y: 370, size: 36, fill: FAIL_COLOR, weight: 600, o: 0 });
+  tw(app2, { o: 1 }, 4.5, 0.6);
+  
+  const desc2 = T(p, '杀毒软件检测病毒特征码', { x: 350, y: 430, size: 28, fill: COL.chalk, o: 0 });
+  tw(desc2, { o: 1 }, 5.5, 0.5);
+  
+  const app3 = T(p, '3. 文本挖掘', { x: 300, y: 510, size: 36, fill: MATCH_COLOR, weight: 600, o: 0 });
+  tw(app3, { o: 1 }, 7, 0.6);
+  
+  const desc3 = T(p, '在大量文本中查找关键词', { x: 350, y: 570, size: 28, fill: COL.chalk, o: 0 });
+  tw(desc3, { o: 1 }, 8, 0.5);
+  
+  const app4 = T(p, '4. 生物信息学', { x: 300, y: 650, size: 36, fill: STATE_COLOR, weight: 600, o: 0 });
+  tw(app4, { o: 1 }, 9.5, 0.6);
+  
+  const desc4 = T(p, 'DNA序列匹配和蛋白质搜索', { x: 350, y: 710, size: 28, fill: COL.chalk, o: 0 });
+  tw(desc4, { o: 1 }, 10.5, 0.5);
+  
+  const summary = T(p, '凡是需要多模式匹配的场合，都能用AC自动机', { x: 800, y: 800, size: 30, fill: TEXT_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(summary, { o: 1 }, 12.5, 0.7);
+}],
+
+['comparison', '算法对比', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'AC自动机 vs KMP vs Trie', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  // KMP
+  const kmp = T(p, 'KMP算法', { x: 300, y: 220, size: 34, fill: PATTERN_COLOR, weight: 600, o: 0 });
+  tw(kmp, { o: 1 }, 2, 0.6);
+  
+  const kmpDesc1 = T(p, '• 单模式匹配', { x: 350, y: 280, size: 28, fill: COL.chalk, o: 0 });
+  tw(kmpDesc1, { o: 1 }, 2.8, 0.4);
+  
+  const kmpDesc2 = T(p, '• 线性时间 O(n + m)', { x: 350, y: 330, size: 28, fill: COL.chalk, o: 0 });
+  tw(kmpDesc2, { o: 1 }, 3.3, 0.4);
+  
+  const kmpDesc3 = T(p, '• 多个模式需要跑多次', { x: 350, y: 380, size: 28, fill: DIM_COLOR, o: 0 });
+  tw(kmpDesc3, { o: 1 }, 3.8, 0.4);
+  
+  // Trie
+  const trie = T(p, 'Trie树', { x: 300, y: 470, size: 34, fill: TRIE_COLOR, weight: 600, o: 0 });
+  tw(trie, { o: 1 }, 5.5, 0.6);
+  
+  const trieDesc1 = T(p, '• 多模式存储', { x: 350, y: 530, size: 28, fill: COL.chalk, o: 0 });
+  tw(trieDesc1, { o: 1 }, 6.3, 0.4);
+  
+  const trieDesc2 = T(p, '• 精确匹配（从头开始）', { x: 350, y: 580, size: 28, fill: COL.chalk, o: 0 });
+  tw(trieDesc2, { o: 1 }, 6.8, 0.4);
+  
+  const trieDesc3 = T(p, '• 不能处理文本中的匹配', { x: 350, y: 630, size: 28, fill: DIM_COLOR, o: 0 });
+  tw(trieDesc3, { o: 1 }, 7.3, 0.4);
+  
+  // AC
+  const ac = T(p, 'AC自动机', { x: 900, y: 220, size: 34, fill: MATCH_COLOR, weight: 600, o: 0 });
+  tw(ac, { o: 1 }, 9, 0.6);
+  
+  const acDesc1 = T(p, '• 多模式匹配', { x: 950, y: 280, size: 28, fill: COL.chalk, o: 0 });
+  tw(acDesc1, { o: 1 }, 9.8, 0.4);
+  
+  const acDesc2 = T(p, '• 线性时间 O(n + m + z)', { x: 950, y: 330, size: 28, fill: COL.chalk, o: 0 });
+  tw(acDesc2, { o: 1 }, 10.3, 0.4);
+  
+  const acDesc3 = T(p, '• 一次扫描找所有匹配', { x: 950, y: 380, size: 28, fill: MATCH_COLOR, o: 0 });
+  tw(acDesc3, { o: 1 }, 10.8, 0.4);
+  
+  const acDesc4 = T(p, '✓ 结合了Trie和KMP', { x: 950, y: 430, size: 28, fill: STATE_COLOR, o: 0 });
+  tw(acDesc4, { o: 1 }, 11.3, 0.4);
+  
+  const summary = T(p, 'AC自动机 = Trie树 + fail指针', { x: 800, y: 750, size: 36, fill: STATE_COLOR, anchor: 'middle', weight: 700, o: 0 });
+  tw(summary, { o: 1 }, 13, 0.8);
+}],
+
+['summary', '总结', () => {
+  const p = panel(0);
+  
+  const title = T(p, '总结：AC自动机', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const key1 = T(p, '核心思想', { x: 300, y: 220, size: 36, fill: MATCH_COLOR, weight: 600, o: 0 });
+  tw(key1, { o: 1 }, 2, 0.6);
+  
+  const desc1 = T(p, 'Trie树存储模式串 + fail指针处理失配', { x: 350, y: 280, size: 30, fill: COL.chalk, o: 0 });
+  tw(desc1, { o: 1 }, 3, 0.5);
+  
+  const key2 = T(p, '时间复杂度', { x: 300, y: 370, size: 36, fill: STATE_COLOR, weight: 600, o: 0 });
+  tw(key2, { o: 1 }, 5, 0.6);
+  
+  const desc2 = T(p, 'O(n + m + z)，线性时间', { x: 350, y: 430, size: 30, fill: COL.chalk, o: 0 });
+  tw(desc2, { o: 1 }, 6, 0.5);
+  
+  const key3 = T(p, '主要应用', { x: 300, y: 520, size: 36, fill: PATTERN_COLOR, weight: 600, o: 0 });
+  tw(key3, { o: 1 }, 8, 0.6);
+  
+  const desc3 = T(p, '敏感词过滤、病毒扫描、文本挖掘', { x: 350, y: 580, size: 30, fill: COL.chalk, o: 0 });
+  tw(desc3, { o: 1 }, 9, 0.5);
+  
+  const key4 = T(p, '算法优势', { x: 300, y: 670, size: 36, fill: TRIE_COLOR, weight: 600, o: 0 });
+  tw(key4, { o: 1 }, 11, 0.6);
+  
+  const desc4 = T(p, '一次扫描，高效处理多模式匹配', { x: 350, y: 730, size: 30, fill: COL.chalk, o: 0 });
+  tw(desc4, { o: 1 }, 12, 0.5);
+  
+  const final = T(p, 'AC自动机：多模式匹配的利器', { x: 800, y: 820, size: 38, fill: MATCH_COLOR, anchor: 'middle', weight: 700, o: 0 });
+  tw(final, { o: 1 }, 14, 0.8);
+}],
+
+];
+
+/* ---------- helper functions ---------- */
+function drawArrow(panel, x1, y1, x2, y2, color, initialOpacity) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const angle = Math.atan2(dy, dx);
+  const length = Math.sqrt(dx * dx + dy * dy);
+  
+  // Shorten line to not overlap with target circle
+  const shortLength = length - 30;
+  const x2Short = x1 + shortLength * Math.cos(angle);
+  const y2Short = y1 + shortLength * Math.sin(angle);
+  
+  const line = L(panel, x1, y1, x2Short, y2Short, {
+    stroke: color,
+    'stroke-width': 2,
+    'stroke-dasharray': '5,5',
+    o: initialOpacity
+  });
+  
+  // Arrow head
+  const headSize = 8;
+  const angle1 = angle + Math.PI * 0.8;
+  const angle2 = angle - Math.PI * 0.8;
+  const hx1 = x2Short + headSize * Math.cos(angle1);
+  const hy1 = y2Short + headSize * Math.sin(angle1);
+  const hx2 = x2Short + headSize * Math.cos(angle2);
+  const hy2 = y2Short + headSize * Math.sin(angle2);
+  
+  const head = PO(panel, [x2Short, y2Short, hx1, hy1, hx2, hy2], {
+    fill: color,
+    o: initialOpacity
+  });
+  
+  return { line, head };
+}
+
+/* ---------- engine ---------- */
+function boot() {
+  animaze(BEATS);
+}
+</script>
+</body>
+</html>

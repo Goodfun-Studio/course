@@ -397,7 +397,7 @@ window.BEATS = BEATS;
 // Initialize the player
 boot();
 
-window.addEventListener('load', () => setPlayer(CHAPTER, BEATS, TIMINGS));
+if (typeof module !== 'undefined') module.exports = { CHAPTER, BEATS };
 </script>
 </body>
 </html>

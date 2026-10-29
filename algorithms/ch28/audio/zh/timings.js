@@ -6,54 +6,54 @@ window.MARKS = [
   },
   {
     "audio": "example",
-    "time": 36.31
+    "time": 29.88
   },
   {
     "audio": "problem-def",
-    "time": 140.88
+    "time": 101.64
   },
   {
     "audio": "dp-state",
-    "time": 195.34
+    "time": 143.45
   },
   {
     "audio": "dp-transition",
-    "time": 244.34
+    "time": 178.13
   },
   {
     "audio": "dp-table",
-    "time": 319.8
+    "time": 219.14
   },
   {
     "audio": "fill-demo",
-    "time": 394.2
+    "time": 253.13
   },
   {
     "audio": "implementation",
-    "time": 608.47
+    "time": 474.26
   },
   {
     "audio": "backtrack",
-    "time": 684.43
+    "time": 499.61
   },
   {
     "audio": "applications",
-    "time": 753.38
+    "time": 530.98
   },
   {
     "audio": "comparison",
-    "time": 792.48
+    "time": 556.22
   },
   {
     "audio": "optimization",
-    "time": 837.98
+    "time": 589.32
   },
   {
     "audio": "variants",
-    "time": 890.66
+    "time": 616.3
   },
   {
     "audio": "finish",
-    "time": 943.15
+    "time": 641.93
   }
 ];

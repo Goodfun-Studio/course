@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>素数筛法</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 32, title: '素数筛法', language: 'zh', minutes: 10 };
+
+/* ---------- colours ---------- */
+const PRIME_COLOR = '#2ecc71';      // 绿色（素数）
+const COMPOSITE_COLOR = '#95a5a6';  // 灰色（合数）
+const CURRENT_COLOR = '#e67e22';    // 橙色（当前处理）
+const MARK_COLOR = '#e74c3c';       // 红色（标记中）
+const GRID_COLOR = '#34495e';       // 深灰（网格）
+const RESULT_COLOR = '#9b59b6';     // 紫色（结果）
+
+/* ---------- beats ---------- */
+let BEATS = [
+
+['intro', '问题引入', () => {
+  const p = panel(0);
+  
+  const title = T(p, '素数筛法', { x: 800, y: 100, size: 56, weight: 700, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, 'Sieve of Eratosthenes', { x: 800, y: 170, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 0.8, 0.5);
+  
+  const problem1 = T(p, '问题：找出 1 到 n 之间的所有素数', { x: 400, y: 260, size: 32, fill: PRIME_COLOR, o: 0 });
+  tw(problem1, { o: 1 }, 3, 0.6);
+  
+  const app1 = T(p, '· RSA 加密：需要大素数', { x: 450, y: 340, size: 28, fill: COL.chalk, o: 0 });
+  tw(app1, { o: 1 }, 5, 0.5);
+  
+  const app2 = T(p, '· 数论研究：素数分布', { x: 450, y: 400, size: 28, fill: COL.chalk, o: 0 });
+  tw(app2, { o: 1 }, 6.5, 0.5);
+  
+  const app3 = T(p, '· 素性检验：快速判断', { x: 450, y: 460, size: 28, fill: COL.chalk, o: 0 });
+  tw(app3, { o: 1 }, 8, 0.5);
+  
+  const question = T(p, '如何高效地生成素数表？', { x: 800, y: 560, size: 36, fill: CURRENT_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(question, { o: 1 }, 10, 0.7);
+  
+  const answer = T(p, '埃拉托斯特尼筛法给出了优雅的答案', { x: 800, y: 640, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(answer, { o: 1 }, 12, 0.6);
+}],
+
+['naive-approach', '朴素方法', () => {
+  const p = panel(0);
+  
+  const title = T(p, '朴素方法', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const method = T(p, '逐个判断每个数是否为素数', { x: 400, y: 200, size: 34, fill: COL.chalk, o: 0 });
+  tw(method, { o: 1 }, 2, 0.6);
+  
+  const step1 = T(p, '对每个数 i：', { x: 450, y: 280, size: 30, fill: CURRENT_COLOR, o: 0 });
+  tw(step1, { o: 1 }, 4, 0.5);
+  
+  const step2 = T(p, '  检查 2 到 √i 的所有数', { x: 470, y: 350, size: 28, fill: COL.chalk, o: 0 });
+  tw(step2, { o: 1 }, 5.5, 0.5);
+  
+  const step3 = T(p, '  如果都不能整除，则为素数', { x: 470, y: 410, size: 28, fill: COL.chalk, o: 0 });
+  tw(step3, { o: 1 }, 7, 0.5);
+  
+  const complexity = T(p, '时间复杂度：O(n√n)', { x: 400, y: 500, size: 32, fill: MARK_COLOR, weight: 600, o: 0 });
+  tw(complexity, { o: 1 }, 9, 0.6);
+  
+  const slow = T(p, '当 n = 10^6 时，需要约 10^9 次运算', { x: 450, y: 580, size: 28, fill: COL.dim, o: 0 });
+  tw(slow, { o: 1 }, 11, 0.6);
+  
+  const tooslow = T(p, '✗ 重复计算太多！', { x: 800, y: 670, size: 36, fill: MARK_COLOR, anchor: 'middle', weight: 700, o: 0 });
+  tw(tooslow, { o: 1 }, 13, 0.7);
+}],
+
+['sieve-concept', '筛法思想', () => {
+  const p = panel(0);
+  
+  const title = T(p, '筛法思想', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, '用排除法筛掉合数', { x: 800, y: 180, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 1, 0.5);
+  
+  const insight = T(p, '核心洞察：', { x: 400, y: 270, size: 36, fill: CURRENT_COLOR, weight: 600, o: 0 });
+  tw(insight, { o: 1 }, 3, 0.6);
+  
+  const key1 = T(p, '· 素数的倍数一定是合数', { x: 450, y: 350, size: 32, fill: COL.chalk, o: 0 });
+  tw(key1, { o: 1 }, 4.5, 0.6);
+  
+  const key2 = T(p, '· 标记掉所有合数', { x: 450, y: 420, size: 32, fill: COL.chalk, o: 0 });
+  tw(key2, { o: 1 }, 6.5, 0.6);
+  
+  const key3 = T(p, '· 剩下的就是素数', { x: 450, y: 490, size: 32, fill: PRIME_COLOR, weight: 600, o: 0 });
+  tw(key3, { o: 1 }, 8.5, 0.6);
+  
+  const process = T(p, '过程：找到素数 → 标记其倍数 → 重复', { x: 800, y: 590, size: 30, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(process, { o: 1 }, 11, 0.6);
+  
+  const clever = T(p, '不需要判断，只需要标记！', { x: 800, y: 670, size: 36, fill: RESULT_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(clever, { o: 1 }, 13, 0.7);
+}],
+
+['sieve-animation', '素数筛动画', () => {
+  const p = panel(0);
+  
+  const title = T(p, '素数筛演示（2 - 50）', { x: 800, y: 60, size: 42, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  // 创建数字网格 (2-50，7列8行)
+  const numbers = [];
+  const cols = 7;
+  const startX = 280;
+  const startY = 140;
+  const cellW = 110;
+  const cellH = 70;
+  
+  for (let i = 2; i <= 50; i++) {
+    const idx = i - 2;
+    const col = idx % cols;
+    const row = Math.floor(idx / cols);
+    const x = startX + col * cellW;
+    const y = startY + row * cellH;
+    
+    const rect = R(p, x - 35, y - 25, 70, 50, { fill: GRID_COLOR, o: 0.3 });
+    const num = T(p, String(i), { x, y, size: 28, fill: COL.chalk, anchor: 'middle', baseline: 'middle', o: 0 });
+    tw(num, { o: 1 }, 0.5 + idx * 0.02, 0.3);
+    
+    numbers.push({ i, rect, num, x, y });
+  }
+  
+  // 筛选过程
+  let t = 2.5;
+  
+  // 标记2的倍数
+  const mark2 = T(p, '标记 2 的倍数', { x: 1200, y: 200, size: 28, fill: CURRENT_COLOR, o: 0 });
+  tw(mark2, { o: 1 }, t, 0.4);
+  t += 0.8;
+  
+  // 2本身是素数
+  const n2 = numbers.find(n => n.i === 2);
+  tw(n2.rect, { fill: PRIME_COLOR, o: 0.6 }, t, 0.3);
+  tw(n2.num, { fill: PRIME_COLOR, weight: 700 }, t, 0.3);
+  t += 0.5;
+  
+  // 标记4,6,8...
+  const multiples2 = [4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50];
+  for (const m of multiples2) {
+    const n = numbers.find(n => n.i === m);
+    tw(n.rect, { fill: COMPOSITE_COLOR, o: 0.6 }, t, 0.2);
+    tw(n.num, { fill: '#ecf0f1', o: 0.5 }, t, 0.2);
+    t += 0.15;
+  }
+  tw(mark2, { o: 0 }, t, 0.3);
+  t += 0.5;
+  
+  // 标记3的倍数
+  const mark3 = T(p, '标记 3 的倍数', { x: 1200, y: 300, size: 28, fill: CURRENT_COLOR, o: 0 });
+  tw(mark3, { o: 1 }, t, 0.4);
+  t += 0.8;
+  
+  // 3本身是素数
+  const n3 = numbers.find(n => n.i === 3);
+  tw(n3.rect, { fill: PRIME_COLOR, o: 0.6 }, t, 0.3);
+  tw(n3.num, { fill: PRIME_COLOR, weight: 700 }, t, 0.3);
+  t += 0.5;
+  
+  // 标记9,15,21... (6,12,18...已被标记)
+  const multiples3 = [9, 15, 21, 27, 33, 39, 45];
+  for (const m of multiples3) {
+    const n = numbers.find(n => n.i === m);
+    tw(n.rect, { fill: COMPOSITE_COLOR, o: 0.6 }, t, 0.2);
+    tw(n.num, { fill: '#ecf0f1', o: 0.5 }, t, 0.2);
+    t += 0.15;
+  }
+  tw(mark3, { o: 0 }, t, 0.3);
+  t += 0.5;
+  
+  // 标记5的倍数
+  const mark5 = T(p, '标记 5 的倍数', { x: 1200, y: 400, size: 28, fill: CURRENT_COLOR, o: 0 });
+  tw(mark5, { o: 1 }, t, 0.4);
+  t += 0.8;
+  
+  // 5本身是素数
+  const n5 = numbers.find(n => n.i === 5);
+  tw(n5.rect, { fill: PRIME_COLOR, o: 0.6 }, t, 0.3);
+  tw(n5.num, { fill: PRIME_COLOR, weight: 700 }, t, 0.3);
+  t += 0.5;
+  
+  // 标记25,35... (10,15,20,30...已被标记)
+  const multiples5 = [25, 35];
+  for (const m of multiples5) {
+    const n = numbers.find(n => n.i === m);
+    tw(n.rect, { fill: COMPOSITE_COLOR, o: 0.6 }, t, 0.2);
+    tw(n.num, { fill: '#ecf0f1', o: 0.5 }, t, 0.2);
+    t += 0.15;
+  }
+  tw(mark5, { o: 0 }, t, 0.3);
+  t += 0.5;
+  
+  // 标记7的倍数
+  const mark7 = T(p, '标记 7 的倍数', { x: 1200, y: 500, size: 28, fill: CURRENT_COLOR, o: 0 });
+  tw(mark7, { o: 1 }, t, 0.4);
+  t += 0.8;
+  
+  // 7本身是素数
+  const n7 = numbers.find(n => n.i === 7);
+  tw(n7.rect, { fill: PRIME_COLOR, o: 0.6 }, t, 0.3);
+  tw(n7.num, { fill: PRIME_COLOR, weight: 700 }, t, 0.3);
+  t += 0.5;
+  
+  // 标记49 (14,21,28,35,42已被标记)
+  const multiples7 = [49];
+  for (const m of multiples7) {
+    const n = numbers.find(n => n.i === m);
+    tw(n.rect, { fill: COMPOSITE_COLOR, o: 0.6 }, t, 0.2);
+    tw(n.num, { fill: '#ecf0f1', o: 0.5 }, t, 0.2);
+    t += 0.15;
+  }
+  tw(mark7, { o: 0 }, t, 0.3);
+  t += 0.5;
+  
+  // 剩下的都是素数：11,13,17,19,23,29,31,37,41,43,47
+  const remaining = [11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47];
+  const result = T(p, '剩下的都是素数！', { x: 1200, y: 600, size: 32, fill: PRIME_COLOR, weight: 600, o: 0 });
+  tw(result, { o: 1 }, t, 0.5);
+  t += 0.8;
+  
+  for (const m of remaining) {
+    const n = numbers.find(n => n.i === m);
+    tw(n.rect, { fill: PRIME_COLOR, o: 0.6 }, t, 0.2);
+    tw(n.num, { fill: PRIME_COLOR, weight: 700 }, t, 0.2);
+    t += 0.15;
+  }
+  
+  t += 0.5;
+  const count = T(p, '2-50 之间共有 15 个素数', { x: 800, y: 700, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(count, { o: 1 }, t, 0.6);
+}],
+
+['algorithm-impl', '算法实现', () => {
+  const p = panel(0);
+  
+  const title = T(p, '算法实现', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const step1 = T(p, '1. 创建布尔数组 is_prime[n+1]', { x: 400, y: 200, size: 30, fill: COL.chalk, o: 0 });
+  tw(step1, { o: 1 }, 2, 0.5);
+  
+  const step2 = T(p, '2. 初始化所有元素为 true', { x: 400, y: 270, size: 30, fill: COL.chalk, o: 0 });
+  tw(step2, { o: 1 }, 3.5, 0.5);
+  
+  const step3 = T(p, '3. is_prime[0] = is_prime[1] = false', { x: 400, y: 340, size: 30, fill: COL.chalk, o: 0 });
+  tw(step3, { o: 1 }, 5, 0.5);
+  
+  const step4 = T(p, '4. 对每个 i (2 到 n)：', { x: 400, y: 410, size: 30, fill: CURRENT_COLOR, o: 0 });
+  tw(step4, { o: 1 }, 6.5, 0.5);
+  
+  const step5 = T(p, '   · 如果 is_prime[i] == true', { x: 440, y: 480, size: 28, fill: COL.chalk, o: 0 });
+  tw(step5, { o: 1 }, 8, 0.5);
+  
+  const step6 = T(p, '   · 标记 i 的所有倍数为 false', { x: 440, y: 540, size: 28, fill: COL.chalk, o: 0 });
+  tw(step6, { o: 1 }, 9.5, 0.5);
+  
+  const step7 = T(p, '   · (2i, 3i, 4i, ...)', { x: 460, y: 600, size: 26, fill: COL.dim, o: 0 });
+  tw(step7, { o: 1 }, 11, 0.5);
+  
+  const complexity = T(p, '时间复杂度：O(n log log n)', { x: 800, y: 690, size: 32, fill: RESULT_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(complexity, { o: 1 }, 13, 0.7);
+}],
+
+['optimization-p2', '优化：从 p² 开始', () => {
+  const p = panel(0);
+  
+  const title = T(p, '优化技巧一', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, '从 p² 开始标记', { x: 800, y: 180, size: 36, fill: CURRENT_COLOR, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 1.5, 0.6);
+  
+  const insight = T(p, '关键观察：', { x: 400, y: 280, size: 34, fill: COL.chalk, o: 0 });
+  tw(insight, { o: 1 }, 3, 0.5);
+  
+  const obs1 = T(p, '对于素数 p，小于 p² 的倍数', { x: 450, y: 360, size: 30, fill: COL.chalk, o: 0 });
+  tw(obs1, { o: 1 }, 4.5, 0.6);
+  
+  const obs2 = T(p, '已经被更小的素数标记过了', { x: 450, y: 430, size: 30, fill: COL.chalk, o: 0 });
+  tw(obs2, { o: 1 }, 6, 0.6);
+  
+  const example = T(p, '例如：p=7 时', { x: 400, y: 520, size: 32, fill: CURRENT_COLOR, weight: 600, o: 0 });
+  tw(example, { o: 1 }, 8, 0.5);
+  
+  const ex1 = T(p, '· 7×2=14 已被 2 标记', { x: 450, y: 590, size: 28, fill: COL.dim, o: 0 });
+  tw(ex1, { o: 1 }, 9.5, 0.5);
+  
+  const ex2 = T(p, '· 7×3=21 已被 3 标记', { x: 450, y: 650, size: 28, fill: COL.dim, o: 0 });
+  tw(ex2, { o: 1 }, 11, 0.5);
+  
+  const conclusion = T(p, '→ 直接从 7²=49 开始！', { x: 450, y: 710, size: 30, fill: PRIME_COLOR, weight: 600, o: 0 });
+  tw(conclusion, { o: 1 }, 12.5, 0.6);
+}],
+
+['optimization-sqrtn', '优化：只检查到 √n', () => {
+  const p = panel(0);
+  
+  const title = T(p, '优化技巧二', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, '只检查到 √n', { x: 800, y: 180, size: 36, fill: CURRENT_COLOR, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 1.5, 0.6);
+  
+  const insight = T(p, '为什么？', { x: 400, y: 280, size: 34, fill: COL.chalk, o: 0 });
+  tw(insight, { o: 1 }, 3, 0.5);
+  
+  const reason1 = T(p, '如果 p > √n，则 p² > n', { x: 450, y: 360, size: 30, fill: COL.chalk, o: 0 });
+  tw(reason1, { o: 1 }, 4.5, 0.6);
+  
+  const reason2 = T(p, 'p 的倍数已经超出范围', { x: 450, y: 430, size: 30, fill: COL.chalk, o: 0 });
+  tw(reason2, { o: 1 }, 6, 0.6);
+  
+  const example = T(p, '例如：n=100', { x: 400, y: 520, size: 32, fill: CURRENT_COLOR, weight: 600, o: 0 });
+  tw(example, { o: 1 }, 8, 0.5);
+  
+  const ex1 = T(p, '√100 = 10', { x: 450, y: 590, size: 28, fill: COL.chalk, o: 0 });
+  tw(ex1, { o: 1 }, 9.5, 0.5);
+  
+  const ex2 = T(p, '只需检查 2, 3, 5, 7', { x: 450, y: 650, size: 28, fill: PRIME_COLOR, o: 0 });
+  tw(ex2, { o: 1 }, 11, 0.5);
+  
+  const benefit = T(p, '大幅减少循环次数！', { x: 800, y: 730, size: 32, fill: RESULT_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(benefit, { o: 1 }, 13, 0.6);
+}],
+
+['code-impl', '代码实现', () => {
+  const p = panel(0);
+  
+  const title = T(p, '代码实现', { x: 800, y: 80, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const code1 = T(p, 'def sieve(n):', { x: 400, y: 170, size: 26, fill: COL.chalk, family: 'monospace', o: 0 });
+  tw(code1, { o: 1 }, 2, 0.4);
+  
+  const code2 = T(p, '    is_prime = [True] * (n+1)', { x: 420, y: 220, size: 26, fill: COL.chalk, family: 'monospace', o: 0 });
+  tw(code2, { o: 1 }, 3, 0.4);
+  
+  const code3 = T(p, '    is_prime[0] = is_prime[1] = False', { x: 420, y: 270, size: 26, fill: COL.chalk, family: 'monospace', o: 0 });
+  tw(code3, { o: 1 }, 4, 0.4);
+  
+  const code4 = T(p, '    ', { x: 420, y: 320, size: 26, fill: COL.chalk, family: 'monospace', o: 0 });
+  tw(code4, { o: 1 }, 5, 0.4);
+  
+  const code5 = T(p, '    for i in range(2, int(n**0.5)+1):', { x: 420, y: 370, size: 26, fill: CURRENT_COLOR, family: 'monospace', o: 0 });
+  tw(code5, { o: 1 }, 6, 0.4);
+  
+  const code6 = T(p, '        if is_prime[i]:', { x: 440, y: 420, size: 26, fill: COL.chalk, family: 'monospace', o: 0 });
+  tw(code6, { o: 1 }, 7, 0.4);
+  
+  const code7 = T(p, '            for j in range(i*i, n+1, i):', { x: 460, y: 470, size: 26, fill: MARK_COLOR, family: 'monospace', o: 0 });
+  tw(code7, { o: 1 }, 8, 0.4);
+  
+  const code8 = T(p, '                is_prime[j] = False', { x: 480, y: 520, size: 26, fill: COL.chalk, family: 'monospace', o: 0 });
+  tw(code8, { o: 1 }, 9, 0.4);
+  
+  const code9 = T(p, '    ', { x: 420, y: 570, size: 26, fill: COL.chalk, family: 'monospace', o: 0 });
+  tw(code9, { o: 1 }, 10, 0.4);
+  
+  const code10 = T(p, '    return [i for i in range(2,n+1) if is_prime[i]]', { x: 420, y: 620, size: 26, fill: PRIME_COLOR, family: 'monospace', o: 0 });
+  tw(code10, { o: 1 }, 11, 0.4);
+  
+  const note1 = T(p, '✓ 只循环到 √n', { x: 1100, y: 370, size: 24, fill: CURRENT_COLOR, o: 0 });
+  tw(note1, { o: 1 }, 12, 0.4);
+  
+  const note2 = T(p, '✓ 从 i² 开始标记', { x: 1100, y: 470, size: 24, fill: MARK_COLOR, o: 0 });
+  tw(note2, { o: 1 }, 12.5, 0.4);
+  
+  const efficiency = T(p, '简洁高效！', { x: 800, y: 700, size: 32, fill: RESULT_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(efficiency, { o: 1 }, 13.5, 0.6);
+}],
+
+['applications', '应用场景', () => {
+  const p = panel(0);
+  
+  const title = T(p, '应用场景', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const app1 = T(p, '1. 生成素数表', { x: 400, y: 200, size: 34, fill: PRIME_COLOR, weight: 600, o: 0 });
+  tw(app1, { o: 1 }, 2, 0.6);
+  
+  const app1_desc = T(p, '   快速生成前 n 个素数', { x: 420, y: 270, size: 28, fill: COL.chalk, o: 0 });
+  tw(app1_desc, { o: 1 }, 3, 0.5);
+  
+  const app2 = T(p, '2. 因式分解', { x: 400, y: 350, size: 34, fill: CURRENT_COLOR, weight: 600, o: 0 });
+  tw(app2, { o: 1 }, 5, 0.6);
+  
+  const app2_desc = T(p, '   找出数的所有质因数', { x: 420, y: 420, size: 28, fill: COL.chalk, o: 0 });
+  tw(app2_desc, { o: 1 }, 6, 0.5);
+  
+  const app3 = T(p, '3. 密码学', { x: 400, y: 500, size: 34, fill: MARK_COLOR, weight: 600, o: 0 });
+  tw(app3, { o: 1 }, 8, 0.6);
+  
+  const app3_desc = T(p, '   RSA 加密需要大素数', { x: 420, y: 570, size: 28, fill: COL.chalk, o: 0 });
+  tw(app3_desc, { o: 1 }, 9, 0.5);
+  
+  const app4 = T(p, '4. 竞赛编程', { x: 400, y: 650, size: 34, fill: RESULT_COLOR, weight: 600, o: 0 });
+  tw(app4, { o: 1 }, 11, 0.6);
+  
+  const app4_desc = T(p, '   数论问题的基础工具', { x: 420, y: 720, size: 28, fill: COL.chalk, o: 0 });
+  tw(app4_desc, { o: 1 }, 12, 0.5);
+}],
+
+['variants', '算法变体', () => {
+  const p = panel(0);
+  
+  const title = T(p, '算法变体', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const var1 = T(p, '1. 线性筛（欧拉筛）', { x: 400, y: 200, size: 36, fill: PRIME_COLOR, weight: 600, o: 0 });
+  tw(var1, { o: 1 }, 2, 0.6);
+  
+  const var1_desc1 = T(p, '· 时间复杂度：O(n)', { x: 450, y: 280, size: 28, fill: COL.chalk, o: 0 });
+  tw(var1_desc1, { o: 1 }, 3.5, 0.5);
+  
+  const var1_desc2 = T(p, '· 每个合数只被标记一次', { x: 450, y: 340, size: 28, fill: COL.chalk, o: 0 });
+  tw(var1_desc2, { o: 1 }, 5, 0.5);
+  
+  const var2 = T(p, '2. 分段筛', { x: 400, y: 440, size: 36, fill: CURRENT_COLOR, weight: 600, o: 0 });
+  tw(var2, { o: 1 }, 7, 0.6);
+  
+  const var2_desc1 = T(p, '· 处理大区间 [L, R]', { x: 450, y: 520, size: 28, fill: COL.chalk, o: 0 });
+  tw(var2_desc1, { o: 1 }, 8.5, 0.5);
+  
+  const var2_desc2 = T(p, '· 空间复杂度：O(R-L+√R)', { x: 450, y: 580, size: 28, fill: COL.chalk, o: 0 });
+  tw(var2_desc2, { o: 1 }, 10, 0.5);
+  
+  const comparison = T(p, '埃氏筛：简单易懂，适合大多数场景', { x: 800, y: 680, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(comparison, { o: 1 }, 12, 0.6);
+}],
+
+['complexity', '复杂度分析', () => {
+  const p = panel(0);
+  
+  const title = T(p, '复杂度分析', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const time_title = T(p, '时间复杂度：O(n log log n)', { x: 400, y: 200, size: 36, fill: RESULT_COLOR, weight: 600, o: 0 });
+  tw(time_title, { o: 1 }, 2, 0.6);
+  
+  const time_exp = T(p, '分析：', { x: 450, y: 280, size: 30, fill: COL.chalk, o: 0 });
+  tw(time_exp, { o: 1 }, 3.5, 0.5);
+  
+  const time1 = T(p, '对每个素数 p，标记 n/p 个数', { x: 470, y: 350, size: 28, fill: COL.chalk, o: 0 });
+  tw(time1, { o: 1 }, 5, 0.5);
+  
+  const time2 = T(p, '总次数 = n/2 + n/3 + n/5 + ...', { x: 470, y: 410, size: 28, fill: COL.chalk, o: 0 });
+  tw(time2, { o: 1 }, 6.5, 0.5);
+  
+  const time3 = T(p, '= n × (1/2 + 1/3 + 1/5 + ...)', { x: 470, y: 470, size: 28, fill: COL.chalk, o: 0 });
+  tw(time3, { o: 1 }, 8, 0.5);
+  
+  const time4 = T(p, '≈ n × log log n', { x: 470, y: 530, size: 28, fill: RESULT_COLOR, weight: 600, o: 0 });
+  tw(time4, { o: 1 }, 9.5, 0.5);
+  
+  const space_title = T(p, '空间复杂度：O(n)', { x: 400, y: 620, size: 34, fill: CURRENT_COLOR, weight: 600, o: 0 });
+  tw(space_title, { o: 1 }, 11.5, 0.6);
+  
+  const space_exp = T(p, '需要 n+1 大小的布尔数组', { x: 450, y: 690, size: 28, fill: COL.chalk, o: 0 });
+  tw(space_exp, { o: 1 }, 13, 0.5);
+}],
+
+['summary', '总结', () => {
+  const p = panel(0);
+  
+  const title = T(p, '总结', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const point1 = T(p, '✓ 埃氏筛：用排除法筛掉合数', { x: 400, y: 200, size: 32, fill: PRIME_COLOR, o: 0 });
+  tw(point1, { o: 1 }, 2, 0.6);
+  
+  const point2 = T(p, '✓ 复杂度：O(n log log n)', { x: 400, y: 280, size: 32, fill: CURRENT_COLOR, o: 0 });
+  tw(point2, { o: 1 }, 3.5, 0.6);
+  
+  const point3 = T(p, '✓ 优化：从 p² 开始，只到 √n', { x: 400, y: 360, size: 32, fill: MARK_COLOR, o: 0 });
+  tw(point3, { o: 1 }, 5, 0.6);
+  
+  const point4 = T(p, '✓ 应用：素数表、因式分解、密码学', { x: 400, y: 440, size: 32, fill: RESULT_COLOR, o: 0 });
+  tw(point4, { o: 1 }, 6.5, 0.6);
+  
+  const point5 = T(p, '✓ 变体：线性筛 O(n)、分段筛', { x: 400, y: 520, size: 32, fill: COL.chalk, o: 0 });
+  tw(point5, { o: 1 }, 8, 0.6);
+  
+  const core = T(p, '核心思想：标记倍数，筛去合数', { x: 800, y: 630, size: 36, fill: PRIME_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(core, { o: 1 }, 10, 0.7);
+  
+  const final = T(p, '简单优雅，却威力强大！', { x: 800, y: 710, size: 32, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(final, { o: 1 }, 12, 0.6);
+}]
+
+];
+
+/* ---------- boot ---------- */
+boot();
+</script>
+</body>
+</html>

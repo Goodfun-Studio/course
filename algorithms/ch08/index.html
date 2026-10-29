@@ -54,7 +54,9 @@ function drawArrow(parent, x1, y1, x2, y2, color = EDGE_DEFAULT) {
   const dx = x2 - x1;
   const dy = y2 - y1;
   const len = Math.sqrt(dx * dx + dy * dy);
-  const ratio = (len - 40) / len;
+  // 使用比例缩短：长边缩短40px，短边按比例缩短（最少保留60%长度）
+  const shrink = Math.min(40, len * 0.4);
+  const ratio = (len - shrink) / len;
   const ex = x1 + dx * ratio;
   const ey = y1 + dy * ratio;
   

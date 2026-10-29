@@ -1,0 +1,29 @@
+{
+  "intro": "字典树，英文叫 Trie，是一种专门用于字符串处理的树形数据结构。[[trie]]想象你在用搜索引擎，刚输入几个字母，下面就弹出一堆补全建议。[[autocomplete]]或者你打错了单词，系统立刻提示可能的正确拼写。[[spellcheck]]这背后就是字典树在工作。[[behind]]字典树特别擅长处理字符串的前缀匹配问题。[[prefix]]今天我们要学会字典树的结构、三个核心操作，以及它的实际应用。[[today]]",
+  
+  "structure": "字典树是一棵多叉树，每条边代表一个字符。[[tree]]从根到某个节点的路径，拼起来就是一个字符串。[[path]]每个节点有两个属性：一个是子节点的映射，一个是标记是否是单词结尾。[[properties]]比如我们要存 apple 这个单词。[[example]]从根节点出发，依次走 a、p、p、l、e 这五条边。[[walk]]到达最后的 e 节点时，标记它是单词结尾。[[mark]]如果我们再存 app，会复用前面的 a、p、p 路径。[[reuse]]然后在第二个 p 节点标记为单词结尾。[[second]]这样相同前缀的单词会共享路径，节省空间。[[share]]",
+  
+  "operations": "字典树支持三个核心操作。[[three]]第一个是 insert(word)，插入一个单词。[[insert]]从根节点开始，逐个字符往下走，没有路径就创建新节点。[[create]]最后在结尾节点标记 isEnd 为 true。[[end]]第二个是 search(word)，查找单词是否存在。[[search]]同样从根节点开始，逐个字符往下走。[[walk]]如果中途走不通，说明单词不存在。[[not_found]]如果走到最后，检查 isEnd 标记，是 true 才算找到。[[check]]第三个是 startsWith(prefix)，判断是否有单词以某前缀开头。[[prefix]]和 search 类似，但只要能走通整个前缀就返回 true。[[partial]]不需要检查 isEnd 标记。",
+  
+  "insert-demo": "看插入操作的动画演示。[[demo]]我们依次插入五个单词：apple、app、application、apply、banana。[[words]]先插入 apple，从根节点开始，创建 a → p → p → l → e 五个节点。[[apple]]每个节点存储对应的字符，最后在 e 节点标记单词结尾。[[mark]]再插入 app，前面的 a、p、p 已经存在，直接复用。[[reuse]]只需要在第二个 p 节点标记单词结尾。[[app]]插入 application，前三个字符 a、p、p 复用。[[app_prefix]]然后创建 l、i、c、a、t、i、o、n 八个新节点，在 n 节点标记结尾。[[application]]插入 apply，前两个字符 a、p 复用。[[ap_prefix]]然后创建第二个 p、l、y 三个节点，在 y 节点标记结尾。[[apply]]最后插入 banana，第一个字符 b 是新的分支。[[new_branch]]创建 b → a → n → a → n → a 六个节点，在最后的 a 节点标记结尾。[[banana]]你看，相同前缀的单词共享路径，树的结构很紧凑。[[compact]]",
+  
+  "search-demo": "看搜索操作的动画演示。[[demo]]先搜索 apple，从根节点开始，依次走 a → p → p → l → e。[[apple_search]]每一步都成功，到达 e 节点，检查 isEnd 为 true，找到了。[[found]]再搜索 app，走 a → p → p，到达第二个 p 节点。[[app_search]]检查 isEnd 为 true，也找到了。[[app_found]]搜索 appl，走 a → p → p → l，到达 l 节点。[[appl_search]]检查 isEnd 为 false，虽然路径存在，但不是完整单词，返回 false。[[not_word]]搜索 orange，第一个字符 o 就走不通，根节点没有 o 这条边。[[no_path]]直接返回 false，单词不存在。[[not_found]]搜索前缀 app，走 a → p → p，路径存在，返回 true。[[prefix_search]]不需要检查 isEnd，只要路径通就行。[[prefix_ok]]字典树的搜索路径清晰，逻辑简单。",
+  
+  "implementation": "看代码实现。[[code]]先定义节点类，每个节点有一个 children 映射，存储子节点。[[node]]还有一个 isEnd 布尔值，标记是否是单词结尾。[[end]]字典树类有一个根节点。[[root]]插入操作：从根节点开始，遍历单词的每个字符。[[insert_start]]如果当前节点没有这个字符的子节点，就创建一个新节点。[[create_node]]然后移动到子节点，继续下一个字符。[[move]]遍历完所有字符后，标记当前节点为单词结尾。[[mark_end]]搜索操作：从根节点开始，遍历单词的每个字符。[[search_start]]如果当前节点没有这个字符的子节点，返回 false。[[no_child]]否则移动到子节点，继续下一个字符。[[next_char]]遍历完后，返回当前节点的 isEnd 值。[[return_end]]前缀搜索操作：和搜索类似，但不检查 isEnd。[[prefix_code]]只要能走完整个前缀，就返回 true。[[prefix_true]]代码不到 40 行，逻辑清晰易懂。",
+  
+  "complexity": "分析一下时间复杂度。[[analysis]]插入操作需要遍历单词的每个字符，时间是 O(m)，m 是单词长度。[[insert_time]]每个字符只要检查子节点是否存在，常数时间。[[constant]]搜索操作也是 O(m)，遍历单词的每个字符。[[search_time]]前缀搜索同样是 O(m)，m 是前缀长度。[[prefix_time]]空间复杂度取决于存储的单词数和长度。[[space]]最坏情况下，n 个单词没有公共前缀，需要 O(n × m) 空间。[[worst_space]]最好情况下，所有单词共享前缀，空间大大减少。[[best_space]]实际应用中，字典树的空间效率还是很高的。",
+  
+  "optimization": "字典树有一些优化技巧。[[optimization]]普通字典树每个节点可能有很多空指针，浪费空间。[[waste]]压缩字典树，也叫基数树或 Radix Tree，可以压缩只有一个子节点的路径。[[radix]]比如 apple 这个单词，如果没有其他以 a 开头的单词。[[example]]可以把整个 apple 压缩成一条边，而不是五个节点。[[compress]]这样节省了空间，但实现稍微复杂一些。[[tradeoff]]另一个优化是用数组代替哈希表存储子节点。[[array]]如果字符集很小，比如只有小写字母，用长度 26 的数组。[[small]]访问速度更快，但每个节点都要分配固定空间。[[fixed]]选择哪种方式取决于字符集大小和空间限制。",
+  
+  "autocomplete": "字典树最常见的应用是自动补全。[[autocomplete]]用户输入前缀，系统返回所有以这个前缀开头的单词。[[prefix]]算法很简单：先用 startsWith 找到前缀对应的节点。[[find_prefix]]然后从这个节点开始，深度优先搜索所有子树。[[dfs]]遇到 isEnd 为 true 的节点，就把路径拼成单词加入结果。[[collect]]时间复杂度是 O(m + k)，m 是前缀长度，k 是结果数量。[[time]]搜索引擎、IDE 代码补全、输入法都用这个技术。[[applications]]给用户流畅的输入体验。",
+  
+  "spellcheck": "字典树的第二个应用是拼写检查。[[spellcheck]]用户输入一个单词，系统提示可能的正确拼写。[[suggestion]]基本思路是在字典树中搜索与输入单词相似的单词。[[similar]]可以用编辑距离衡量相似度，允许插入、删除、替换字符。[[edit]]从根节点开始深度优先搜索，记录当前的编辑距离。[[dfs]]如果编辑距离超过阈值，剪枝不再往下搜。[[prune]]找到 isEnd 为 true 且编辑距离在阈值内的单词，加入结果。[[collect]]时间复杂度取决于树的大小和编辑距离阈值。[[complexity]]Word、浏览器、邮件客户端都用这个技术纠错。",
+  
+  "applications": "字典树还有很多其他应用。[[more]]IP 路由表用压缩字典树存储 IP 地址前缀，快速查找路由。[[ip]]词频统计时，用字典树存储单词，每个节点记录出现次数。[[frequency]]敏感词过滤用字典树存储敏感词库，在文本中快速匹配。[[filter]]DNA 序列分析用字典树存储基因序列，查找特定模式。[[dna]]这些场景都利用了字典树的前缀匹配特性。",
+  
+  "comparison": "字典树和哈希表都能存储字符串，有什么区别？[[comparison]]哈希表的插入和查找都是 O(1) 平均时间，但不支持前缀操作。[[hash]]字典树的操作是 O(m)，m 是字符串长度，但支持前缀搜索和排序。[[trie]]哈希表需要存储完整的字符串，可能有哈希冲突。[[collision]]字典树共享公共前缀，节省空间，没有冲突。[[no_conflict]]如果只需要精确查找，用哈希表更快。[[exact]]如果需要前缀匹配、自动补全、排序，用字典树更合适。[[prefix_ops]]选择数据结构要根据具体需求。",
+  
+  "variants": "字典树还有一些高级变体。[[variants]]后缀树可以在 O(m) 时间内查找任意子串。[[suffix]]它存储一个字符串的所有后缀，在字符串匹配中很有用。[[matching]]三向字典树结合了二叉树和字典树的特点。[[ternary]]每个节点最多三个子节点，比普通字典树省空间。[[space]]AC 自动机是字典树加上失败指针。[[ac]]可以在 O(n) 时间内匹配多个模式串，用于多模式匹配。[[multi]]这些高级数据结构在字符串处理中都很强大。",
+  
+  "finish": "字典树是处理字符串的强大工具。[[powerful]]它用树形结构存储字符串，共享公共前缀。[[structure]]支持插入、搜索、前缀匹配三个核心操作，时间都是 O(m)。[[operations]]在自动补全、拼写检查、IP 路由、词频统计中都有应用。[[applications]]相比哈希表，字典树支持前缀操作，但操作时间稍长。[[tradeoff]]掌握了字典树，你就掌握了解决字符串前缀问题的利器。[[master]]记住核心思想：树形结构，共享前缀，逐字符匹配。[[core]]三个操作 insert、search、startsWith，解决所有前缀相关问题。"
+}

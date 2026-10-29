@@ -1,0 +1,794 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第二十一章 字典树（Trie）</title>
+<link rel="stylesheet" href="../lib/engine.css">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 21, title: '字典树（Trie）', language: 'zh', minutes: 11 };
+
+/* ---------- 颜色方案 ---------- */
+const NODE_COLOR = '#3498db';      // 蓝色（普通节点）
+const END_NODE_COLOR = '#e74c3c';  // 红色（单词结尾节点）
+const EDGE_COLOR = '#2c3e50';      // 深色（边）
+const HIGHLIGHT = '#f39c12';       // 橙色（高亮）
+const SUCCESS = '#2ecc71';         // 绿色（成功）
+const BACKGROUND = '#ecf0f1';      // 浅灰（背景）
+const TEXT_COLOR = '#2c3e50';      // 深色文字
+const PATH_COLOR = '#9b59b6';      // 紫色（路径）
+
+/* ---------- 辅助函数 ---------- */
+function drawNode(parent, x, y, label, isEnd = false) {
+  const g = G(parent, { x, y, o: 0 });
+  const circle = mk('circle', { 
+    cx: 0, cy: 0, r: 25, 
+    fill: isEnd ? END_NODE_COLOR : NODE_COLOR, 
+    stroke: TEXT_COLOR, 
+    'stroke-width': 2 
+  }, g);
+  const text = T(g, label, { x: 0, y: 0, size: 20, weight: 700, fill: '#fff', anchor: 'middle' });
+  text.setAttribute('dominant-baseline', 'central');
+  return { g, circle, text };
+}
+
+function drawEdge(parent, x1, y1, x2, y2, label, color = EDGE_COLOR) {
+  const g = G(parent, { o: 0 });
+  const line = mk('line', { 
+    x1, y1, x2, y2, 
+    stroke: color, 
+    'stroke-width': 2
+  }, g);
+  
+  const midX = (x1 + x2) / 2;
+  const midY = (y1 + y2) / 2;
+  const text = T(g, label, { 
+    x: midX, y: midY - 10, 
+    size: 16, weight: 600, fill: color, anchor: 'middle' 
+  });
+  
+  return { g, line, text };
+}
+
+/* ---------- Beats ---------- */
+window.BEATS = [
+
+['intro', '问题引入', () => {
+  const p = panel(0);
+
+  T(p, '字典树（Trie）', { x: 400, y: 80, size: 48, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const scenarios = [
+    { icon: '🔍', text: '搜索引擎自动补全', y: 180 },
+    { icon: '✏️', text: '拼写检查与纠错', y: 260 },
+    { icon: '🌐', text: 'IP 路由表查找', y: 340 },
+    { icon: '📊', text: '词频统计与分析', y: 420 }
+  ];
+  
+  scenarios.forEach(({ icon, text, y }, i) => {
+    const g = G(p, { x: 150, y, o: 0 });
+    T(g, icon, { x: 0, y: 0, size: 36, anchor: 'middle' });
+    T(g, text, { x: 70, y: 0, size: 26, fill: TEXT_COLOR, anchor: 'start' });
+    tw(g, { o: 1 }, 0.5 + i * 0.3);
+  });
+  
+  const question = T(p, '核心问题：如何高效处理字符串前缀？', { 
+    x: 400, y: 530, size: 30, weight: 600, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+  });
+  tw(question, { o: 1 }, 2.5);
+}],
+
+['structure', '字典树结构', () => {
+  const p = panel(0);
+  
+  T(p, '字典树结构', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
+  
+  // 示例：存储 "apple" 和 "app"
+  const root = drawNode(p, 400, 150, 'root', false);
+  tw(root.g, { o: 1 }, 0.5);
+  
+  // apple 的路径
+  const nodeA = drawNode(p, 400, 230, 'a', false);
+  const edgeA = drawEdge(p, 400, 175, 400, 205, 'a');
+  tw(nodeA.g, { o: 1 }, 1);
+  tw(edgeA.g, { o: 1 }, 1);
+  
+  const nodeP1 = drawNode(p, 400, 310, 'p', false);
+  const edgeP1 = drawEdge(p, 400, 255, 400, 285, 'p');
+  tw(nodeP1.g, { o: 1 }, 1.5);
+  tw(edgeP1.g, { o: 1 }, 1.5);
+  
+  const nodeP2 = drawNode(p, 400, 390, 'p', true);
+  const edgeP2 = drawEdge(p, 400, 335, 400, 365, 'p');
+  tw(nodeP2.g, { o: 1 }, 2);
+  tw(edgeP2.g, { o: 1 }, 2);
+  
+  const nodeL = drawNode(p, 400, 470, 'l', false);
+  const edgeL = drawEdge(p, 400, 415, 400, 445, 'l');
+  tw(nodeL.g, { o: 1 }, 2.5);
+  tw(edgeL.g, { o: 1 }, 2.5);
+  
+  const nodeE = drawNode(p, 400, 550, 'e', true);
+  const edgeE = drawEdge(p, 400, 495, 400, 525, 'e');
+  tw(nodeE.g, { o: 1 }, 3);
+  tw(edgeE.g, { o: 1 }, 3);
+  
+  // 标注
+  const appLabel = T(p, '"app"', { 
+    x: 500, y: 390, size: 24, weight: 600, fill: END_NODE_COLOR, anchor: 'start', o: 0 
+  });
+  tw(appLabel, { o: 1 }, 3.5);
+  
+  const appleLabel = T(p, '"apple"', { 
+    x: 500, y: 550, size: 24, weight: 600, fill: END_NODE_COLOR, anchor: 'start', o: 0 
+  });
+  tw(appleLabel, { o: 1 }, 4);
+  
+  const note = T(p, '红色节点：单词结尾', { 
+    x: 100, y: 550, size: 20, fill: END_NODE_COLOR, o: 0 
+  });
+  tw(note, { o: 1 }, 4.5);
+}],
+
+['operations', '三个核心操作', () => {
+  const p = panel(0);
+  
+  T(p, '三个核心操作', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
+  
+  const operations = [
+    { 
+      name: 'insert(word)', 
+      desc: '插入单词，逐字符创建路径', 
+      y: 150,
+      code: '标记结尾节点 isEnd = true'
+    },
+    { 
+      name: 'search(word)', 
+      desc: '查找单词，检查是否完整存在', 
+      y: 280,
+      code: '路径存在 && isEnd == true'
+    },
+    { 
+      name: 'startsWith(prefix)', 
+      desc: '前缀匹配，只要路径存在', 
+      y: 410,
+      code: '路径存在即返回 true'
+    }
+  ];
+  
+  operations.forEach(({ name, desc, y, code }, i) => {
+    const g = G(p, { x: 100, y, o: 0 });
+    
+    T(g, name, { x: 0, y: 0, size: 28, weight: 700, fill: HIGHLIGHT, anchor: 'start' });
+    T(g, desc, { x: 0, y: 40, size: 22, fill: TEXT_COLOR, anchor: 'start' });
+    T(g, code, { x: 0, y: 80, size: 18, fill: PATH_COLOR, anchor: 'start', family: 'monospace' });
+    
+    tw(g, { o: 1 }, 0.5 + i * 0.8);
+  });
+}],
+
+['insert-demo', '插入操作演示', () => {
+  const p = panel(0);
+  
+  T(p, '插入操作：依次插入 5 个单词', { x: 400, y: 50, size: 32, weight: 700, fill: TEXT_COLOR });
+  
+  // 根节点
+  const root = drawNode(p, 400, 130, '●', false);
+  tw(root.g, { o: 1 }, 0.3);
+  
+  // 插入 "apple"
+  const wordLabel = T(p, '插入: "apple"', { x: 100, y: 100, size: 24, weight: 600, fill: HIGHLIGHT, o: 0 });
+  tw(wordLabel, { o: 1 }, 0.5);
+  
+  const a1 = drawNode(p, 300, 200, 'a', false);
+  const ea1 = drawEdge(p, 380, 150, 320, 180, 'a', HIGHLIGHT);
+  tw(a1.g, { o: 1 }, 1);
+  tw(ea1.g, { o: 1 }, 1);
+  
+  const p1 = drawNode(p, 250, 270, 'p', false);
+  const ep1 = drawEdge(p, 285, 220, 265, 250, 'p', HIGHLIGHT);
+  tw(p1.g, { o: 1 }, 1.5);
+  tw(ep1.g, { o: 1 }, 1.5);
+  
+  const p2 = drawNode(p, 200, 340, 'p', false);
+  const ep2 = drawEdge(p, 235, 290, 215, 320, 'p', HIGHLIGHT);
+  tw(p2.g, { o: 1 }, 2);
+  tw(ep2.g, { o: 1 }, 2);
+  
+  const l1 = drawNode(p, 150, 410, 'l', false);
+  const el1 = drawEdge(p, 185, 360, 165, 390, 'l', HIGHLIGHT);
+  tw(l1.g, { o: 1 }, 2.5);
+  tw(el1.g, { o: 1 }, 2.5);
+  
+  const e1 = drawNode(p, 100, 480, 'e', true);
+  const ee1 = drawEdge(p, 135, 430, 115, 460, 'e', HIGHLIGHT);
+  tw(e1.g, { o: 1 }, 3);
+  tw(ee1.g, { o: 1 }, 3);
+  
+  // 插入 "app"
+  tw(wordLabel, { o: 0 }, 3.5);
+  const word2Label = T(p, '插入: "app"', { x: 100, y: 100, size: 24, weight: 600, fill: HIGHLIGHT, o: 0 });
+  tw(word2Label, { o: 1 }, 3.5);
+  
+  tw(p2.circle, { fill: END_NODE_COLOR }, 4);
+  const appMark = T(p, '标记结尾', { x: 200, y: 370, size: 16, fill: END_NODE_COLOR, anchor: 'middle', o: 0 });
+  tw(appMark, { o: 1 }, 4);
+  
+  // 插入 "application"
+  tw(word2Label, { o: 0 }, 5);
+  const word3Label = T(p, '插入: "application"', { x: 100, y: 100, size: 24, weight: 600, fill: HIGHLIGHT, o: 0 });
+  tw(word3Label, { o: 1 }, 5);
+  
+  const l2 = drawNode(p, 250, 410, 'l', false);
+  const el2 = drawEdge(p, 215, 360, 235, 390, 'l', SUCCESS);
+  tw(l2.g, { o: 1 }, 5.5);
+  tw(el2.g, { o: 1 }, 5.5);
+  
+  const i1 = drawNode(p, 300, 480, 'i', false);
+  const ei1 = drawEdge(p, 265, 430, 285, 460, 'i', SUCCESS);
+  tw(i1.g, { o: 1 }, 6);
+  tw(ei1.g, { o: 1 }, 6);
+  
+  const c1 = drawNode(p, 350, 530, 'c', false);
+  const ec1 = drawEdge(p, 315, 500, 335, 520, 'c...', SUCCESS);
+  tw(c1.g, { o: 1 }, 6.5);
+  tw(ec1.g, { o: 1 }, 6.5);
+  
+  // 插入 "apply"
+  tw(word3Label, { o: 0 }, 7.5);
+  const word4Label = T(p, '插入: "apply"', { x: 100, y: 100, size: 24, weight: 600, fill: HIGHLIGHT, o: 0 });
+  tw(word4Label, { o: 1 }, 7.5);
+  
+  const p3 = drawNode(p, 350, 270, 'p', false);
+  const ep3 = drawEdge(p, 315, 220, 335, 250, 'p', PATH_COLOR);
+  tw(p3.g, { o: 1 }, 8);
+  tw(ep3.g, { o: 1 }, 8);
+  
+  const l3 = drawNode(p, 400, 340, 'l', false);
+  const el3 = drawEdge(p, 365, 290, 385, 320, 'l', PATH_COLOR);
+  tw(l3.g, { o: 1 }, 8.5);
+  tw(el3.g, { o: 1 }, 8.5);
+  
+  const y1 = drawNode(p, 450, 410, 'y', true);
+  const ey1 = drawEdge(p, 415, 360, 435, 390, 'y', PATH_COLOR);
+  tw(y1.g, { o: 1 }, 9);
+  tw(ey1.g, { o: 1 }, 9);
+  
+  // 插入 "banana"
+  tw(word4Label, { o: 0 }, 10);
+  const word5Label = T(p, '插入: "banana"', { x: 100, y: 100, size: 24, weight: 600, fill: HIGHLIGHT, o: 0 });
+  tw(word5Label, { o: 1 }, 10);
+  
+  const b1 = drawNode(p, 500, 200, 'b', false);
+  const eb1 = drawEdge(p, 420, 150, 480, 180, 'b', NODE_COLOR);
+  tw(b1.g, { o: 1 }, 10.5);
+  tw(eb1.g, { o: 1 }, 10.5);
+  
+  const a2 = drawNode(p, 550, 270, 'a', false);
+  const ea2 = drawEdge(p, 515, 220, 535, 250, 'a', NODE_COLOR);
+  tw(a2.g, { o: 1 }, 11);
+  tw(ea2.g, { o: 1 }, 11);
+  
+  const n1 = drawNode(p, 600, 340, 'n', false);
+  const en1 = drawEdge(p, 565, 290, 585, 320, 'n...', NODE_COLOR);
+  tw(n1.g, { o: 1 }, 11.5);
+  tw(en1.g, { o: 1 }, 11.5);
+  
+  const summary = T(p, '相同前缀共享路径，节省空间', { 
+    x: 400, y: 560, size: 24, weight: 600, fill: SUCCESS, anchor: 'middle', o: 0 
+  });
+  tw(summary, { o: 1 }, 12);
+}],
+
+['search-demo', '搜索操作演示', () => {
+  const p = panel(0);
+  
+  T(p, '搜索操作', { x: 400, y: 50, size: 36, weight: 700, fill: TEXT_COLOR });
+  
+  // 简化的树（已插入 apple, app, apply）
+  const root = drawNode(p, 400, 130, '●', false);
+  tw(root.g, { o: 1 }, 0.2);
+  
+  const a = drawNode(p, 400, 200, 'a', false);
+  const ea = drawEdge(p, 400, 155, 400, 175, 'a');
+  tw(a.g, { o: 1 }, 0.3);
+  tw(ea.g, { o: 1 }, 0.3);
+  
+  const p1 = drawNode(p, 300, 270, 'p', false);
+  const ep1 = drawEdge(p, 380, 220, 320, 250, 'p');
+  tw(p1.g, { o: 1 }, 0.4);
+  tw(ep1.g, { o: 1 }, 0.4);
+  
+  const p2 = drawNode(p, 250, 340, 'p', true);
+  const ep2 = drawEdge(p, 285, 290, 265, 320, 'p');
+  tw(p2.g, { o: 1 }, 0.5);
+  tw(ep2.g, { o: 1 }, 0.5);
+  
+  const l1 = drawNode(p, 200, 410, 'l', false);
+  const el1 = drawEdge(p, 235, 360, 215, 390, 'l');
+  tw(l1.g, { o: 1 }, 0.6);
+  tw(el1.g, { o: 1 }, 0.6);
+  
+  const e1 = drawNode(p, 150, 480, 'e', true);
+  const ee1 = drawEdge(p, 185, 430, 165, 460, 'e');
+  tw(e1.g, { o: 1 }, 0.7);
+  tw(ee1.g, { o: 1 }, 0.7);
+  
+  const p3 = drawNode(p, 350, 340, 'p', false);
+  const ep3 = drawEdge(p, 315, 290, 335, 320, 'p');
+  tw(p3.g, { o: 1 }, 0.8);
+  tw(ep3.g, { o: 1 }, 0.8);
+  
+  const l2 = drawNode(p, 400, 410, 'l', false);
+  const el2 = drawEdge(p, 365, 360, 385, 390, 'l');
+  tw(l2.g, { o: 1 }, 0.9);
+  tw(el2.g, { o: 1 }, 0.9);
+  
+  const y1 = drawNode(p, 450, 480, 'y', true);
+  const ey1 = drawEdge(p, 415, 430, 435, 460, 'y');
+  tw(y1.g, { o: 1 }, 1);
+  tw(ey1.g, { o: 1 }, 1);
+  
+  // 搜索 "apple" - 成功
+  const searchLabel = T(p, '搜索: "apple"', { x: 550, y: 150, size: 24, weight: 600, fill: HIGHLIGHT, o: 0 });
+  tw(searchLabel, { o: 1 }, 1.5);
+  
+  // 高亮路径
+  tw(ea.g, { o: 1 }, 2);
+  tw(ea.line, { stroke: SUCCESS, 'stroke-width': 4 }, 2);
+  tw(ep1.line, { stroke: SUCCESS, 'stroke-width': 4 }, 2.5);
+  tw(ep2.line, { stroke: SUCCESS, 'stroke-width': 4 }, 3);
+  tw(el1.line, { stroke: SUCCESS, 'stroke-width': 4 }, 3.5);
+  tw(ee1.line, { stroke: SUCCESS, 'stroke-width': 4 }, 4);
+  
+  const result1 = T(p, '✓ 找到！isEnd = true', { 
+    x: 550, y: 200, size: 22, fill: SUCCESS, o: 0 
+  });
+  tw(result1, { o: 1 }, 4.5);
+  
+  // 搜索 "appl" - 失败
+  tw(searchLabel, { o: 0 }, 5.5);
+  tw(result1, { o: 0 }, 5.5);
+  tw(ea.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, 5.5);
+  tw(ep1.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, 5.5);
+  tw(ep2.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, 5.5);
+  tw(el1.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, 5.5);
+  tw(ee1.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, 5.5);
+  
+  const searchLabel2 = T(p, '搜索: "appl"', { x: 550, y: 150, size: 24, weight: 600, fill: HIGHLIGHT, o: 0 });
+  tw(searchLabel2, { o: 1 }, 6);
+  
+  tw(ep1.line, { stroke: PATH_COLOR, 'stroke-width': 4 }, 6.5);
+  tw(ep2.line, { stroke: PATH_COLOR, 'stroke-width': 4 }, 7);
+  tw(el1.line, { stroke: PATH_COLOR, 'stroke-width': 4 }, 7.5);
+  
+  const result2 = T(p, '✗ 未找到！isEnd = false', { 
+    x: 550, y: 200, size: 22, fill: END_NODE_COLOR, o: 0 
+  });
+  tw(result2, { o: 1 }, 8);
+  
+  // 前缀搜索 "app" - 成功
+  tw(searchLabel2, { o: 0 }, 9);
+  tw(result2, { o: 0 }, 9);
+  tw(ep1.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, 9);
+  tw(ep2.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, 9);
+  tw(el1.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, 9);
+  
+  const searchLabel3 = T(p, 'startsWith: "app"', { x: 550, y: 150, size: 24, weight: 600, fill: HIGHLIGHT, o: 0 });
+  tw(searchLabel3, { o: 1 }, 9.5);
+  
+  tw(ep1.line, { stroke: NODE_COLOR, 'stroke-width': 4 }, 10);
+  tw(ep2.line, { stroke: NODE_COLOR, 'stroke-width': 4 }, 10.5);
+  
+  const result3 = T(p, '✓ 前缀存在！', { 
+    x: 550, y: 200, size: 22, fill: SUCCESS, o: 0 
+  });
+  tw(result3, { o: 1 }, 11);
+}],
+
+['implementation', '代码实现', () => {
+  const p = panel(0);
+  
+  T(p, '代码实现', { x: 400, y: 50, size: 36, weight: 700, fill: TEXT_COLOR });
+  
+  const code = `class TrieNode {
+  constructor() {
+    this.children = new Map();
+    this.isEnd = false;
+  }
+}
+
+class Trie {
+  constructor() {
+    this.root = new TrieNode();
+  }
+  
+  insert(word) {
+    let node = this.root;
+    for (let char of word) {
+      if (!node.children.has(char)) {
+        node.children.set(char, new TrieNode());
+      }
+      node = node.children.get(char);
+    }
+    node.isEnd = true;
+  }
+  
+  search(word) {
+    let node = this.root;
+    for (let char of word) {
+      if (!node.children.has(char)) {
+        return false;
+      }
+      node = node.children.get(char);
+    }
+    return node.isEnd;
+  }
+  
+  startsWith(prefix) {
+    let node = this.root;
+    for (let char of prefix) {
+      if (!node.children.has(char)) {
+        return false;
+      }
+      node = node.children.get(char);
+    }
+    return true;
+  }
+}`;
+  
+  const lines = code.split('\n');
+  lines.forEach((line, i) => {
+    const text = T(p, line, { 
+      x: 50, 
+      y: 120 + i * 16, 
+      size: 13, 
+      fill: TEXT_COLOR, 
+      family: 'monospace', 
+      anchor: 'start',
+      o: 0
+    });
+    tw(text, { o: 1 }, 0.5 + i * 0.1);
+  });
+}],
+
+['complexity', '复杂度分析', () => {
+  const p = panel(0);
+  
+  T(p, '时间和空间复杂度', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
+  
+  const items = [
+    { op: 'insert(word)', time: 'O(m)', desc: 'm = 单词长度', y: 150 },
+    { op: 'search(word)', time: 'O(m)', desc: '每个字符常数时间', y: 230 },
+    { op: 'startsWith(prefix)', time: 'O(m)', desc: 'm = 前缀长度', y: 310 },
+    { op: '空间复杂度', time: 'O(n × m)', desc: 'n 个单词，平均长度 m', y: 410 }
+  ];
+  
+  items.forEach(({ op, time, desc, y }, i) => {
+    const g = G(p, { x: 100, y, o: 0 });
+    
+    T(g, op, { x: 0, y: 0, size: 26, weight: 700, fill: HIGHLIGHT, anchor: 'start' });
+    T(g, time, { x: 0, y: 40, size: 24, weight: 600, fill: SUCCESS, anchor: 'start', family: 'monospace' });
+    T(g, desc, { x: 200, y: 40, size: 20, fill: TEXT_COLOR, anchor: 'start' });
+    
+    tw(g, { o: 1 }, 0.5 + i * 0.5);
+  });
+  
+  const note = T(p, '实际应用中，相同前缀共享路径，空间效率较高', { 
+    x: 400, y: 520, size: 22, fill: PATH_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(note, { o: 1 }, 3);
+}],
+
+['optimization', '空间优化', () => {
+  const p = panel(0);
+  
+  T(p, '压缩字典树（Radix Tree）', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
+  
+  // 普通 Trie
+  T(p, '普通 Trie', { x: 200, y: 130, size: 24, weight: 600, fill: HIGHLIGHT });
+  
+  const root1 = drawNode(p, 200, 180, '●', false);
+  tw(root1.g, { o: 1 }, 0.5);
+  
+  const a1 = drawNode(p, 200, 250, 'a', false);
+  const ea1 = drawEdge(p, 200, 205, 200, 225, 'a');
+  tw(a1.g, { o: 1 }, 1);
+  tw(ea1.g, { o: 1 }, 1);
+  
+  const p1 = drawNode(p, 200, 320, 'p', false);
+  const ep1 = drawEdge(p, 200, 275, 200, 295, 'p');
+  tw(p1.g, { o: 1 }, 1.5);
+  tw(ep1.g, { o: 1 }, 1.5);
+  
+  const p2 = drawNode(p, 200, 390, 'p', false);
+  const ep2 = drawEdge(p, 200, 345, 200, 365, 'p');
+  tw(p2.g, { o: 1 }, 2);
+  tw(ep2.g, { o: 1 }, 2);
+  
+  const l1 = drawNode(p, 200, 460, 'l', false);
+  const el1 = drawEdge(p, 200, 415, 200, 435, 'l');
+  tw(l1.g, { o: 1 }, 2.5);
+  tw(el1.g, { o: 1 }, 2.5);
+  
+  const e1 = drawNode(p, 200, 530, 'e', true);
+  const ee1 = drawEdge(p, 200, 485, 200, 505, 'e');
+  tw(e1.g, { o: 1 }, 3);
+  tw(ee1.g, { o: 1 }, 3);
+  
+  // 压缩 Trie
+  T(p, '压缩 Trie', { x: 600, y: 130, size: 24, weight: 600, fill: SUCCESS });
+  
+  const root2 = drawNode(p, 600, 180, '●', false);
+  tw(root2.g, { o: 1 }, 3.5);
+  
+  const apple = drawNode(p, 600, 350, 'apple', true);
+  const eapple = drawEdge(p, 600, 205, 600, 325, 'apple', SUCCESS);
+  tw(apple.g, { o: 1 }, 4);
+  tw(eapple.g, { o: 1 }, 4);
+  
+  const note1 = T(p, '5 个节点', { x: 200, y: 560, size: 18, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
+  tw(note1, { o: 1 }, 3.5);
+  
+  const note2 = T(p, '1 个节点（压缩）', { x: 600, y: 400, size: 18, fill: SUCCESS, anchor: 'middle', o: 0 });
+  tw(note2, { o: 1 }, 4.5);
+  
+  const summary = T(p, '压缩只有单个子节点的路径，节省空间', { 
+    x: 400, y: 560, size: 22, weight: 600, fill: PATH_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(summary, { o: 1 }, 5);
+}],
+
+['autocomplete', '应用：自动补全', () => {
+  const p = panel(0);
+  
+  T(p, '自动补全', { x: 400, y: 50, size: 36, weight: 700, fill: TEXT_COLOR });
+  
+  // 搜索框
+  const searchBox = mk('rect', { 
+    x: 150, y: 100, width: 500, height: 50, 
+    fill: '#fff', stroke: HIGHLIGHT, 'stroke-width': 3, rx: 5, o: 0 
+  }, p);
+  tw(searchBox, { o: 1 }, 0.5);
+  
+  const searchText = T(p, '🔍 app', { x: 180, y: 125, size: 24, anchor: 'start', o: 0 });
+  tw(searchText, { o: 1 }, 1);
+  
+  // 补全建议
+  const suggestions = [
+    'apple',
+    'app',
+    'application',
+    'apply'
+  ];
+  
+  T(p, '补全建议：', { x: 170, y: 200, size: 22, weight: 600, fill: TEXT_COLOR, o: 0 });
+  
+  suggestions.forEach((word, i) => {
+    const g = G(p, { x: 200, y: 240 + i * 50, o: 0 });
+    
+    const bg = mk('rect', { 
+      x: -20, y: -20, width: 300, height: 40, 
+      fill: BACKGROUND, rx: 5 
+    }, g);
+    
+    T(g, word, { x: 0, y: 0, size: 22, fill: TEXT_COLOR, anchor: 'start' });
+    
+    tw(g, { o: 1 }, 2 + i * 0.3);
+  });
+  
+  const process = T(p, '算法：① 找到前缀节点\n② DFS 遍历子树\n③ 收集所有 isEnd 节点', { 
+    x: 550, y: 280, size: 18, fill: PATH_COLOR, o: 0 
+  });
+  process.style.whiteSpace = 'pre';
+  tw(process, { o: 1 }, 3.5);
+  
+  const complexity = T(p, '时间：O(m + k)，m=前缀长度，k=结果数', { 
+    x: 400, y: 500, size: 20, weight: 600, fill: SUCCESS, anchor: 'middle', o: 0 
+  });
+  tw(complexity, { o: 1 }, 4.5);
+}],
+
+['spellcheck', '应用：拼写检查', () => {
+  const p = panel(0);
+  
+  T(p, '拼写检查与纠错', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
+  
+  // 错误单词
+  const wrong = T(p, '输入: aple', { x: 200, y: 140, size: 28, weight: 600, fill: END_NODE_COLOR, o: 0 });
+  tw(wrong, { o: 1 }, 0.5);
+  
+  const line = mk('line', { 
+    x1: 190, y1: 150, x2: 270, y2: 150, 
+    stroke: END_NODE_COLOR, 'stroke-width': 3, 
+    'stroke-dasharray': '5,5', o: 0 
+  }, p);
+  tw(line, { o: 1 }, 1);
+  
+  // 建议
+  T(p, '可能的正确拼写：', { x: 150, y: 220, size: 24, weight: 600, fill: TEXT_COLOR, o: 0 });
+  
+  const corrections = [
+    { word: 'apple', dist: 1, desc: '缺少一个 p' },
+    { word: 'able', dist: 2, desc: '替换两个字符' }
+  ];
+  
+  corrections.forEach(({ word, dist, desc }, i) => {
+    const g = G(p, { x: 200, y: 280 + i * 80, o: 0 });
+    
+    T(g, word, { x: 0, y: 0, size: 26, weight: 700, fill: SUCCESS, anchor: 'start' });
+    T(g, `编辑距离: ${dist}`, { x: 0, y: 35, size: 20, fill: HIGHLIGHT, anchor: 'start' });
+    T(g, desc, { x: 200, y: 35, size: 18, fill: TEXT_COLOR, anchor: 'start' });
+    
+    tw(g, { o: 1 }, 2 + i * 0.5);
+  });
+  
+  const algorithm = T(p, '算法：DFS + 编辑距离\n允许插入、删除、替换字符\n剪枝：距离超过阈值停止搜索', { 
+    x: 150, y: 470, size: 18, fill: PATH_COLOR, o: 0 
+  });
+  algorithm.style.whiteSpace = 'pre';
+  tw(algorithm, { o: 1 }, 3.5);
+}],
+
+['applications', '更多应用场景', () => {
+  const p = panel(0);
+  
+  T(p, '字典树的应用', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
+  
+  const apps = [
+    { icon: '🌐', title: 'IP 路由表', desc: '压缩 Trie 存储 IP 前缀，快速路由查找', y: 150 },
+    { icon: '📊', title: '词频统计', desc: '每个节点记录单词出现次数', y: 240 },
+    { icon: '🚫', title: '敏感词过滤', desc: 'AC 自动机：多模式串匹配', y: 330 },
+    { icon: '🧬', title: 'DNA 序列', desc: '基因序列模式匹配与查找', y: 420 }
+  ];
+  
+  apps.forEach(({ icon, title, desc, y }, i) => {
+    const g = G(p, { x: 150, y, o: 0 });
+    
+    T(g, icon, { x: 0, y: 0, size: 40, anchor: 'middle' });
+    T(g, title, { x: 80, y: -5, size: 28, weight: 700, fill: HIGHLIGHT, anchor: 'start' });
+    T(g, desc, { x: 80, y: 25, size: 20, fill: TEXT_COLOR, anchor: 'start' });
+    
+    tw(g, { o: 1 }, 0.5 + i * 0.5);
+  });
+  
+  const note = T(p, '核心优势：前缀匹配 + 路径共享', { 
+    x: 400, y: 540, size: 24, weight: 600, fill: SUCCESS, anchor: 'middle', o: 0 
+  });
+  tw(note, { o: 1 }, 3);
+}],
+
+['comparison', 'Trie vs 哈希表', () => {
+  const p = panel(0);
+  
+  T(p, '字典树 vs 哈希表', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
+  
+  // 表头
+  const headers = ['特性', '哈希表', '字典树'];
+  headers.forEach((h, i) => {
+    T(p, h, { 
+      x: 200 + i * 200, y: 130, 
+      size: 24, weight: 700, fill: HIGHLIGHT, anchor: 'middle' 
+    });
+  });
+  
+  // 对比项
+  const rows = [
+    { feature: '查找时间', hash: 'O(1) 平均', trie: 'O(m) m=长度' },
+    { feature: '前缀搜索', hash: '✗ 不支持', trie: '✓ O(m)' },
+    { feature: '有序输出', hash: '✗ 无序', trie: '✓ 字典序' },
+    { feature: '空间占用', hash: '存完整串', trie: '共享前缀' },
+    { feature: '哈希冲突', hash: '可能冲突', trie: '无冲突' }
+  ];
+  
+  rows.forEach((row, i) => {
+    const y = 180 + i * 60;
+    
+    T(p, row.feature, { 
+      x: 200, y, size: 20, weight: 600, fill: TEXT_COLOR, anchor: 'middle', o: 0 
+    });
+    
+    T(p, row.hash, { 
+      x: 400, y, size: 18, fill: NODE_COLOR, anchor: 'middle', o: 0 
+    });
+    
+    T(p, row.trie, { 
+      x: 600, y, size: 18, fill: SUCCESS, anchor: 'middle', o: 0 
+    });
+    
+    setTimeout(() => {
+      const elements = p.querySelectorAll(`text[y="${y}"]`);
+      elements.forEach(el => tw(el, { o: 1 }, 0.5 + i * 0.4));
+    }, 10);
+  });
+  
+  const conclusion = T(p, '精确查找用哈希表，前缀操作用字典树', { 
+    x: 400, y: 520, size: 22, weight: 600, fill: PATH_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(conclusion, { o: 1 }, 3.5);
+}],
+
+['variants', '高级变体', () => {
+  const p = panel(0);
+  
+  T(p, '字典树的变体', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
+  
+  const variants = [
+    { 
+      name: '后缀树（Suffix Tree）', 
+      desc: '存储字符串的所有后缀\nO(m) 时间查找任意子串',
+      use: '字符串匹配、最长公共子串',
+      y: 150 
+    },
+    { 
+      name: '三向字典树（Ternary Trie）', 
+      desc: '每个节点最多 3 个子节点\n比普通 Trie 省空间',
+      use: '嵌入式系统、内存受限环境',
+      y: 290 
+    },
+    { 
+      name: 'AC 自动机（Aho-Corasick）', 
+      desc: 'Trie + 失败指针\nO(n) 时间匹配多个模式',
+      use: '多模式串匹配、敏感词过滤',
+      y: 430 
+    }
+  ];
+  
+  variants.forEach(({ name, desc, use, y }, i) => {
+    const g = G(p, { x: 100, y, o: 0 });
+    
+    T(g, name, { x: 0, y: 0, size: 26, weight: 700, fill: HIGHLIGHT, anchor: 'start' });
+    
+    const descText = T(g, desc, { x: 0, y: 40, size: 18, fill: TEXT_COLOR, anchor: 'start' });
+    descText.style.whiteSpace = 'pre';
+    
+    T(g, `应用：${use}`, { x: 0, y: 95, size: 17, fill: PATH_COLOR, anchor: 'start' });
+    
+    tw(g, { o: 1 }, 0.5 + i * 0.8);
+  });
+}],
+
+['finish', '总结', () => {
+  const p = panel(0);
+  
+  T(p, '字典树（Trie）', { x: 400, y: 80, size: 42, weight: 700, fill: TEXT_COLOR });
+  
+  const points = [
+    { icon: '🌳', text: '树形结构，边代表字符，共享公共前缀', y: 180 },
+    { icon: '⚙️', text: 'insert、search、startsWith 三个核心操作', y: 260 },
+    { icon: '⏱️', text: '时间复杂度 O(m)，m 是字符串长度', y: 340 },
+    { icon: '🎯', text: '擅长前缀匹配、自动补全、拼写检查', y: 420 },
+    { icon: '💡', text: '压缩 Trie 节省空间，后缀树、AC 自动机更强大', y: 500 }
+  ];
+  
+  points.forEach(({ icon, text, y }, i) => {
+    const g = G(p, { x: 100, y, o: 0 });
+    T(g, icon, { x: 0, y: 0, size: 36, anchor: 'middle' });
+    T(g, text, { x: 70, y: 0, size: 24, fill: TEXT_COLOR, anchor: 'start' });
+    tw(g, { o: 1 }, 0.5 + i * 0.5);
+  });
+  
+  const motto = T(p, '掌握字典树，轻松处理字符串前缀问题！', { 
+    x: 400, y: 560, size: 26, weight: 700, fill: SUCCESS, anchor: 'middle', o: 0 
+  });
+  tw(motto, { o: 1 }, 3.5);
+}]
+
+];
+
+/* ---------- 初始化 ---------- */
+function boot() {
+  const bg = mk('rect', { x: 0, y: 0, width: 800, height: 600, fill: BACKGROUND }, panel(0));
+  bg.style.pointerEvents = 'none';
+}
+
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "intro": "想象你是一个网站管理员，要拦截百万恶意网址。[[malicious]]用哈希表存储，需要几百兆内存。[[hash_table]]但如果用布隆过滤器，只需要几兆。[[bloom_filter]]或者你在做Redis缓存，要防止缓存穿透。[[cache]]有人恶意查询不存在的数据，打穿缓存直达数据库。[[attack]]布隆过滤器可以快速判断，拦截这些请求。[[intercept]]再或者你在做爬虫，要对百亿URL去重。[[crawler]]传统方案需要几百GB内存，但布隆过滤器只需几GB。[[space]]今天我们学习布隆过滤器，一种概率型数据结构。[[probabilistic]]用小概率误判，换取巨大的空间节省。[[tradeoff]]",
+  
+  "problem": "先看看需要解决什么问题。[[problem]]传统的哈希表或集合，查询是百分之百准确的。[[accurate]]但空间占用很大。[[space]]一亿个URL，每个平均80字节，需要8GB内存。[[calculation]]对于缓存、去重这些场景，成本太高。[[cost]]布隆过滤器提供了另一种方案。[[alternative]]它用极小的空间，快速判断元素是否存在。[[fast]]代价是有小概率误判。[[tradeoff]]一亿URL只需要120MB，节省了98%的空间。[[savings]]误判率可以控制，比如设为1%。[[control]]这意味着100次查询，平均有1次会误判。[[rate]]但关键是，它只会把不存在的误判为可能存在。[[false_positive]]不会把存在的误判为不存在。[[no_false_negative]]",
+  
+  "structure": "布隆过滤器由两部分组成。[[structure]]第一部分是一个位数组。[[bit_array]]有m个位，初始全是0。[[initialization]]第二部分是k个独立的哈希函数。[[hash_functions]]每个函数把输入映射到0到m减1的范围。[[mapping]]这三个参数m、k、n决定了过滤器的性能。[[parameters]]m是位数组大小，k是哈希函数个数。[[m_k]]n是要插入的元素数量。[[n]]这些参数的选择很关键，直接影响误判率和空间效率。[[choice]]",
+  
+  "insert_demo": "看插入操作的动画演示。[[demo]]假设我们要插入字符串apple。[[apple]]先用三个哈希函数计算。[[hash]]第一个哈希函数h1把apple映射到位置3。[[h1]]第二个哈希函数h2映射到位置7。[[h2]]第三个哈希函数h3映射到位置12。[[h3]]然后把位数组的这三个位置都设为1。[[set]]位置3设为1。[[pos3]]位置7设为1。[[pos7]]位置12设为1。[[pos12]]插入完成。[[done]]时间复杂度是O(k)，k是哈希函数个数。[[complexity]]通常k很小，比如3到10个。[[small]]所以插入非常快。[[fast]]",
+  
+  "query_demo": "再看查询操作。[[query]]位数组现在的状态是：位置3、7、12是1，其他是0。[[state]]这是插入apple后的结果。[[result]]现在查询banana是否存在。[[banana]]同样用三个哈希函数计算。[[hash]]h1得到位置2，h2得到位置7，h3得到位置15。[[positions]]检查这三个位置。[[check]]位置2是0。[[pos2]]只要有一个位置是0，就说明一定不存在。[[not_exist]]所以banana一定没有插入过。[[certain]]这是准确的，不会误判。[[accurate]]再查询cherry。[[cherry]]三个哈希函数得到位置3、7、12。[[positions2]]检查这三个位置，都是1。[[all_one]]按理说应该存在。[[should_exist]]但实际上我们从未插入过cherry。[[never_inserted]]这就是误判。[[false_positive]]因为这三个位置恰好被apple设置了。[[coincidence]]所以布隆过滤器返回可能存在。[[maybe]]这种误判是概率性的，可以通过参数控制。[[control]]",
+  
+  "false_positive": "误判率是如何计算的？[[calculation]]误判的定义是：元素未插入，但所有哈希位置都是1。[[definition]]这是因为其他元素恰好设置了这些位。[[reason]]数学上有一个近似公式。[[formula]]误判率P约等于1减e的负kn除以m次方，再k次方。[[math]]k是哈希函数个数，n是已插入元素数量，m是位数组大小。[[parameters]]这个公式可以帮助我们选择最优参数。[[optimal]]理论上，当k等于m除以n乘以自然对数2时，误判率最低。[[best_k]]约等于0.693倍的m除以n。[[value]]实际应用中，k通常取3到10。[[practical]]",
+  
+  "parameters": "看几个参数配置的例子。[[examples]]假设要存储1亿个URL，容忍1%的误判率。[[example1]]计算得到位数组需要约120MB。[[space1]]哈希函数需要7个。[[k1]]这比传统哈希表节省了98%的空间。[[savings1]]如果是1000万用户，容忍0.1%的误判率。[[example2]]需要约18MB空间，10个哈希函数。[[params2]]如果是100万商品，容忍5%的误判率。[[example3]]只需要约800KB空间，4个哈希函数。[[params3]]可以看到，误判率越低，需要的空间越大。[[tradeoff]]但即使是很低的误判率，空间仍然比哈希表小得多。[[efficient]]",
+  
+  "applications": "布隆过滤器在工程中有很多应用。[[applications]]Redis缓存穿透防护。[[redis]]在查询缓存之前，先用布隆过滤器判断key是否存在。[[check]]如果不存在，直接返回，不查数据库。[[protect]]爬虫URL去重。[[crawler]]百亿URL去重，用布隆过滤器只需几GB内存。[[space]]垃圾邮件过滤。[[spam]]快速判断邮件地址或域名是否在黑名单。[[blacklist]]区块链轻节点。[[blockchain]]Bitcoin的SPV轻客户端用布隆过滤器同步交易。[[spv]]数据库查询优化。[[database]]HBase和Cassandra用布隆过滤器判断行是否存在。[[hbase]]避免无效的磁盘读取。[[avoid_io]]",
+  
+  "pros_cons": "总结一下优缺点。[[summary]]优点是空间效率极高。[[space]]同样的数据，布隆过滤器比哈希表小几十倍。[[comparison]]查询速度快，时间复杂度O(k)。[[speed]]不存储原始数据，隐私保护好。[[privacy]]易于并行化，多个哈希函数可以并行计算。[[parallel]]缺点是存在误判。[[false_positive]]会把不存在的误判为可能存在。[[fp_detail]]不支持删除元素。[[no_delete]]因为一个位可能被多个元素共享。[[shared]]删除一个元素会影响其他元素。[[impact]]无法获取原始数据，只能判断存在性。[[no_data]]不支持计数，不知道插入了多少次。[[no_count]]容量固定，扩展比较困难。[[fixed]]但这些缺点在很多场景下是可以接受的。[[acceptable]]关键要记住：布隆过滤器没有假阴性。[[no_fn]]不会把存在的误判为不存在。[[guarantee]]只会把不存在的误判为可能存在。[[only_fp]]",
+  
+  "variants": "布隆过滤器有一些改进变体。[[variants]]Counting Bloom Filter，计数型布隆过滤器。[[counting]]用计数器代替位，每个位置存一个小整数。[[counter]]插入时计数器加1，删除时减1。[[operation]]这样就支持删除了。[[support_delete]]代价是空间增加3到4倍。[[space]]Cuckoo Filter，布谷鸟过滤器。[[cuckoo]]基于布谷鸟哈希表，也支持删除。[[cuckoo_delete]]空间效率和布隆过滤器类似，但查询更快。[[faster]]Scalable Bloom Filter，可扩展布隆过滤器。[[scalable]]用多个过滤器链接起来，容量可以动态增长。[[grow]]Blocked Bloom Filter，分块布隆过滤器。[[blocked]]把位数组分成多个块，提高CPU缓存命中率。[[cache_friendly]]",
+  
+  "implementation": "看一个简单的代码实现。[[code]]定义一个BloomFilter类。[[class]]构造函数接收位数组大小和哈希函数个数。[[constructor]]初始化位数组，全部为0。[[init]]定义哈希函数。[[hash_function]]这里用简单的字符串哈希。[[simple]]通过不同的种子生成多个哈希函数。[[seed]]插入方法add。[[add]]对每个哈希函数，计算索引并设置为1。[[set_bits]]查询方法contains。[[contains]]对每个哈希函数，检查对应位置。[[check_bits]]如果有任何一个位置是0，返回false，一定不存在。[[return_false]]如果所有位置都是1，返回true，可能存在。[[return_true]]使用示例。[[usage]]创建一个位数组大小1000、3个哈希函数的过滤器。[[create]]插入apple，查询apple返回true。[[test1]]查询banana可能返回false。[[test2]]查询cherry可能误判为true。[[test3]]",
+  
+  "summary": "总结一下布隆过滤器。[[summary]]它由位数组加多个哈希函数组成。[[components]]核心优势是空间效率极高，速度快。[[advantage]]关键特性是无假阴性，有假阳性。[[characteristic]]不会漏判，但会误判。[[no_miss]]误判率可以通过m、k、n三个参数控制。[[control]]适合海量数据的快速存在性判断。[[suitable]]比如缓存穿透防护、URL去重、黑名单过滤。[[scenarios]]核心思想是用小概率误判换取巨大空间节省。[[tradeoff]]在大数据场景中，这是非常值得的权衡。[[worth]]布隆过滤器是大数据处理的利器。[[tool]]掌握它的原理和应用，能解决很多实际问题。[[master]]"
+}

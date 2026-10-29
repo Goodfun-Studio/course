@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>博弈论基础：Nim游戏与SG函数</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 37, title: '博弈论基础：Nim游戏与SG函数', language: 'zh', minutes: 11 };
+
+/* ---------- colours ---------- */
+const PLAYER1_COLOR = '#3498db';    // 蓝色（玩家1）
+const PLAYER2_COLOR = '#e74c3c';    // 红色（玩家2）
+const XOR_COLOR = '#f39c12';        // 橙色（异或）
+const SG_COLOR = '#2ecc71';         // 绿色（SG函数）
+const WIN_COLOR = '#9b59b6';        // 紫色（必胜）
+const LOSE_COLOR = '#95a5a6';       // 灰色（必败）
+const STONE_COLOR = '#34495e';      // 深灰（石子）
+
+/* ---------- beats ---------- */
+let BEATS = [
+
+['intro', '问题引入', () => {
+  const p = panel(0);
+  
+  const title = T(p, '博弈论基础', { x: 800, y: 80, size: 56, weight: 700, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, 'Nim游戏与SG函数', { x: 800, y: 150, size: 36, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 0.8, 0.5);
+  
+  const q1 = T(p, '什么是博弈论？', { x: 300, y: 250, size: 34, fill: XOR_COLOR, o: 0 });
+  tw(q1, { o: 1 }, 2.5, 0.6);
+  
+  const a1 = T(p, '→ 研究决策者策略互动的数学理论', { x: 350, y: 310, size: 28, fill: COL.chalk, o: 0 });
+  tw(a1, { o: 1 }, 4, 0.6);
+  
+  const q2 = T(p, '应用场景', { x: 300, y: 400, size: 34, fill: SG_COLOR, o: 0 });
+  tw(q2, { o: 1 }, 6.5, 0.5);
+  
+  const app1 = T(p, '• 游戏AI开发', { x: 350, y: 460, size: 28, fill: COL.chalk, o: 0 });
+  tw(app1, { o: 1 }, 7.5, 0.4);
+  
+  const app2 = T(p, '• 决策树搜索', { x: 350, y: 520, size: 28, fill: COL.chalk, o: 0 });
+  tw(app2, { o: 1 }, 8.2, 0.4);
+  
+  const app3 = T(p, '• 组合优化问题', { x: 350, y: 580, size: 28, fill: COL.chalk, o: 0 });
+  tw(app3, { o: 1 }, 8.9, 0.4);
+  
+  const core = T(p, '今天的核心：公平组合游戏', { x: 800, y: 680, size: 32, fill: WIN_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(core, { o: 1 }, 10.5, 0.7);
+}],
+
+['game-basics', '公平组合游戏', () => {
+  const p = panel(0);
+  
+  const title = T(p, '什么是公平组合游戏？', { x: 800, y: 100, size: 48, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const cond1 = T(p, '条件一：双人参与', { x: 300, y: 220, size: 36, fill: PLAYER1_COLOR, weight: 600, o: 0 });
+  tw(cond1, { o: 1 }, 2, 0.6);
+  
+  const cond1_desc = T(p, '两个玩家轮流操作', { x: 350, y: 280, size: 28, fill: COL.chalk, o: 0 });
+  tw(cond1_desc, { o: 1 }, 3, 0.5);
+  
+  const cond2 = T(p, '条件二：完全信息', { x: 300, y: 360, size: 36, fill: XOR_COLOR, weight: 600, o: 0 });
+  tw(cond2, { o: 1 }, 5, 0.6);
+  
+  const cond2_desc = T(p, '双方都能看到完整状态', { x: 350, y: 420, size: 28, fill: COL.chalk, o: 0 });
+  tw(cond2_desc, { o: 1 }, 6, 0.5);
+  
+  const cond3 = T(p, '条件三：无随机因素', { x: 300, y: 500, size: 36, fill: SG_COLOR, weight: 600, o: 0 });
+  tw(cond3, { o: 1 }, 8.5, 0.6);
+  
+  const cond3_desc = T(p, '没有骰子、没有抽牌', { x: 350, y: 560, size: 28, fill: COL.chalk, o: 0 });
+  tw(cond3_desc, { o: 1 }, 9.5, 0.5);
+  
+  const examples = T(p, '典型例子：围棋、象棋、Nim游戏', { x: 800, y: 660, size: 32, fill: WIN_COLOR, anchor: 'middle', o: 0 });
+  tw(examples, { o: 1 }, 12, 0.7);
+}],
+
+['nim-intro', 'Nim游戏介绍', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'Nim游戏', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const rule1 = T(p, '游戏规则', { x: 300, y: 200, size: 38, fill: XOR_COLOR, weight: 600, o: 0 });
+  tw(rule1, { o: 1 }, 2, 0.5);
+  
+  const r1 = T(p, '• 有若干堆石子', { x: 350, y: 270, size: 30, fill: COL.chalk, o: 0 });
+  tw(r1, { o: 1 }, 3, 0.5);
+  
+  const r2 = T(p, '• 双方轮流操作', { x: 350, y: 330, size: 30, fill: COL.chalk, o: 0 });
+  tw(r2, { o: 1 }, 4, 0.5);
+  
+  const r3 = T(p, '• 每次从任意一堆取任意数量', { x: 350, y: 390, size: 30, fill: COL.chalk, o: 0 });
+  tw(r3, { o: 1 }, 5, 0.5);
+  
+  const r4 = T(p, '• 至少取一个', { x: 350, y: 450, size: 30, fill: COL.chalk, o: 0 });
+  tw(r4, { o: 1 }, 6.5, 0.5);
+  
+  const r5 = T(p, '• 取走最后一颗石子的人获胜', { x: 350, y: 510, size: 30, fill: WIN_COLOR, weight: 600, o: 0 });
+  tw(r5, { o: 1 }, 8, 0.6);
+  
+  const question = T(p, '看起来简单，但隐藏精妙数学原理', { x: 800, y: 620, size: 32, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(question, { o: 1 }, 10.5, 0.7);
+  
+  const mystery = T(p, '必胜策略是什么？', { x: 800, y: 690, size: 36, fill: WIN_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(mystery, { o: 1 }, 12, 0.6);
+}],
+
+['nim-demo', 'Nim游戏演示', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'Nim游戏实战', { x: 800, y: 80, size: 48, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  // 初始状态
+  const heap1_label = T(p, '第一堆', { x: 300, y: 180, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(heap1_label, { o: 1 }, 1, 0.4);
+  
+  const heap2_label = T(p, '第二堆', { x: 800, y: 180, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(heap2_label, { o: 1 }, 1.2, 0.4);
+  
+  const heap3_label = T(p, '第三堆', { x: 1300, y: 180, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(heap3_label, { o: 1 }, 1.4, 0.4);
+  
+  // 绘制石子 - 第一堆 (3个)
+  const stones1 = [];
+  for (let i = 0; i < 3; i++) {
+    const stone = C(p, 25, { x: 300, y: 240 + i * 60, fill: STONE_COLOR, o: 0 });
+    stones1.push(stone);
+    tw(stone, { o: 1 }, 2 + i * 0.15, 0.3);
+  }
+  
+  const count1 = T(p, '3个', { x: 300, y: 400, size: 32, fill: PLAYER1_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(count1, { o: 1 }, 2.5, 0.4);
+  
+  // 第二堆 (5个)
+  const stones2 = [];
+  for (let i = 0; i < 5; i++) {
+    const stone = C(p, 25, { x: 800, y: 240 + i * 60, fill: STONE_COLOR, o: 0 });
+    stones2.push(stone);
+    tw(stone, { o: 1 }, 3.5 + i * 0.15, 0.3);
+  }
+  
+  const count2 = T(p, '5个', { x: 800, y: 520, size: 32, fill: PLAYER1_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(count2, { o: 1 }, 4, 0.4);
+  
+  // 第三堆 (7个)
+  const stones3 = [];
+  for (let i = 0; i < 7; i++) {
+    const stone = C(p, 25, { x: 1300, y: 240 + i * 60, fill: STONE_COLOR, o: 0 });
+    stones3.push(stone);
+    tw(stone, { o: 1 }, 5 + i * 0.15, 0.3);
+  }
+  
+  const count3 = T(p, '7个', { x: 1300, y: 640, size: 32, fill: PLAYER1_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(count3, { o: 1 }, 5.5, 0.4);
+  
+  // 先手操作
+  const move1 = T(p, '先手：从第三堆取5个', { x: 800, y: 700, size: 30, fill: PLAYER2_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(move1, { o: 1 }, 7, 0.6);
+  
+  // 移除5个石子
+  for (let i = 0; i < 5; i++) {
+    tw(stones3[i], { o: 0 }, 8 + i * 0.2, 0.3);
+  }
+  tw(count3, { text: '2个' }, 9.5, 0.4);
+  
+  // 局面变化
+  const state1 = T(p, '局面：(3, 5, 2)', { x: 800, y: 730, size: 28, fill: XOR_COLOR, anchor: 'middle', o: 0 });
+  tw(state1, { o: 1 }, 10.5, 0.5);
+  
+  // 后手操作
+  const move2 = T(p, '后手：从第二堆取4个', { x: 800, y: 700, size: 30, fill: PLAYER1_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(move2, { o: 1 }, 12, 0.6);
+  
+  // 移除4个石子
+  for (let i = 0; i < 4; i++) {
+    tw(stones2[i], { o: 0 }, 13 + i * 0.2, 0.3);
+  }
+  tw(count2, { text: '1个' }, 14, 0.4);
+  
+  const state2 = T(p, '局面：(3, 1, 2)', { x: 800, y: 730, size: 28, fill: XOR_COLOR, anchor: 'middle', o: 0 });
+  tw(state2, { o: 1 }, 15, 0.5);
+  
+  const hint = T(p, '看起来随意？实则暗藏玄机...', { x: 800, y: 760, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(hint, { o: 1 }, 16.5, 0.6);
+}],
+
+['xor-concept', '异或运算', () => {
+  const p = panel(0);
+  
+  const title = T(p, '关键：异或运算', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, 'XOR (⊕)', { x: 800, y: 180, size: 36, fill: XOR_COLOR, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 1, 0.4);
+  
+  const rule = T(p, '规则：相同为0，不同为1', { x: 800, y: 250, size: 34, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(rule, { o: 1 }, 2.5, 0.6);
+  
+  // 示例
+  const ex1 = T(p, '0 ⊕ 0 = 0', { x: 400, y: 340, size: 32, fill: COL.dim, o: 0 });
+  tw(ex1, { o: 1 }, 4, 0.3);
+  
+  const ex2 = T(p, '0 ⊕ 1 = 1', { x: 400, y: 400, size: 32, fill: XOR_COLOR, o: 0 });
+  tw(ex2, { o: 1 }, 4.5, 0.3);
+  
+  const ex3 = T(p, '1 ⊕ 0 = 1', { x: 400, y: 460, size: 32, fill: XOR_COLOR, o: 0 });
+  tw(ex3, { o: 1 }, 5, 0.3);
+  
+  const ex4 = T(p, '1 ⊕ 1 = 0', { x: 400, y: 520, size: 32, fill: COL.dim, o: 0 });
+  tw(ex4, { o: 1 }, 5.5, 0.3);
+  
+  // Nim和的计算
+  const nim_title = T(p, 'Nim和示例：3 ⊕ 5 ⊕ 7', { x: 800, y: 620, size: 36, fill: WIN_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(nim_title, { o: 1 }, 7.5, 0.6);
+  
+  const bin3 = T(p, '3 = 011', { x: 700, y: 690, size: 30, fill: PLAYER1_COLOR, family: 'monospace', o: 0 });
+  tw(bin3, { o: 1 }, 9, 0.4);
+  
+  const bin5 = T(p, '5 = 101', { x: 700, y: 730, size: 30, fill: PLAYER1_COLOR, family: 'monospace', o: 0 });
+  tw(bin5, { o: 1 }, 9.5, 0.4);
+  
+  const bin7 = T(p, '7 = 111', { x: 700, y: 770, size: 30, fill: PLAYER1_COLOR, family: 'monospace', o: 0 });
+  tw(bin7, { o: 1 }, 10, 0.4);
+  
+  const line = T(p, '─────', { x: 700, y: 790, size: 30, fill: COL.dim, family: 'monospace', o: 0 });
+  tw(line, { o: 1 }, 10.8, 0.3);
+  
+  const result = T(p, '⊕ = 001 = 1', { x: 700, y: 820, size: 30, fill: XOR_COLOR, family: 'monospace', weight: 600, o: 0 });
+  tw(result, { o: 1 }, 11.5, 0.6);
+}],
+
+['winning-strategy', 'Nim必胜策略', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'Nim游戏必胜策略', { x: 800, y: 80, size: 50, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const theorem = T(p, '核心定理', { x: 300, y: 180, size: 38, fill: WIN_COLOR, weight: 600, o: 0 });
+  tw(theorem, { o: 1 }, 2, 0.5);
+  
+  const t1 = T(p, '如果所有堆的异或和 ≠ 0', { x: 350, y: 250, size: 32, fill: COL.chalk, o: 0 });
+  tw(t1, { o: 1 }, 3.5, 0.6);
+  
+  const t2 = T(p, '→ 先手必胜', { x: 400, y: 310, size: 32, fill: WIN_COLOR, weight: 600, o: 0 });
+  tw(t2, { o: 1 }, 5, 0.5);
+  
+  const strategy_title = T(p, '策略步骤', { x: 300, y: 400, size: 36, fill: XOR_COLOR, weight: 600, o: 0 });
+  tw(strategy_title, { o: 1 }, 7, 0.5);
+  
+  const s1 = T(p, '① 找到异或和的最高位1', { x: 350, y: 470, size: 30, fill: COL.chalk, o: 0 });
+  tw(s1, { o: 1 }, 8, 0.5);
+  
+  const s2 = T(p, '② 找到该位也为1的某一堆', { x: 350, y: 530, size: 30, fill: COL.chalk, o: 0 });
+  tw(s2, { o: 1 }, 9.5, 0.5);
+  
+  const s3 = T(p, '③ 从这一堆取若干个', { x: 350, y: 590, size: 30, fill: COL.chalk, o: 0 });
+  tw(s3, { o: 1 }, 11, 0.5);
+  
+  const s4 = T(p, '④ 使得异或和变为0', { x: 350, y: 650, size: 30, fill: XOR_COLOR, weight: 600, o: 0 });
+  tw(s4, { o: 1 }, 12.5, 0.6);
+  
+  const key = T(p, '之后无论对手怎么取，你都能恢复平衡', { x: 800, y: 730, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(key, { o: 1 }, 14.5, 0.7);
+}],
+
+['xor-zero', '异或和为零', () => {
+  const p = panel(0);
+  
+  const title = T(p, '异或和为0的情况', { x: 800, y: 100, size: 50, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const losing = T(p, '结论：先手必败', { x: 800, y: 200, size: 42, fill: LOSE_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(losing, { o: 1 }, 2, 0.7);
+  
+  const why_title = T(p, '为什么？', { x: 300, y: 300, size: 38, fill: XOR_COLOR, weight: 600, o: 0 });
+  tw(why_title, { o: 1 }, 4, 0.5);
+  
+  const reason1 = T(p, '• 无论先手怎么取', { x: 350, y: 370, size: 32, fill: COL.chalk, o: 0 });
+  tw(reason1, { o: 1 }, 5, 0.5);
+  
+  const reason2 = T(p, '• 都会破坏平衡', { x: 350, y: 430, size: 32, fill: COL.chalk, o: 0 });
+  tw(reason2, { o: 1 }, 6, 0.5);
+  
+  const reason3 = T(p, '• 使异或和变为非零', { x: 350, y: 490, size: 32, fill: PLAYER2_COLOR, weight: 600, o: 0 });
+  tw(reason3, { o: 1 }, 7, 0.6);
+  
+  const counter = T(p, '后手策略', { x: 300, y: 580, size: 36, fill: WIN_COLOR, weight: 600, o: 0 });
+  tw(counter, { o: 1 }, 9, 0.5);
+  
+  const c1 = T(p, '每次都把异或和恢复为0', { x: 350, y: 650, size: 32, fill: COL.chalk, o: 0 });
+  tw(c1, { o: 1 }, 10, 0.6);
+  
+  const c2 = T(p, '最终让先手无子可取', { x: 350, y: 710, size: 32, fill: WIN_COLOR, weight: 600, o: 0 });
+  tw(c2, { o: 1 }, 11.5, 0.6);
+  
+  const essence = T(p, '这就是Nim游戏的数学本质', { x: 800, y: 780, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(essence, { o: 1 }, 13.5, 0.7);
+}],
+
+['sg-intro', 'SG函数介绍', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'SG函数', { x: 800, y: 100, size: 56, weight: 700, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, 'Sprague-Grundy Function', { x: 800, y: 180, size: 32, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 1, 0.4);
+  
+  const power = T(p, '更一般的理论框架', { x: 800, y: 240, size: 36, fill: SG_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(power, { o: 1 }, 2.5, 0.6);
+  
+  const idea = T(p, '核心思想', { x: 300, y: 340, size: 38, fill: XOR_COLOR, weight: 600, o: 0 });
+  tw(idea, { o: 1 }, 4.5, 0.5);
+  
+  const i1 = T(p, '把任意公平组合游戏', { x: 350, y: 410, size: 32, fill: COL.chalk, o: 0 });
+  tw(i1, { o: 1 }, 5.5, 0.5);
+  
+  const i2 = T(p, '转化为Nim游戏', { x: 350, y: 470, size: 32, fill: WIN_COLOR, weight: 600, o: 0 });
+  tw(i2, { o: 1 }, 7, 0.6);
+  
+  const def_title = T(p, 'SG函数定义', { x: 300, y: 560, size: 36, fill: SG_COLOR, weight: 600, o: 0 });
+  tw(def_title, { o: 1 }, 9, 0.5);
+  
+  const def = T(p, 'SG(x) = mex{ SG(y) | y是x的后继 }', { x: 350, y: 630, size: 30, fill: COL.chalk, family: 'monospace', o: 0 });
+  tw(def, { o: 1 }, 10.5, 0.7);
+  
+  const mex_explain = T(p, 'mex = 最小排除数', { x: 350, y: 690, size: 28, fill: XOR_COLOR, o: 0 });
+  tw(mex_explain, { o: 1 }, 12, 0.5);
+  
+  const example_hint = T(p, '（最小的不在集合中的非负整数）', { x: 350, y: 730, size: 26, fill: COL.dim, o: 0 });
+  tw(example_hint, { o: 1 }, 13, 0.5);
+}],
+
+['sg-demo', 'SG函数演示', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'SG函数计算示例', { x: 800, y: 70, size: 48, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const game_desc = T(p, '取石子游戏：每次可取1个或2个', { x: 800, y: 140, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(game_desc, { o: 1 }, 1, 0.5);
+  
+  // SG(0)
+  const sg0_state = T(p, '状态0：0个石子', { x: 200, y: 220, size: 28, fill: XOR_COLOR, o: 0 });
+  tw(sg0_state, { o: 1 }, 2.5, 0.5);
+  
+  const sg0_next = T(p, '后继：无', { x: 250, y: 270, size: 26, fill: COL.chalk, o: 0 });
+  tw(sg0_next, { o: 1 }, 3.5, 0.4);
+  
+  const sg0_val = T(p, 'SG(0) = 0', { x: 250, y: 320, size: 28, fill: SG_COLOR, weight: 600, family: 'monospace', o: 0 });
+  tw(sg0_val, { o: 1 }, 4.5, 0.5);
+  
+  // SG(1)
+  const sg1_state = T(p, '状态1：1个石子', { x: 200, y: 400, size: 28, fill: XOR_COLOR, o: 0 });
+  tw(sg1_state, { o: 1 }, 6, 0.5);
+  
+  const sg1_next = T(p, '后继：{0}', { x: 250, y: 450, size: 26, fill: COL.chalk, o: 0 });
+  tw(sg1_next, { o: 1 }, 7, 0.4);
+  
+  const sg1_mex = T(p, 'mex{0} = 1', { x: 250, y: 500, size: 26, fill: COL.dim, o: 0 });
+  tw(sg1_mex, { o: 1 }, 8, 0.4);
+  
+  const sg1_val = T(p, 'SG(1) = 1', { x: 250, y: 550, size: 28, fill: SG_COLOR, weight: 600, family: 'monospace', o: 0 });
+  tw(sg1_val, { o: 1 }, 9, 0.5);
+  
+  // SG(2)
+  const sg2_state = T(p, '状态2：2个石子', { x: 850, y: 220, size: 28, fill: XOR_COLOR, o: 0 });
+  tw(sg2_state, { o: 1 }, 10.5, 0.5);
+  
+  const sg2_next = T(p, '后继：{0, 1}', { x: 900, y: 270, size: 26, fill: COL.chalk, o: 0 });
+  tw(sg2_next, { o: 1 }, 11.5, 0.4);
+  
+  const sg2_mex = T(p, 'mex{0, 1} = 2', { x: 900, y: 320, size: 26, fill: COL.dim, o: 0 });
+  tw(sg2_mex, { o: 1 }, 12.5, 0.4);
+  
+  const sg2_val = T(p, 'SG(2) = 2', { x: 900, y: 370, size: 28, fill: SG_COLOR, weight: 600, family: 'monospace', o: 0 });
+  tw(sg2_val, { o: 1 }, 13.5, 0.5);
+  
+  // 游戏图
+  const graph_title = T(p, '游戏状态图', { x: 800, y: 480, size: 34, fill: WIN_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(graph_title, { o: 1 }, 15, 0.5);
+  
+  // 节点
+  const node0 = C(p, 35, { x: 500, y: 600, fill: SG_COLOR, o: 0 });
+  tw(node0, { o: 1 }, 16, 0.3);
+  const label0 = T(p, '0', { x: 500, y: 608, size: 24, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(label0, { o: 1 }, 16, 0.3);
+  
+  const node1 = C(p, 35, { x: 800, y: 600, fill: SG_COLOR, o: 0 });
+  tw(node1, { o: 1 }, 16.5, 0.3);
+  const label1 = T(p, '1', { x: 800, y: 608, size: 24, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(label1, { o: 1 }, 16.5, 0.3);
+  
+  const node2 = C(p, 35, { x: 1100, y: 600, fill: SG_COLOR, o: 0 });
+  tw(node2, { o: 1 }, 17, 0.3);
+  const label2 = T(p, '2', { x: 1100, y: 608, size: 24, fill: '#fff', anchor: 'middle', o: 0 });
+  tw(label2, { o: 1 }, 17, 0.3);
+  
+  // 箭头
+  const arrow1 = T(p, '→', { x: 620, y: 600, size: 48, fill: PLAYER1_COLOR, o: 0 });
+  tw(arrow1, { o: 1 }, 17.5, 0.3);
+  
+  const arrow2 = T(p, '→', { x: 920, y: 600, size: 48, fill: PLAYER1_COLOR, o: 0 });
+  tw(arrow2, { o: 1 }, 18, 0.3);
+  
+  const pattern = T(p, '递归计算每个状态的SG值', { x: 800, y: 710, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(pattern, { o: 1 }, 19, 0.6);
+}],
+
+['mex-operation', 'mex运算详解', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'mex运算', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, 'minimal excludant（最小排除数）', { x: 800, y: 180, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 1, 0.5);
+  
+  const def = T(p, '定义：集合中不存在的最小非负整数', { x: 800, y: 260, size: 34, fill: XOR_COLOR, anchor: 'middle', o: 0 });
+  tw(def, { o: 1 }, 2.5, 0.6);
+  
+  // 示例1
+  const ex1_set = T(p, 'mex{0, 1, 2}', { x: 300, y: 360, size: 32, fill: COL.chalk, weight: 600, o: 0 });
+  tw(ex1_set, { o: 1 }, 4.5, 0.5);
+  
+  const ex1_explain = T(p, '0、1、2都在，最小缺的是3', { x: 350, y: 420, size: 28, fill: COL.dim, o: 0 });
+  tw(ex1_explain, { o: 1 }, 5.5, 0.5);
+  
+  const ex1_result = T(p, '= 3', { x: 350, y: 470, size: 32, fill: SG_COLOR, weight: 600, o: 0 });
+  tw(ex1_result, { o: 1 }, 6.5, 0.5);
+  
+  // 示例2
+  const ex2_set = T(p, 'mex{1, 2, 3}', { x: 300, y: 550, size: 32, fill: COL.chalk, weight: 600, o: 0 });
+  tw(ex2_set, { o: 1 }, 8, 0.5);
+  
+  const ex2_explain = T(p, '缺0', { x: 350, y: 610, size: 28, fill: COL.dim, o: 0 });
+  tw(ex2_explain, { o: 1 }, 9, 0.4);
+  
+  const ex2_result = T(p, '= 0', { x: 350, y: 660, size: 32, fill: SG_COLOR, weight: 600, o: 0 });
+  tw(ex2_result, { o: 1 }, 9.8, 0.5);
+  
+  // 示例3
+  const ex3_set = T(p, 'mex{0, 2, 4}', { x: 900, y: 360, size: 32, fill: COL.chalk, weight: 600, o: 0 });
+  tw(ex3_set, { o: 1 }, 11, 0.5);
+  
+  const ex3_explain = T(p, '0在，1不在', { x: 950, y: 420, size: 28, fill: COL.dim, o: 0 });
+  tw(ex3_explain, { o: 1 }, 12, 0.4);
+  
+  const ex3_result = T(p, '= 1', { x: 950, y: 470, size: 32, fill: SG_COLOR, weight: 600, o: 0 });
+  tw(ex3_result, { o: 1 }, 12.8, 0.5);
+  
+  const key = T(p, '通过mex递归计算所有状态的SG值', { x: 800, y: 730, size: 30, fill: WIN_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(key, { o: 1 }, 14.5, 0.7);
+}],
+
+['sg-theorem', 'SG定理', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'Sprague-Grundy定理', { x: 800, y: 90, size: 50, weight: 700, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const theorem_box = T(p, '核心定理', { x: 800, y: 190, size: 38, fill: WIN_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(theorem_box, { o: 1 }, 2, 0.6);
+  
+  const th1 = T(p, '多个独立游戏的组合', { x: 800, y: 270, size: 34, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(th1, { o: 1 }, 3.5, 0.5);
+  
+  const th2 = T(p, 'SG值 = 各游戏SG值的异或和', { x: 800, y: 340, size: 36, fill: XOR_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(th2, { o: 1 }, 5, 0.7);
+  
+  const formula = T(p, 'SG(G₁ + G₂ + ... + Gₙ)', { x: 400, y: 450, size: 32, fill: COL.chalk, o: 0 });
+  tw(formula, { o: 1 }, 7, 0.5);
+  
+  const equals = T(p, '=', { x: 800, y: 450, size: 40, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(equals, { o: 1 }, 7.8, 0.3);
+  
+  const xor_formula = T(p, 'SG(G₁) ⊕ SG(G₂) ⊕ ... ⊕ SG(Gₙ)', { x: 900, y: 450, size: 32, fill: XOR_COLOR, o: 0 });
+  tw(xor_formula, { o: 1 }, 8.5, 0.6);
+  
+  const meaning_title = T(p, '这意味着什么？', { x: 800, y: 560, size: 36, fill: SG_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(meaning_title, { o: 1 }, 10, 0.5);
+  
+  const m1 = T(p, '任何公平组合游戏', { x: 800, y: 640, size: 32, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(m1, { o: 1 }, 11.5, 0.5);
+  
+  const m2 = T(p, '都等价于某个Nim游戏', { x: 800, y: 700, size: 34, fill: WIN_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(m2, { o: 1 }, 13, 0.6);
+  
+  const conclusion = T(p, 'SG值≠0 → 先手必胜  |  SG值=0 → 先手必败', { x: 800, y: 770, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(conclusion, { o: 1 }, 14.5, 0.7);
+}],
+
+['applications', '应用场景', () => {
+  const p = panel(0);
+  
+  const title = T(p, '博弈论的应用', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const app1_title = T(p, '① 游戏AI开发', { x: 300, y: 220, size: 36, fill: PLAYER1_COLOR, weight: 600, o: 0 });
+  tw(app1_title, { o: 1 }, 2, 0.5);
+  
+  const app1_desc = T(p, '使用博弈树搜索 + alpha-beta剪枝', { x: 350, y: 280, size: 28, fill: COL.chalk, o: 0 });
+  tw(app1_desc, { o: 1 }, 3, 0.5);
+  
+  const app1_desc2 = T(p, '结合SG函数优化决策', { x: 350, y: 330, size: 28, fill: COL.chalk, o: 0 });
+  tw(app1_desc2, { o: 1 }, 4, 0.5);
+  
+  const app2_title = T(p, '② 组合优化', { x: 300, y: 420, size: 36, fill: XOR_COLOR, weight: 600, o: 0 });
+  tw(app2_title, { o: 1 }, 5.5, 0.5);
+  
+  const app2_desc = T(p, '将问题转化为博弈模型求解', { x: 350, y: 480, size: 28, fill: COL.chalk, o: 0 });
+  tw(app2_desc, { o: 1 }, 6.5, 0.5);
+  
+  const app3_title = T(p, '③ 多智能体系统', { x: 300, y: 570, size: 36, fill: SG_COLOR, weight: 600, o: 0 });
+  tw(app3_title, { o: 1 }, 8, 0.5);
+  
+  const app3_desc = T(p, '分析策略均衡和纳什均衡', { x: 350, y: 630, size: 28, fill: COL.chalk, o: 0 });
+  tw(app3_desc, { o: 1 }, 9, 0.5);
+  
+  const app4_title = T(p, '④ 区块链与密码学', { x: 900, y: 220, size: 36, fill: WIN_COLOR, weight: 600, o: 0 });
+  tw(app4_title, { o: 1 }, 10.5, 0.5);
+  
+  const app4_desc = T(p, '共识算法的博弈论分析', { x: 950, y: 280, size: 28, fill: COL.chalk, o: 0 });
+  tw(app4_desc, { o: 1 }, 11.5, 0.5);
+  
+  const future = T(p, '博弈论：算法设计的重要思想', { x: 800, y: 730, size: 32, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(future, { o: 1 }, 13, 0.7);
+}],
+
+['variants', 'Nim变体', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'Nim游戏变体', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const v1_title = T(p, 'Bash游戏', { x: 300, y: 220, size: 38, fill: PLAYER1_COLOR, weight: 600, o: 0 });
+  tw(v1_title, { o: 1 }, 2, 0.5);
+  
+  const v1_desc = T(p, '一堆石子，每次最多取m个', { x: 350, y: 280, size: 30, fill: COL.chalk, o: 0 });
+  tw(v1_desc, { o: 1 }, 3, 0.5);
+  
+  const v1_strategy = T(p, '策略：保持n % (m+1) = 0', { x: 350, y: 330, size: 28, fill: XOR_COLOR, o: 0 });
+  tw(v1_strategy, { o: 1 }, 4, 0.5);
+  
+  const v2_title = T(p, '阶梯Nim', { x: 300, y: 430, size: 38, fill: SG_COLOR, weight: 600, o: 0 });
+  tw(v2_title, { o: 1 }, 5.5, 0.5);
+  
+  const v2_desc = T(p, '石子排成阶梯，向下移动', { x: 350, y: 490, size: 30, fill: COL.chalk, o: 0 });
+  tw(v2_desc, { o: 1 }, 6.5, 0.5);
+  
+  const v2_strategy = T(p, '策略：只考虑奇数层的异或和', { x: 350, y: 540, size: 28, fill: XOR_COLOR, o: 0 });
+  tw(v2_strategy, { o: 1 }, 7.5, 0.5);
+  
+  const v3_title = T(p, 'Anti-Nim', { x: 900, y: 220, size: 38, fill: WIN_COLOR, weight: 600, o: 0 });
+  tw(v3_title, { o: 1 }, 9, 0.5);
+  
+  const v3_desc = T(p, '取走最后一颗石子的人输', { x: 950, y: 280, size: 30, fill: COL.chalk, o: 0 });
+  tw(v3_desc, { o: 1 }, 10, 0.5);
+  
+  const v3_strategy = T(p, '策略：判断SG值的奇偶性', { x: 950, y: 330, size: 28, fill: XOR_COLOR, o: 0 });
+  tw(v3_strategy, { o: 1 }, 11, 0.5);
+  
+  const diversity = T(p, '每种变体都有独特的分析方法', { x: 800, y: 680, size: 32, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(diversity, { o: 1 }, 12.5, 0.6);
+  
+  const key = T(p, '核心工具：SG函数 + 异或运算', { x: 800, y: 740, size: 34, fill: WIN_COLOR, anchor: 'middle', weight: 600, o: 0 });
+  tw(key, { o: 1 }, 13.5, 0.7);
+}],
+
+['summary', '总结', () => {
+  const p = panel(0);
+  
+  const title = T(p, '总结', { x: 800, y: 100, size: 56, weight: 700, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const point1 = T(p, '① Nim游戏：异或运算的威力', { x: 350, y: 220, size: 34, fill: XOR_COLOR, o: 0 });
+  tw(point1, { o: 1 }, 2, 0.6);
+  
+  const p1_detail = T(p, '异或和为0 → 先手必败', { x: 400, y: 280, size: 28, fill: COL.dim, o: 0 });
+  tw(p1_detail, { o: 1 }, 3, 0.5);
+  
+  const point2 = T(p, '② SG函数：统一的框架', { x: 350, y: 370, size: 34, fill: SG_COLOR, o: 0 });
+  tw(point2, { o: 1 }, 5, 0.6);
+  
+  const p2_detail = T(p, 'SG(x) = mex{ SG(后继) }', { x: 400, y: 430, size: 28, fill: COL.dim, family: 'monospace', o: 0 });
+  tw(p2_detail, { o: 1 }, 6, 0.5);
+  
+  const point3 = T(p, '③ SG定理：组合游戏的本质', { x: 350, y: 520, size: 34, fill: WIN_COLOR, o: 0 });
+  tw(point3, { o: 1 }, 8, 0.6);
+  
+  const p3_detail = T(p, '多游戏SG值 = 各游戏SG值异或', { x: 400, y: 580, size: 28, fill: COL.dim, o: 0 });
+  tw(p3_detail, { o: 1 }, 9, 0.5);
+  
+  const point4 = T(p, '④ 实际应用广泛', { x: 350, y: 670, size: 34, fill: PLAYER1_COLOR, o: 0 });
+  tw(point4, { o: 1 }, 11, 0.5);
+  
+  const conclusion = T(p, '掌握博弈论，理解策略思维', { x: 800, y: 760, size: 36, fill: COL.chalk, anchor: 'middle', weight: 600, o: 0 });
+  tw(conclusion, { o: 1 }, 13, 0.7);
+}],
+
+];
+
+/* ---------- boot ---------- */
+function boot() {
+  panel(0, 0, 1600, 800, COL.bg);
+  
+  marks(marks_zh);
+  play();
+}
+boot();
+</script>
+</body>
+</html>

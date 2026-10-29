@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第十八章 活动选择问题（贪心算法）</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#greedy-demo" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 18, title: '活动选择问题（贪心算法）', language: 'zh', minutes: 12 };
+
+/* ---------- 颜色方案 ---------- */
+const SELECTED = '#2ecc71';      // 绿色（已选择）
+const REJECTED = '#e74c3c';      // 红色（被拒绝）
+const CANDIDATE = '#f39c12';     // 橙色（候选）
+const NEUTRAL = '#95a5a6';       // 灰色（中性）
+const TIMELINE_BG = '#3498db';   // 蓝色（时间轴）
+const TEXT_COLOR = '#2c3e50';    // 深色文字
+const HIGHLIGHT = '#9b59b6';     // 紫色（高亮）
+const PROOF_COLOR = '#1abc9c';   // 青色（证明）
+
+/* ---------- 辅助函数 ---------- */
+function drawActivity(parent, x, y, start, end, label, color = NEUTRAL, width = 500) {
+  const g = G(parent, { x, y, o: 0 });
+  
+  // 活动矩形
+  const actWidth = (end - start) / 24 * width;
+  const actX = start / 24 * width;
+  
+  const rect = mk('rect', {
+    x: actX, y: -20,
+    width: actWidth, height: 40,
+    fill: color,
+    stroke: TEXT_COLOR,
+    'stroke-width': 2,
+    rx: 5
+  }, g);
+  
+  // 标签
+  const text = T(g, label, { 
+    x: actX + actWidth / 2, y: 0, 
+    size: 20, weight: 600, fill: '#fff', anchor: 'middle' 
+  });
+  text.setAttribute('dominant-baseline', 'central');
+  
+  // 时间标注
+  const timeText = T(g, `${start}-${end}`, { 
+    x: actX + actWidth / 2, y: 30, 
+    size: 14, fill: TEXT_COLOR, anchor: 'middle' 
+  });
+  
+  return { g, rect, text, timeText };
+}
+
+function drawTimeline(parent, x, y, hours = 24, width = 500) {
+  const g = G(parent, { x, y, o: 0 });
+  
+  // 时间轴线
+  const line = mk('line', { 
+    x1: 0, y1: 0, x2: width, y2: 0, 
+    stroke: TEXT_COLOR, 'stroke-width': 3 
+  }, g);
+  
+  // 时间刻度
+  for (let i = 0; i <= hours; i += 4) {
+    const tickX = i / hours * width;
+    mk('line', { 
+      x1: tickX, y1: -5, x2: tickX, y2: 5, 
+      stroke: TEXT_COLOR, 'stroke-width': 2 
+    }, g);
+    
+    T(g, `${i}:00`, { 
+      x: tickX, y: 20, 
+      size: 14, fill: TEXT_COLOR, anchor: 'middle' 
+    });
+  }
+  
+  return g;
+}
+
+function drawBox(parent, x, y, width, height, color, label) {
+  const g = G(parent, { x, y, o: 0 });
+  
+  mk('rect', {
+    x: 0, y: 0,
+    width, height,
+    fill: color,
+    stroke: TEXT_COLOR,
+    'stroke-width': 3,
+    rx: 8
+  }, g);
+  
+  const text = T(g, label, { 
+    x: width / 2, y: height / 2, 
+    size: 24, weight: 600, fill: '#fff', anchor: 'middle' 
+  });
+  text.setAttribute('dominant-baseline', 'central');
+  
+  return g;
+}
+
+/* ---------- Beats ---------- */
+let BEATS = [
+
+['intro', '问题引入', () => {
+  const p = panel(0);
+
+  T(p, '活动选择问题（贪心算法）', { x: 400, y: 80, size: 48, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const scenarios = [
+    { icon: '🏢', text: '会议室安排：如何安排最多会议？', y: 180 },
+    { icon: '📅', text: '任务调度：选择最多不冲突的任务', y: 260 },
+    { icon: '🎓', text: '课程安排：同一教室如何排最多课？', y: 340 },
+    { icon: '⏰', text: '区间调度：充分利用有限资源', y: 420 }
+  ];
+  
+  scenarios.forEach(({ icon, text, y }, i) => {
+    const g = G(p, { x: 120, y, o: 0 });
+    T(g, icon, { x: 0, y: 0, size: 40, anchor: 'middle' });
+    T(g, text, { x: 80, y: 0, size: 28, fill: TEXT_COLOR, anchor: 'start' });
+    tw(g, { o: 1 }, 0.5 + i * 0.3);
+  });
+  
+  const question = T(p, '核心问题：如何选择最多的不冲突活动？', { 
+    x: 400, y: 530, size: 32, weight: 600, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+  });
+  tw(question, { o: 1 }, 2.5);
+}, { audio: 'intro' }],
+
+['problem-definition', '问题定义', () => {
+  const p = panel(0);
+
+  T(p, '问题定义', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  // 问题描述
+  const desc = [
+    '给定 n 个活动，每个活动有：',
+    '  • 开始时间 sᵢ',
+    '  • 结束时间 fᵢ',
+    '',
+    '如果两个活动时间不重叠，则称它们兼容',
+    '',
+    '目标：选择最多的兼容活动子集'
+  ];
+  
+  desc.forEach((line, i) => {
+    const text = T(p, line, { 
+      x: 100, y: 160 + i * 35, 
+      size: 26, fill: TEXT_COLOR, anchor: 'start', o: 0 
+    });
+    tw(text, { o: 1 }, 0.5 + i * 0.2);
+  });
+  
+  // 示例
+  T(p, '示例：', { x: 100, y: 400, size: 28, weight: 600, fill: HIGHLIGHT, o: 0 });
+  
+  const timeline = drawTimeline(p, 150, 480, 12, 500);
+  tw(timeline, { o: 1 }, 2.5);
+  
+  // 三个活动
+  const act1 = drawActivity(p, 150, 520, 1, 4, 'A₁', CANDIDATE, 500);
+  const act2 = drawActivity(p, 150, 580, 3, 5, 'A₂', CANDIDATE, 500);
+  const act3 = drawActivity(p, 150, 640, 5, 9, 'A₃', CANDIDATE, 500);
+  
+  tw(act1.g, { o: 1 }, 3.0);
+  tw(act2.g, { o: 1 }, 3.3);
+  tw(act3.g, { o: 1 }, 3.6);
+  
+  // A1和A2冲突
+  tw(act2.rect, { fill: REJECTED }, 4.5);
+  tw(act2.rect, { fill: CANDIDATE }, 5.0);
+  
+  // A1和A3兼容
+  tw(act1.rect, { fill: SELECTED }, 5.5);
+  tw(act3.rect, { fill: SELECTED }, 5.8);
+}, { audio: 'problem-definition' }],
+
+['greedy-concept', '贪心思想', () => {
+  const p = panel(0);
+
+  T(p, '贪心算法思想', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  // 核心思想
+  const concepts = [
+    { title: '局部最优', desc: '每一步都做最优选择', color: CANDIDATE },
+    { title: '全局最优', desc: '希望局部最优导致全局最优', color: SELECTED },
+    { title: '贪心选择性质', desc: '局部最优选择不影响子问题', color: TIMELINE_BG }
+  ];
+  
+  concepts.forEach(({ title, desc, color }, i) => {
+    const y = 180 + i * 120;
+    
+    const box = mk('rect', { 
+      x: 100, y: y - 30, width: 600, height: 90, 
+      fill: color, opacity: 0.2, 
+      stroke: color, 'stroke-width': 3, rx: 8 
+    }, p);
+    tw(box, { opacity: 0.3 }, 0.5 + i * 0.3);
+    
+    const titleText = T(p, title, { 
+      x: 400, y: y, 
+      size: 32, weight: 700, fill: color, anchor: 'middle', o: 0 
+    });
+    tw(titleText, { o: 1 }, 0.6 + i * 0.3);
+    
+    const descText = T(p, desc, { 
+      x: 400, y: y + 35, 
+      size: 24, fill: TEXT_COLOR, anchor: 'middle', o: 0 
+    });
+    tw(descText, { o: 1 }, 0.8 + i * 0.3);
+  });
+  
+  // 对比动态规划
+  const compare = T(p, '与动态规划的区别：不需要考虑所有子问题', { 
+    x: 400, y: 540, size: 28, weight: 600, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+  });
+  tw(compare, { o: 1 }, 2.5);
+}, { audio: 'greedy-concept' }],
+
+['wrong-strategy-1', '错误策略1：按开始时间', () => {
+  const p = panel(0);
+
+  T(p, '策略1：选择开始时间最早的', { x: 400, y: 60, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  T(p, '直觉：越早开始，留给后面的时间越多', { x: 400, y: 110, size: 24, fill: NEUTRAL, anchor: 'middle', o: 0 });
+  
+  // 时间轴
+  const timeline = drawTimeline(p, 150, 200, 12, 500);
+  tw(timeline, { o: 1 }, 0.5);
+  
+  // 反例
+  const act1 = drawActivity(p, 150, 260, 0, 10, 'A₁', CANDIDATE, 500);
+  const act2 = drawActivity(p, 150, 330, 1, 3, 'A₂', CANDIDATE, 500);
+  const act3 = drawActivity(p, 150, 400, 4, 6, 'A₃', CANDIDATE, 500);
+  const act4 = drawActivity(p, 150, 470, 7, 9, 'A₄', CANDIDATE, 500);
+  
+  tw(act1.g, { o: 1 }, 1.0);
+  tw(act2.g, { o: 1 }, 1.3);
+  tw(act3.g, { o: 1 }, 1.6);
+  tw(act4.g, { o: 1 }, 1.9);
+  
+  // 按开始时间选择A1
+  tw(act1.rect, { fill: SELECTED }, 2.5);
+  
+  // A2, A3, A4都被排除
+  tw(act2.rect, { fill: REJECTED }, 3.0);
+  tw(act3.rect, { fill: REJECTED }, 3.3);
+  tw(act4.rect, { fill: REJECTED }, 3.6);
+  
+  // 结果
+  const result = T(p, '只选了1个活动', { 
+    x: 150, y: 540, size: 28, weight: 600, fill: REJECTED, anchor: 'start', o: 0 
+  });
+  tw(result, { o: 1 }, 4.0);
+  
+  // 最优解
+  const optimal = T(p, '最优解：选 A₂, A₃, A₄（3个）', { 
+    x: 450, y: 540, size: 28, weight: 600, fill: SELECTED, anchor: 'start', o: 0 
+  });
+  tw(optimal, { o: 1 }, 4.5);
+  
+  const wrong = T(p, '❌ 错误策略', { 
+    x: 400, y: 590, size: 36, weight: 700, fill: REJECTED, anchor: 'middle', o: 0 
+  });
+  tw(wrong, { o: 1 }, 5.0);
+}, { audio: 'wrong-strategy-1' }],
+
+['wrong-strategy-2', '错误策略2：按持续时间', () => {
+  const p = panel(0);
+
+  T(p, '策略2：选择持续时间最短的', { x: 400, y: 60, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  T(p, '直觉：短活动占用少，能选更多', { x: 400, y: 110, size: 24, fill: NEUTRAL, anchor: 'middle', o: 0 });
+  
+  // 时间轴
+  const timeline = drawTimeline(p, 150, 200, 12, 500);
+  tw(timeline, { o: 1 }, 0.5);
+  
+  // 反例
+  const act1 = drawActivity(p, 150, 260, 0, 3, 'A₁', CANDIDATE, 500);
+  const act2 = drawActivity(p, 150, 330, 4, 5, 'A₂', CANDIDATE, 500);
+  const act3 = drawActivity(p, 150, 400, 2, 9, 'A₃', CANDIDATE, 500);
+  const act4 = drawActivity(p, 150, 470, 6, 7, 'A₄', CANDIDATE, 500);
+  
+  tw(act1.g, { o: 1 }, 1.0);
+  tw(act2.g, { o: 1 }, 1.3);
+  tw(act3.g, { o: 1 }, 1.6);
+  tw(act4.g, { o: 1 }, 1.9);
+  
+  // 按持续时间选择A2和A4（都是1小时）
+  tw(act2.rect, { fill: SELECTED }, 2.5);
+  tw(act4.rect, { fill: SELECTED }, 2.8);
+  
+  // A1和A3被排除
+  tw(act1.rect, { fill: REJECTED }, 3.3);
+  tw(act3.rect, { fill: REJECTED }, 3.6);
+  
+  // 结果
+  const result = T(p, '选了2个活动', { 
+    x: 150, y: 540, size: 28, weight: 600, fill: CANDIDATE, anchor: 'start', o: 0 
+  });
+  tw(result, { o: 1 }, 4.0);
+  
+  // 最优解
+  const optimal = T(p, '最优解：选 A₁, A₂, A₄（3个）', { 
+    x: 450, y: 540, size: 28, weight: 600, fill: SELECTED, anchor: 'start', o: 0 
+  });
+  tw(optimal, { o: 1 }, 4.5);
+  
+  const wrong = T(p, '❌ 错误策略', { 
+    x: 400, y: 590, size: 36, weight: 700, fill: REJECTED, anchor: 'middle', o: 0 
+  });
+  tw(wrong, { o: 1 }, 5.0);
+}, { audio: 'wrong-strategy-2' }],
+
+['correct-strategy', '正确策略：按结束时间', () => {
+  const p = panel(0);
+
+  T(p, '策略3：选择结束时间最早的', { x: 400, y: 60, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  T(p, '关键：越早结束，给后续留的空间越大', { x: 400, y: 110, size: 24, fill: SELECTED, anchor: 'middle', o: 0 });
+  
+  // 时间轴
+  const timeline = drawTimeline(p, 150, 200, 12, 500);
+  tw(timeline, { o: 1 }, 0.5);
+  
+  // 示例
+  const act1 = drawActivity(p, 150, 260, 0, 3, 'A₁', CANDIDATE, 500);
+  const act2 = drawActivity(p, 150, 330, 1, 4, 'A₂', CANDIDATE, 500);
+  const act3 = drawActivity(p, 150, 400, 4, 7, 'A₃', CANDIDATE, 500);
+  const act4 = drawActivity(p, 150, 470, 5, 9, 'A₄', CANDIDATE, 500);
+  
+  tw(act1.g, { o: 1 }, 1.0);
+  tw(act2.g, { o: 1 }, 1.3);
+  tw(act3.g, { o: 1 }, 1.6);
+  tw(act4.g, { o: 1 }, 1.9);
+  
+  // 按结束时间排序：A1(3) < A2(4) < A3(7) < A4(9)
+  // 选择A1
+  tw(act1.rect, { fill: SELECTED }, 2.5);
+  
+  // A2与A1冲突
+  tw(act2.rect, { fill: REJECTED }, 3.0);
+  
+  // 选择A3
+  tw(act3.rect, { fill: SELECTED }, 3.5);
+  
+  // A4与A3冲突
+  tw(act4.rect, { fill: REJECTED }, 4.0);
+  
+  // 结果
+  const result = T(p, '选了2个活动：A₁, A₃', { 
+    x: 400, y: 540, size: 28, weight: 600, fill: SELECTED, anchor: 'middle', o: 0 
+  });
+  tw(result, { o: 1 }, 4.5);
+  
+  const correct = T(p, '✓ 正确策略', { 
+    x: 400, y: 590, size: 36, weight: 700, fill: SELECTED, anchor: 'middle', o: 0 
+  });
+  tw(correct, { o: 1 }, 5.0);
+}, { audio: 'correct-strategy' }],
+
+['greedy-demo', '贪心选择过程动画', () => {
+  const p = panel(0);
+
+  T(p, '贪心算法演示', { x: 400, y: 50, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  // 时间轴
+  const timeline = drawTimeline(p, 100, 140, 16, 600);
+  tw(timeline, { o: 1 }, 0.5);
+  
+  // 10个活动
+  const activities = [
+    { id: 'A₁', start: 1, end: 4, y: 190 },
+    { id: 'A₂', start: 3, end: 5, y: 240 },
+    { id: 'A₃', start: 0, end: 6, y: 290 },
+    { id: 'A₄', start: 5, end: 7, y: 340 },
+    { id: 'A₅', start: 3, end: 9, y: 390 },
+    { id: 'A₆', start: 5, end: 9, y: 440 },
+    { id: 'A₇', start: 6, end: 10, y: 490 },
+    { id: 'A₈', start: 8, end: 11, y: 540 },
+    { id: 'A₉', start: 8, end: 12, y: 590 },
+    { id: 'A₁₀', start: 2, end: 14, y: 640 }
+  ];
+  
+  const actElements = {};
+  activities.forEach((act, i) => {
+    actElements[act.id] = drawActivity(p, 100, act.y, act.start, act.end, act.id, NEUTRAL, 600);
+    tw(actElements[act.id].g, { o: 1 }, 0.8 + i * 0.15);
+  });
+  
+  // 按结束时间排序展示
+  const sorted = [...activities].sort((a, b) => a.end - b.end);
+  
+  T(p, '排序后（按结束时间）：', { x: 100, y: 700, size: 20, weight: 600, fill: TEXT_COLOR, o: 0 });
+  const sortedText = T(p, '', { x: 310, y: 700, size: 20, fill: HIGHLIGHT, anchor: 'start', o: 0 });
+  
+  let time = 3.0;
+  
+  // 显示排序结果
+  sortedText.textContent = sorted.map(a => a.id).join(' → ');
+  tw(sortedText, { o: 1 }, time);
+  time += 1.0;
+  
+  // 贪心选择过程
+  let lastEnd = -1;
+  let selectedCount = 0;
+  
+  sorted.forEach((act, i) => {
+    // 考察当前活动
+    tw(actElements[act.id].rect, { fill: CANDIDATE, 'stroke-width': 4 }, time);
+    time += 0.5;
+    
+    if (act.start >= lastEnd) {
+      // 选择这个活动
+      tw(actElements[act.id].rect, { fill: SELECTED }, time);
+      lastEnd = act.end;
+      selectedCount++;
+      time += 0.6;
+    } else {
+      // 拒绝这个活动
+      tw(actElements[act.id].rect, { fill: REJECTED }, time);
+      time += 0.5;
+    }
+    
+    // 恢复边框
+    tw(actElements[act.id].rect, { 'stroke-width': 2 }, time);
+    time += 0.4;
+  });
+  
+  // 最终结果
+  const result = T(p, `共选择了 ${selectedCount} 个活动`, { 
+    x: 400, y: 740, size: 28, weight: 700, fill: SELECTED, anchor: 'middle', o: 0 
+  });
+  tw(result, { o: 1 }, time);
+}, { audio: 'greedy-demo' }],
+
+['algorithm', '算法实现', () => {
+  const p = panel(0);
+
+  T(p, '算法实现', { x: 400, y: 60, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  // 伪代码
+  const code = [
+    'function activitySelection(activities):',
+    '    // 按结束时间排序',
+    '    sort(activities, by endTime)',
+    '    ',
+    '    selected = []',
+    '    lastEnd = -∞',
+    '    ',
+    '    for each activity in activities:',
+    '        if activity.start >= lastEnd:',
+    '            selected.append(activity)',
+    '            lastEnd = activity.end',
+    '    ',
+    '    return selected'
+  ];
+  
+  code.forEach((line, i) => {
+    const indent = line.match(/^(\s*)/)[0].length;
+    const text = T(p, line, { 
+      x: 80 + indent * 8, y: 140 + i * 32, 
+      size: 20, fill: TEXT_COLOR, anchor: 'start', 
+      family: 'Monaco, monospace', o: 0 
+    });
+    tw(text, { o: 1 }, 0.5 + i * 0.2);
+  });
+  
+  // 复杂度分析
+  const complexity = [
+    { label: '时间复杂度：', value: 'O(n log n)', desc: '排序的时间' },
+    { label: '空间复杂度：', value: 'O(1)', desc: '只需常数空间' }
+  ];
+  
+  complexity.forEach(({ label, value, desc }, i) => {
+    const y = 580 + i * 60;
+    
+    const labelText = T(p, label, { 
+      x: 100, y, 
+      size: 26, weight: 600, fill: TEXT_COLOR, anchor: 'start', o: 0 
+    });
+    tw(labelText, { o: 1 }, 3.5 + i * 0.3);
+    
+    const valueText = T(p, value, { 
+      x: 320, y, 
+      size: 28, weight: 700, fill: HIGHLIGHT, anchor: 'start', o: 0 
+    });
+    tw(valueText, { o: 1 }, 3.7 + i * 0.3);
+    
+    const descText = T(p, desc, { 
+      x: 500, y, 
+      size: 22, fill: NEUTRAL, anchor: 'start', o: 0 
+    });
+    tw(descText, { o: 1 }, 3.9 + i * 0.3);
+  });
+}, { audio: 'algorithm' }],
+
+['proof', '正确性证明', () => {
+  const p = panel(0);
+
+  T(p, '正确性证明（交换论证）', { x: 400, y: 60, size: 42, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  // 证明思路
+  const steps = [
+    '假设：最优解 OPT 不包含结束最早的活动 a₁',
+    '',
+    '设：OPT 中第一个活动是 aₖ',
+    '',
+    '因为：a₁ 结束最早，所以 f₁ ≤ fₖ',
+    '',
+    '构造：将 OPT 中的 aₖ 替换为 a₁',
+    '',
+    '结果：新解仍然可行，且大小不变',
+    '',
+    '结论：包含 a₁ 的最优解一定存在'
+  ];
+  
+  steps.forEach((line, i) => {
+    const size = line === '' ? 10 : (line.startsWith('假设') || line.startsWith('结论')) ? 26 : 24;
+    const weight = (line.startsWith('假设') || line.startsWith('结论')) ? 700 : 400;
+    const color = line.startsWith('结论') ? PROOF_COLOR : TEXT_COLOR;
+    
+    const text = T(p, line, { 
+      x: 100, y: 140 + i * 38, 
+      size, weight, fill: color, anchor: 'start', o: 0 
+    });
+    tw(text, { o: 1 }, 0.5 + i * 0.3);
+  });
+  
+  // 关键insight
+  const insight = T(p, '💡 贪心选择性质：局部最优可以导致全局最优', { 
+    x: 400, y: 620, size: 26, weight: 600, fill: SELECTED, anchor: 'middle', o: 0 
+  });
+  tw(insight, { o: 1 }, 4.5);
+}, { audio: 'proof' }],
+
+['applications', '应用场景', () => {
+  const p = panel(0);
+
+  T(p, '实际应用', { x: 400, y: 80, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const apps = [
+    { 
+      icon: '🏢', 
+      title: '会议室管理', 
+      desc: '一个会议室，多个会议申请，如何安排最多会议？',
+      color: SELECTED
+    },
+    { 
+      icon: '💻', 
+      title: 'CPU任务调度', 
+      desc: '单核CPU，多个任务，选择最多可执行任务',
+      color: TIMELINE_BG
+    },
+    { 
+      icon: '🎓', 
+      title: '课程安排', 
+      desc: '同一教室，多门课程，排最多的课',
+      color: CANDIDATE
+    },
+    { 
+      icon: '📺', 
+      title: '电视节目安排', 
+      desc: '一个频道，多个节目，播放最多节目',
+      color: HIGHLIGHT
+    }
+  ];
+  
+  apps.forEach(({ icon, title, desc, color }, i) => {
+    const y = 180 + i * 120;
+    
+    const box = mk('rect', { 
+      x: 80, y: y - 40, width: 640, height: 100, 
+      fill: color, opacity: 0.15, 
+      stroke: color, 'stroke-width': 3, rx: 8 
+    }, p);
+    tw(box, { opacity: 0.2 }, 0.5 + i * 0.4);
+    
+    const iconText = T(p, icon, { 
+      x: 120, y: y, 
+      size: 48, anchor: 'middle', o: 0 
+    });
+    tw(iconText, { o: 1 }, 0.6 + i * 0.4);
+    
+    const titleText = T(p, title, { 
+      x: 180, y: y - 10, 
+      size: 28, weight: 700, fill: color, anchor: 'start', o: 0 
+    });
+    tw(titleText, { o: 1 }, 0.7 + i * 0.4);
+    
+    const descText = T(p, desc, { 
+      x: 180, y: y + 25, 
+      size: 20, fill: TEXT_COLOR, anchor: 'start', o: 0 
+    });
+    tw(descText, { o: 1 }, 0.8 + i * 0.4);
+  });
+}, { audio: 'applications' }],
+
+['greedy-vs-dp', '贪心 vs 动态规划', () => {
+  const p = panel(0);
+
+  T(p, '贪心算法 vs 动态规划', { x: 400, y: 60, size: 42, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  // 对比表格
+  const headers = ['', '贪心算法', '动态规划'];
+  const rows = [
+    ['策略', '局部最优', '全局考虑'],
+    ['选择', '不可撤销', '可以回溯'],
+    ['子问题', '一个子问题', '多个重叠子问题'],
+    ['时间', '通常更快', '通常更慢'],
+    ['适用', '特殊问题', '更广泛']
+  ];
+  
+  const colWidth = 200;
+  const rowHeight = 60;
+  const startX = 100;
+  const startY = 150;
+  
+  // 表头
+  headers.forEach((header, j) => {
+    const x = startX + j * colWidth;
+    const text = T(p, header, { 
+      x: x + colWidth / 2, y: startY, 
+      size: 24, weight: 700, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+    });
+    tw(text, { o: 1 }, 0.5);
+  });
+  
+  // 表格内容
+  rows.forEach((row, i) => {
+    row.forEach((cell, j) => {
+      const x = startX + j * colWidth;
+      const y = startY + (i + 1) * rowHeight + rowHeight / 2;
+      
+      // 背景
+      if (j > 0) {
+        const bg = mk('rect', {
+          x: x, y: y - rowHeight / 2,
+          width: colWidth, height: rowHeight,
+          fill: j === 1 ? SELECTED : TIMELINE_BG,
+          opacity: 0.1,
+          stroke: TEXT_COLOR,
+          'stroke-width': 1
+        }, p);
+        tw(bg, { opacity: 0.15 }, 1.0 + i * 0.3);
+      }
+      
+      const text = T(p, cell, { 
+        x: x + colWidth / 2, y, 
+        size: j === 0 ? 22 : 20, 
+        weight: j === 0 ? 600 : 400,
+        fill: TEXT_COLOR, anchor: 'middle', o: 0 
+      });
+      text.setAttribute('dominant-baseline', 'central');
+      tw(text, { o: 1 }, 1.0 + i * 0.3);
+    });
+  });
+  
+  // 关键提示
+  const hint = T(p, '关键：贪心需要证明贪心选择性质和最优子结构', { 
+    x: 400, y: 550, size: 24, weight: 600, fill: PROOF_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(hint, { o: 1 }, 3.5);
+}, { audio: 'greedy-vs-dp' }],
+
+['variants', '变体问题', () => {
+  const p = panel(0);
+
+  T(p, '活动选择的变体', { x: 400, y: 70, size: 44, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const variants = [
+    {
+      title: '带权重的活动选择',
+      desc: '每个活动有价值，选择总价值最大的子集',
+      solution: '需要用动态规划，贪心不再适用',
+      color: REJECTED
+    },
+    {
+      title: '多个会议室',
+      desc: '给定k个会议室，安排所有活动需要几个？',
+      solution: '贪心：按开始时间排序，用堆维护会议室',
+      color: SELECTED
+    },
+    {
+      title: '活动选择与任务调度',
+      desc: '活动有依赖关系，某些活动必须在其他活动之后',
+      solution: '拓扑排序 + 贪心/动态规划',
+      color: CANDIDATE
+    }
+  ];
+  
+  variants.forEach(({ title, desc, solution, color }, i) => {
+    const y = 160 + i * 160;
+    
+    const box = mk('rect', { 
+      x: 60, y: y - 35, width: 680, height: 140, 
+      fill: color, opacity: 0.12, 
+      stroke: color, 'stroke-width': 3, rx: 10 
+    }, p);
+    tw(box, { opacity: 0.18 }, 0.5 + i * 0.5);
+    
+    const titleText = T(p, title, { 
+      x: 400, y: y, 
+      size: 30, weight: 700, fill: color, anchor: 'middle', o: 0 
+    });
+    tw(titleText, { o: 1 }, 0.6 + i * 0.5);
+    
+    const descText = T(p, desc, { 
+      x: 400, y: y + 40, 
+      size: 22, fill: TEXT_COLOR, anchor: 'middle', o: 0 
+    });
+    tw(descText, { o: 1 }, 0.7 + i * 0.5);
+    
+    const solutionText = T(p, `解法：${solution}`, { 
+      x: 400, y: y + 75, 
+      size: 20, fill: NEUTRAL, anchor: 'middle', o: 0 
+    });
+    tw(solutionText, { o: 1 }, 0.8 + i * 0.5);
+  });
+}, { audio: 'variants' }],
+
+['summary', '总结', () => {
+  const p = panel(0);
+
+  T(p, '总结', { x: 400, y: 70, size: 48, weight: 700, fill: TEXT_COLOR, o: 0 });
+  
+  const points = [
+    '✓ 活动选择：选择最多不冲突的活动',
+    '✓ 贪心策略：按结束时间排序，依次选择',
+    '✓ 关键性质：贪心选择性质 + 最优子结构',
+    '✓ 时间复杂度：O(n log n)',
+    '✓ 应用场景：资源调度、任务安排',
+    '✓ 注意：并非所有问题都适合贪心',
+    '✓ 变体：带权重需要动态规划'
+  ];
+  
+  points.forEach((point, i) => {
+    const text = T(p, point, { 
+      x: 120, y: 170 + i * 60, 
+      size: 28, weight: 500, fill: TEXT_COLOR, anchor: 'start', o: 0 
+    });
+    tw(text, { o: 1 }, 0.5 + i * 0.3);
+  });
+  
+  // 关键takeaway
+  const takeaway = T(p, '贪心算法：简单高效，但需要严格证明', { 
+    x: 400, y: 650, size: 32, weight: 700, fill: SELECTED, anchor: 'middle', o: 0 
+  });
+  tw(takeaway, { o: 1 }, 3.5);
+}, { audio: 'summary' }]
+
+];
+
+/* ---------- 启动 ---------- */
+window.BEATS = BEATS;
+window.SELECTED = SELECTED;
+window.REJECTED = REJECTED;
+window.CANDIDATE = CANDIDATE;
+window.NEUTRAL = NEUTRAL;
+window.TIMELINE_BG = TIMELINE_BG;
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "intro": "单源最短路径算法我们学了两个：[[dijkstra]] Dijkstra处理非负权边，[[bellman]] Bellman-Ford处理负权边。[[apsp]] 但如果要求所有点对之间的最短路径呢？[[all_pairs]] Floyd-Warshall算法应运而生！",
+  "problem": "全源最短路径问题：[[problem]] 给定一个加权图，计算任意两点之间的最短距离。[[definition]] 一种方法是对每个节点跑一次Dijkstra，[[naive]] 时间复杂度O(V²logV + VE)。[[complexity_naive]] Floyd-Warshall用动态规划思想，[[dp]] 代码更简洁，只需三重循环！",
+  "applications": "应用场景非常广泛！[[apps]] 网络路由表计算：路由器需要知道到所有目的地的最短路径。[[routing]] 城市交通规划：计算任意两地的最短通勤时间。[[traffic]] 社交网络距离：六度分隔理论的计算基础。[[social]] 只要涉及「全局距离矩阵」，就是Floyd-Warshall的主场。",
+  "dp_idea": "核心是动态规划！[[dp_core]] 定义状态：dist[i][j][k]表示只经过前k个节点时，[[state]] i到j的最短路径长度。[[meaning]] 状态转移很优雅：[[transition]] 要么不经过k，要么经过k中转。[[two_cases]] 取两者的最小值即可！",
+  "transition": "状态转移方程：[[formula]] dist[i][j][k]等于min括号，[[min]] dist[i][j][k-1]逗号，[[case1]] dist[i][k][k-1]加dist[k][j][k-1]括号。[[case2]] 第一项表示不经过k，[[no_k]] 第二项表示经过k中转。[[via_k]] 神奇的是，可以用二维数组滚动更新，省掉第三维！",
+  "implementation": "算法实现非常简洁！[[simple]] 初始化：直接边权值，自环为0，无边为无穷大。[[init]] 三重循环：最外层枚举中转点k，[[outer_k]] 内两层枚举所有点对i和j。[[inner_ij]] 每次用经过k的路径尝试松弛。[[relax]] 为什么k在最外层？因为每轮必须用同一个k版本的距离！",
+  "demo_setup": "来看动画演示！[[demo]] 5个节点的加权有向图，[[graph]] 初始化5乘5的距离矩阵。[[matrix]] 对角线是0，直接边填权值，[[diagonal]] 无边的位置是无穷大。[[inf]] 接下来逐个中转点迭代，看矩阵如何更新！",
+  "demo_k0": "第一轮：中转点k等于0，也就是节点A。[[k0]] 检查所有点对i和j：[[check_all]] 能否通过A让路径更短？[[via_a]] 看第1行第3列，B到D：[[b_to_d]] 直接距离是无穷大，经过A是5加7等于12，[[calc]] 更新为12！[[update]] 矩阵单元格从红色变成绿色，数值刷新。",
+  "demo_k1": "第二轮：中转点k等于1，节点B。[[k1]] 高亮B节点，[[highlight]] 逐个检查点对能否通过B优化。[[check_via_b]] A到D：直接7，经过B是4加3也是7，不变。[[no_change]] A到C：直接无穷大，经过B是4加8等于12，[[update_ac]] 黄色闪烁后更新为12！[[flash]] 继续检查其他点对。",
+  "demo_k2": "第三轮：中转点k等于2，节点C。[[k2]] C连接了几条关键边，[[key_node]] 会触发多次更新！[[multiple]] B到E：直接无穷大，经过C是8加6等于14。[[be_update]] D到E：直接3，经过C是负5加6等于1，更短！[[de_update]] 负权边在这里起作用了。[[negative]] 矩阵继续优化。",
+  "demo_final": "第四轮和第五轮：[[k3_k4]] 继续用D和E做中转点。[[last_rounds]] 矩阵逐步收敛，[[converge]] 最终得到完整的全源最短路径矩阵！[[final]] 所有单元格变成蓝色表示确定。[[confirmed]] 现在知道任意两点的最短距离了。",
+  "negative_cycle": "负权环检测很简单！[[cycle_detect]] 跑完算法后检查对角线：[[check_diagonal]] 如果dist[i][i]小于0，[[negative_diagonal]] 说明存在负权环，i在环上。[[in_cycle]] 这时候最短路径无定义，可以无限减小。[[undefined]] 比Bellman-Ford的检测更直观！",
+  "complexity": "时间复杂度：O(V³)，三重循环。[[time]] 空间复杂度：O(V²)，距离矩阵。[[space]] 虽然是立方复杂度，[[cubic]] 但代码极其简洁，常数小，[[simple_code]] 而且支持负权边！[[negative_support]] 密集图V接近E时，比跑V次Bellman-Ford还快。",
+  "comparison": "三大最短路径算法对比！[[compare]] Dijkstra：单源、贪心、O括号V加E括号logV、不支持负权边。[[dij]] Bellman-Ford：单源、动态规划、O(VE)、支持负权边和检测负权环。[[bf]] Floyd-Warshall：全源、动态规划、O(V³)、支持负权边、代码最简洁！[[fw]] 根据图的性质选择合适的算法。",
+  "summary": "总结Floyd-Warshall算法：[[summary]] 初始化距离矩阵：直接边和自环。[[init_sum]] 三重循环：枚举中转点k和点对i、j。[[triple_loop]] 状态转移：不经过k或经过k取最小值。[[transition_sum]] 负权环检测：检查对角线。[[cycle_sum]] 全源最短路径的标准解法，简洁优雅！"
+}

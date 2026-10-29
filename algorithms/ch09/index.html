@@ -1,0 +1,1091 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第九章 Floyd-Warshall 全源最短路径</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#table" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 9, title: 'Floyd-Warshall 全源最短路径', language: 'zh', minutes: 12 };
+
+/* ---------- 颜色方案 ---------- */
+const PRIMARY = '#667eea';
+const SECONDARY = '#764ba2';
+const UNVISITED = '#95a5a6';
+const VISITED = '#2ecc71';
+const CURRENT = '#f39c12';
+const EDGE_DEFAULT = '#7f8c8d';
+const EDGE_TRYING = '#f39c12';
+const EDGE_SELECTED = '#2ecc71';
+const EDGE_NEGATIVE = '#e74c3c';
+const INF_COLOR = '#c0392b';
+const CELL_INIT = '#ecf0f1';
+const CELL_CHECKING = '#fff3cd';
+const CELL_UPDATED = '#d4edda';
+const CELL_FINAL = '#cfe2ff';
+
+/* ---------- 辅助函数：绘制有向图 ---------- */
+// 5个节点布局
+const NODES = {
+  A: { x: 200, y: 350, label: 'A' },
+  B: { x: 400, y: 250, label: 'B' },
+  C: { x: 400, y: 450, label: 'C' },
+  D: { x: 600, y: 350, label: 'D' },
+  E: { x: 800, y: 350, label: 'E' }
+};
+
+// 有向边（包含负权边）
+const EDGES = [
+  { from: 'A', to: 'B', weight: 4 },
+  { from: 'A', to: 'D', weight: 7 },
+  { from: 'B', to: 'C', weight: 8 },
+  { from: 'B', to: 'D', weight: 3 },
+  { from: 'C', to: 'E', weight: 6 },
+  { from: 'D', to: 'C', weight: -5 },  // 负权边
+  { from: 'D', to: 'E', weight: 3 }
+];
+
+function drawArrow(parent, x1, y1, x2, y2, color = EDGE_DEFAULT) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  const shrink = Math.min(40, len * 0.4);
+  const ratio = (len - shrink) / len;
+  const ex = x1 + dx * ratio;
+  const ey = y1 + dy * ratio;
+  
+  const line = mk('line', {
+    x1, y1, x2: ex, y2: ey,
+    stroke: color,
+    'stroke-width': 3,
+    'marker-end': 'url(#arrowhead)',
+    opacity: 0.7
+  }, parent);
+  
+  return line;
+}
+
+function drawGraph(parent, options = {}) {
+  const g = G(parent, { o: 0 });
+  
+  // 定义箭头标记
+  const defs = mk('defs', {}, g);
+  const marker = mk('marker', {
+    id: 'arrowhead',
+    markerWidth: 10,
+    markerHeight: 10,
+    refX: 9,
+    refY: 3,
+    orient: 'auto',
+    markerUnits: 'strokeWidth'
+  }, defs);
+  mk('path', {
+    d: 'M0,0 L0,6 L9,3 z',
+    fill: EDGE_DEFAULT
+  }, marker);
+  
+  // 先画边
+  const edgeGroup = G(g);
+  const edgeElements = {};
+  
+  EDGES.forEach(edge => {
+    const from = NODES[edge.from];
+    const to = NODES[edge.to];
+    
+    const arrow = drawArrow(edgeGroup, from.x, from.y, to.x, to.y);
+    arrow.dataset.from = edge.from;
+    arrow.dataset.to = edge.to;
+    arrow.dataset.weight = edge.weight;
+    
+    edgeElements[`${edge.from}-${edge.to}`] = arrow;
+    
+    // 权重标签
+    const mx = (from.x + to.x) / 2;
+    const my = (from.y + to.y) / 2;
+    
+    const labelColor = edge.weight < 0 ? EDGE_NEGATIVE : '#34495e';
+    const labelBg = G(edgeGroup, { x: mx, y: my });
+    mk('circle', { r: 16, fill: '#ecf0f1', stroke: '#bdc3c7', 'stroke-width': 2 }, labelBg);
+    T(labelBg, String(edge.weight), {
+      x: 0, y: 5,
+      size: 16,
+      fill: labelColor,
+      weight: 700,
+      anchor: 'middle'
+    });
+  });
+  
+  // 再画节点
+  const nodeGroup = G(g);
+  const nodeElements = {};
+  
+  Object.entries(NODES).forEach(([key, node]) => {
+    const nodeG = G(nodeGroup, { x: node.x, y: node.y });
+    nodeG.dataset.node = key;
+    
+    const circle = mk('circle', {
+      r: 30,
+      fill: UNVISITED,
+      stroke: '#2c3e50',
+      'stroke-width': 3
+    }, nodeG);
+    
+    T(nodeG, node.label, {
+      x: 0, y: 5,
+      size: 24,
+      fill: '#fff',
+      weight: 700,
+      anchor: 'middle'
+    });
+    
+    nodeElements[key] = { group: nodeG, circle };
+  });
+  
+  g._edges = edgeGroup;
+  g._edgeElements = edgeElements;
+  g._nodes = nodeGroup;
+  g._nodeElements = nodeElements;
+  
+  return g;
+}
+
+// 绘制距离矩阵
+function drawDistanceMatrix(parent, initialValues) {
+  const g = G(parent, { o: 0 });
+  const cellSize = 60;
+  const startX = 950;
+  const startY = 180;
+  
+  const nodeKeys = Object.keys(NODES);
+  const n = nodeKeys.length;
+  
+  // 行列标签
+  const headerY = startY - 35;
+  nodeKeys.forEach((key, i) => {
+    T(g, key, { x: startX + i * cellSize + cellSize/2, y: headerY, size: 18, fill: PRIMARY, weight: 600, anchor: 'middle' });
+  });
+  
+  const headerX = startX - 35;
+  nodeKeys.forEach((key, i) => {
+    T(g, key, { x: headerX, y: startY + i * cellSize + cellSize/2 + 5, size: 18, fill: PRIMARY, weight: 600, anchor: 'middle' });
+  });
+  
+  // 矩阵单元格
+  const cells = {};
+  
+  nodeKeys.forEach((rowKey, i) => {
+    nodeKeys.forEach((colKey, j) => {
+      const cellG = G(g, { x: startX + j * cellSize, y: startY + i * cellSize });
+      
+      const rect = mk('rect', {
+        width: cellSize,
+        height: cellSize,
+        fill: CELL_INIT,
+        stroke: '#bdc3c7',
+        'stroke-width': 2
+      }, cellG);
+      
+      let value = initialValues[rowKey][colKey];
+      let displayText = value === Infinity ? '∞' : String(value);
+      let textColor = value === Infinity ? INF_COLOR : '#2c3e50';
+      
+      const text = T(cellG, displayText, {
+        x: cellSize / 2,
+        y: cellSize / 2 + 5,
+        size: 18,
+        fill: textColor,
+        weight: 600,
+        anchor: 'middle'
+      });
+      
+      cells[`${rowKey}-${colKey}`] = { group: cellG, rect, text, value };
+    });
+  });
+  
+  g._cells = cells;
+  return g;
+}
+
+// 更新矩阵单元格
+function updateMatrixCell(cells, rowKey, colKey, newValue, t0, options = {}) {
+  const key = `${rowKey}-${colKey}`;
+  const cell = cells[key];
+  
+  if (!cell) return;
+  
+  const { flashColor = CELL_CHECKING, finalColor = CELL_UPDATED } = options;
+  
+  // 高亮闪烁
+  tw(cell.rect, { fill: flashColor }, t0, 0.3);
+  tw(cell.rect, { fill: finalColor }, t0 + 0.3, 0.3);
+  
+  // 更新数值
+  prog(q => {
+    if (q >= 1) {
+      const displayText = newValue === Infinity ? '∞' : String(newValue);
+      const textColor = newValue === Infinity ? INF_COLOR : '#2c3e50';
+      cell.text.textContent = displayText;
+      cell.text.setAttribute('fill', textColor);
+      cell.value = newValue;
+    }
+  }, t0 + 0.3, 0.001);
+  
+  // 数值缩放动画
+  tw(cell.text, { s: 1.3 }, t0 + 0.3, 0.2, out);
+  tw(cell.text, { s: 1 }, t0 + 0.5, 0.25, io);
+}
+
+/* ---------- BEATS ---------- */
+let BEATS = [
+
+['intro', '引入：全源最短路径', (m, dur) => {
+  const p = stage(m);
+  
+  const title = T(p, '全源最短路径（All-Pairs Shortest Paths）', {
+    x: W/2, y: 120, size: 42, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+  });
+  tw(title, { o: 1 }, 0.5, 0.8);
+  
+  const subtitle = T(p, 'Floyd-Warshall 算法', {
+    x: W/2, y: 180, size: 28, fill: PRIMARY, weight: 600, anchor: 'middle', o: 0
+  });
+  tw(subtitle, { o: 1 }, 1.5, 0.8);
+  
+  // 三种算法对比
+  const algoY = 280;
+  const algo1 = T(p, '单源最短路径：Dijkstra（非负权边）', {
+    x: W/2, y: algoY, size: 24, fill: COL.dim, o: 0
+  });
+  tw(algo1, { o: 1 }, 3, 0.6);
+  
+  const algo2 = T(p, '单源最短路径：Bellman-Ford（负权边）', {
+    x: W/2, y: algoY + 60, size: 24, fill: COL.dim, o: 0
+  });
+  tw(algo2, { o: 1 }, 4.5, 0.6);
+  
+  const arrow = T(p, '↓', {
+    x: W/2, y: algoY + 120, size: 48, fill: PRIMARY, weight: 700, o: 0
+  });
+  tw(arrow, { o: 1 }, 6, 0.6);
+  
+  const algo3 = T(p, '全源最短路径：Floyd-Warshall（所有点对）', {
+    x: W/2, y: algoY + 190, size: 28, fill: PRIMARY, weight: 700, o: 0
+  });
+  tw(algo3, { o: 1 }, 7.5, 0.8);
+  
+  const hint = T(p, '一次计算，得到任意两点间的最短距离', {
+    x: W/2, y: algoY + 250, size: 22, fill: SECONDARY, o: 0
+  });
+  tw(hint, { o: 1 }, 9, 0.7);
+}],
+
+['problem', '问题定义', (m, dur) => {
+  const p = stage(m);
+  
+  const title = T(p, '问题：全源最短路径', {
+    x: W/2, y: 100, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+  });
+  tw(title, { o: 1 }, 0.5, 0.7);
+  
+  const def = T(p, '输入：加权有向图 G = (V, E)', {
+    x: 200, y: 200, size: 24, fill: COL.dim, o: 0
+  });
+  tw(def, { o: 1 }, 2, 0.6);
+  
+  const output = T(p, '输出：dist[i][j] = 从节点 i 到节点 j 的最短距离', {
+    x: 200, y: 260, size: 24, fill: COL.dim, o: 0
+  });
+  tw(output, { o: 1 }, 3.5, 0.6);
+  
+  const naive = T(p, '朴素方法：对每个节点跑一次 Dijkstra', {
+    x: 200, y: 340, size: 22, fill: '#e67e22', o: 0
+  });
+  tw(naive, { o: 1 }, 5.5, 0.6);
+  
+  const complexity1 = T(p, '时间复杂度：O(V² log V + VE)', {
+    x: 220, y: 395, size: 20, fill: COL.dim, o: 0
+  });
+  tw(complexity1, { o: 1 }, 7, 0.6);
+  
+  const fw = T(p, 'Floyd-Warshall：动态规划，三重循环', {
+    x: 200, y: 480, size: 22, fill: PRIMARY, weight: 600, o: 0
+  });
+  tw(fw, { o: 1 }, 9, 0.7);
+  
+  const complexity2 = T(p, '时间复杂度：O(V³)，代码更简洁！', {
+    x: 220, y: 535, size: 20, fill: SECONDARY, o: 0
+  });
+  tw(complexity2, { o: 1 }, 10.5, 0.7);
+}],
+
+['applications', '应用场景', (m, dur) => {
+  const p = stage(m);
+  
+  const title = T(p, '应用场景', {
+    x: W/2, y: 100, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+  });
+  tw(title, { o: 1 }, 0.5, 0.7);
+  
+  const apps = [
+    { text: '🌐 网络路由表计算', desc: '路由器需要知道到所有目的地的最短路径', delay: 2 },
+    { text: '🚗 城市交通规划', desc: '计算任意两地的最短通勤时间', delay: 5 },
+    { text: '👥 社交网络距离', desc: '六度分隔理论的计算基础', delay: 8 },
+    { text: '📊 全局距离矩阵', desc: '需要快速查询任意点对距离时', delay: 11 }
+  ];
+  
+  apps.forEach((app, idx) => {
+    const y = 220 + idx * 120;
+    
+    const main = T(p, app.text, {
+      x: 200, y, size: 28, fill: PRIMARY, weight: 600, o: 0
+    });
+    tw(main, { o: 1 }, app.delay, 0.7);
+    
+    const desc = T(p, app.desc, {
+      x: 220, y: y + 50, size: 20, fill: COL.dim, o: 0
+    });
+    tw(desc, { o: 1 }, app.delay + 1, 0.6);
+  });
+}],
+
+['dp_idea', '动态规划思想', (m, dur) => {
+  const p = stage(m);
+  
+  const title = T(p, '核心：动态规划', {
+    x: W/2, y: 100, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+  });
+  tw(title, { o: 1 }, 0.5, 0.7);
+  
+  const state = T(p, '状态定义：', {
+    x: 200, y: 200, size: 26, fill: PRIMARY, weight: 600, o: 0
+  });
+  tw(state, { o: 1 }, 2, 0.6);
+  
+  const stateFormula = T(p, 'dist[i][j][k] = 只经过前 k 个节点时，i 到 j 的最短路径', {
+    x: 220, y: 255, size: 22, fill: COL.dim, o: 0
+  });
+  tw(stateFormula, { o: 1 }, 3.5, 0.7);
+  
+  const transition = T(p, '状态转移：', {
+    x: 200, y: 340, size: 26, fill: PRIMARY, weight: 600, o: 0
+  });
+  tw(transition, { o: 1 }, 6, 0.6);
+  
+  const case1 = T(p, '情况 1：不经过节点 k', {
+    x: 220, y: 400, size: 22, fill: '#e67e22', o: 0
+  });
+  tw(case1, { o: 1 }, 8, 0.6);
+  
+  const case1formula = T(p, 'dist[i][j][k] = dist[i][j][k-1]', {
+    x: 260, y: 450, size: 20, fill: COL.dim, family: 'monospace', o: 0
+  });
+  tw(case1formula, { o: 1 }, 9, 0.6);
+  
+  const case2 = T(p, '情况 2：经过节点 k 中转', {
+    x: 220, y: 520, size: 22, fill: '#27ae60', o: 0
+  });
+  tw(case2, { o: 1 }, 11, 0.6);
+  
+  const case2formula = T(p, 'dist[i][j][k] = dist[i][k][k-1] + dist[k][j][k-1]', {
+    x: 260, y: 570, size: 20, fill: COL.dim, family: 'monospace', o: 0
+  });
+  tw(case2formula, { o: 1 }, 12, 0.6);
+  
+  const min = T(p, '→ 取两者最小值！', {
+    x: 200, y: 640, size: 24, fill: SECONDARY, weight: 600, o: 0
+  });
+  tw(min, { o: 1 }, 14, 0.7);
+}],
+
+['transition', '状态转移方程', (m, dur) => {
+  const p = stage(m);
+  
+  const title = T(p, '状态转移方程', {
+    x: W/2, y: 100, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+  });
+  tw(title, { o: 1 }, 0.5, 0.7);
+  
+  // 公式展示
+  const formulaBg = G(p, { x: W/2 - 350, y: 220, o: 0 });
+  mk('rect', {
+    width: 700, height: 120,
+    fill: '#2c3e50',
+    stroke: PRIMARY,
+    'stroke-width': 3,
+    rx: 10
+  }, formulaBg);
+  
+  const formula = T(formulaBg, 'dist[i][j][k] = min(', {
+    x: 20, y: 45, size: 24, fill: '#ecf0f1', family: 'monospace', o: 1
+  });
+  
+  const part1 = T(formulaBg, 'dist[i][j][k-1],', {
+    x: 80, y: 80, size: 22, fill: '#f39c12', family: 'monospace', o: 1
+  });
+  
+  const part2 = T(formulaBg, 'dist[i][k][k-1] + dist[k][j][k-1]', {
+    x: 80, y: 110, size: 22, fill: '#2ecc71', family: 'monospace', o: 1
+  });
+  
+  const closeParen = T(formulaBg, ')', {
+    x: 680, y: 45, size: 24, fill: '#ecf0f1', family: 'monospace', o: 1
+  });
+  
+  tw(formulaBg, { o: 1 }, 2, 0.8);
+  
+  // 解释
+  const explain1 = T(p, '不经过 k：直接使用前一版本的距离', {
+    x: 200, y: 390, size: 22, fill: '#f39c12', weight: 600, o: 0
+  });
+  tw(explain1, { o: 1 }, 5, 0.7);
+  
+  const explain2 = T(p, '经过 k：通过 k 中转，路径分两段', {
+    x: 200, y: 450, size: 22, fill: '#2ecc71', weight: 600, o: 0
+  });
+  tw(explain2, { o: 1 }, 8, 0.7);
+  
+  const optimize = T(p, '✨ 空间优化：可以用二维数组滚动更新', {
+    x: W/2, y: 550, size: 24, fill: SECONDARY, weight: 600, anchor: 'middle', o: 0
+  });
+  tw(optimize, { o: 1 }, 12, 0.8);
+  
+  const why = T(p, '原因：每次只需要前一版本 k-1 的距离', {
+    x: W/2, y: 605, size: 20, fill: COL.dim, anchor: 'middle', o: 0
+  });
+  tw(why, { o: 1 }, 14, 0.7);
+}],
+
+['implementation', '算法实现', (m, dur) => {
+  const p = stage(m);
+  
+  const title = T(p, '算法实现', {
+    x: W/2, y: 80, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+  });
+  tw(title, { o: 1 }, 0.5, 0.7);
+  
+  // 伪代码
+  const code = [
+    'FloydWarshall(G):',
+    '  // 初始化',
+    '  for i in V:',
+    '    for j in V:',
+    '      if i == j:',
+    '        dist[i][j] = 0',
+    '      else if (i,j) in E:',
+    '        dist[i][j] = weight(i,j)',
+    '      else:',
+    '        dist[i][j] = ∞',
+    '',
+    '  // 三重循环',
+    '  for k in V:          // 枚举中转点',
+    '    for i in V:',
+    '      for j in V:',
+    '        // 松弛操作',
+    '        dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])'
+  ];
+  
+  const codeY = 140;
+  const lineHeight = 28;
+  
+  code.forEach((line, idx) => {
+    let color = COL.dim;
+    if (line.includes('//')) color = '#95a5a6';
+    if (line.includes('for k')) color = PRIMARY;
+    if (line.includes('min(')) color = SECONDARY;
+    
+    const indent = (line.match(/^\s*/)[0].length / 2) * 20;
+    
+    const text = T(p, line, {
+      x: 180 + indent, y: codeY + idx * lineHeight,
+      size: 18, fill: color, family: 'monospace', o: 0
+    });
+    
+    const delay = 2 + idx * 0.4;
+    tw(text, { o: 1 }, delay, 0.5);
+  });
+  
+  const keyPoint = T(p, '⚠️ k 在最外层！每轮必须用同一个 k 版本', {
+    x: W/2, y: 680, size: 22, fill: '#e74c3c', weight: 600, anchor: 'middle', o: 0
+  });
+  tw(keyPoint, { o: 1 }, 18, 0.8);
+}],
+
+['demo_setup', 'Floyd-Warshall 演示：初始化', (m, dur) => {
+  const p = stage(m);
+  
+  const title = T(p, 'Floyd-Warshall 演示', {
+    x: W/2, y: 80, size: 32, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+  });
+  tw(title, { o: 1 }, 0.5, 0.7);
+  
+  // 图
+  const graph = drawGraph(p);
+  tw(graph, { o: 1 }, 1.5, 0.8);
+  
+  // 初始化距离矩阵
+  const nodeKeys = Object.keys(NODES);
+  const initialDist = {};
+  nodeKeys.forEach(i => {
+    initialDist[i] = {};
+    nodeKeys.forEach(j => {
+      if (i === j) {
+        initialDist[i][j] = 0;
+      } else {
+        const edge = EDGES.find(e => e.from === i && e.to === j);
+        initialDist[i][j] = edge ? edge.weight : Infinity;
+      }
+    });
+  });
+  
+  const matrix = drawDistanceMatrix(p, initialDist);
+  tw(matrix, { o: 1 }, 3, 0.8);
+  
+  const hint1 = T(p, '初始化：对角线 = 0，直接边 = 权值，无边 = ∞', {
+    x: W/2, y: 620, size: 20, fill: COL.dim, anchor: 'middle', o: 0
+  });
+  tw(hint1, { o: 1 }, 5, 0.7);
+  
+  const hint2 = T(p, '接下来逐个中转点 k 迭代，更新矩阵...', {
+    x: W/2, y: 670, size: 22, fill: PRIMARY, weight: 600, anchor: 'middle', o: 0
+  });
+  tw(hint2, { o: 1 }, 8, 0.8);
+  
+  // 保存到 metadata 供后续 beat 使用
+  m.graph = graph;
+  m.matrix = matrix;
+  m.dist = JSON.parse(JSON.stringify(initialDist));
+}],
+
+['demo_k0', 'Floyd-Warshall 演示：k = 0 (A)', (m, dur) => {
+  const p = stage(m);
+  
+  const title = T(p, '迭代：k = 0（中转点 A）', {
+    x: W/2, y: 80, size: 28, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+  });
+  tw(title, { o: 1 }, 0.5, 0.7);
+  
+  // 复用前一个 beat 的图和矩阵
+  const graph = drawGraph(p);
+  tw(graph, { o: 1 }, 0.5, 0.5);
+  
+  const nodeKeys = Object.keys(NODES);
+  const dist = {};
+  nodeKeys.forEach(i => {
+    dist[i] = {};
+    nodeKeys.forEach(j => {
+      if (i === j) {
+        dist[i][j] = 0;
+      } else {
+        const edge = EDGES.find(e => e.from === i && e.to === j);
+        dist[i][j] = edge ? edge.weight : Infinity;
+      }
+    });
+  });
+  
+  const matrix = drawDistanceMatrix(p, dist);
+  tw(matrix, { o: 1 }, 0.5, 0.5);
+  
+  // 高亮中转点 A
+  let t = 1.5;
+  const nodeA = graph._nodeElements['A'];
+  tw(nodeA.circle, { fill: CURRENT }, t, 0.4);
+  tw(nodeA.circle, { r: 35 }, t, 0.3, out);
+  tw(nodeA.circle, { r: 30 }, t + 0.3, 0.3, io);
+  t += 1;
+  
+  // 检查所有点对 (i, j)，尝试通过 A 优化
+  const updates = [
+    { i: 'B', j: 'D', comment: 'B→D: 直接3 vs 经过A(4+7=11)，不更新' },
+    { i: 'C', j: 'B', comment: 'C→B: 直接∞ vs 经过A(∞)，不更新' },
+    { i: 'D', j: 'B', comment: 'D→B: 直接∞ vs 经过A(7+4=11)，更新!' },
+    { i: 'B', j: 'E', comment: 'B→E: 直接∞ vs 经过A(4+∞)，不更新' }
+  ];
+  
+  updates.forEach((u, idx) => {
+    const key = `${u.i}-${u.j}`;
+    const cell = matrix._cells[key];
+    
+    // 高亮正在检查的单元格
+    tw(cell.rect, { fill: CELL_CHECKING }, t, 0.3);
+    tw(cell.rect, { stroke: PRIMARY, 'stroke-width': 3 }, t, 0.3);
+    
+    if (u.comment.includes('更新')) {
+      // 计算新距离
+      const newDist = dist[u.i]['A'] + dist['A'][u.j];
+      if (newDist < dist[u.i][u.j]) {
+        dist[u.i][u.j] = newDist;
+        updateMatrixCell(matrix._cells, u.i, u.j, newDist, t + 0.5);
+      }
+      t += 1.2;
+    } else {
+      tw(cell.rect, { fill: CELL_INIT }, t + 0.5, 0.3);
+      tw(cell.rect, { stroke: '#bdc3c7', 'stroke-width': 2 }, t + 0.5, 0.3);
+      t += 1;
+    }
+  });
+  
+  // B→D 通过 A 可以更新
+  const newDist_BD = 4 + 7; // B→A→D = 4+7=11
+  if (newDist_BD < dist['B']['D']) {
+    dist['B']['D'] = newDist_BD;
+    updateMatrixCell(matrix._cells, 'B', 'D', newDist_BD, t);
+    t += 1;
+  }
+  
+  tw(nodeA.circle, { fill: VISITED }, t, 0.5);
+  
+  const hint = T(p, '第一轮结束：部分距离通过 A 更新', {
+    x: W/2, y: 650, size: 20, fill: PRIMARY, anchor: 'middle', o: 0
+  });
+  tw(hint, { o: 1 }, t, 0.7);
+}],
+
+['demo_k1', 'Floyd-Warshall 演示：k = 1 (B)', (m, dur) => {
+  const p = stage(m);
+  
+  const title = T(p, '迭代：k = 1（中转点 B）', {
+    x: W/2, y: 80, size: 28, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+  });
+  tw(title, { o: 1 }, 0.5, 0.7);
+  
+  const graph = drawGraph(p);
+  tw(graph, { o: 1 }, 0.5, 0.5);
+  
+  // 使用 k=0 后的距离矩阵
+  const nodeKeys = Object.keys(NODES);
+  const dist = {};
+  nodeKeys.forEach(i => {
+    dist[i] = {};
+    nodeKeys.forEach(j => {
+      if (i === j) {
+        dist[i][j] = 0;
+      } else {
+        const edge = EDGES.find(e => e.from === i && e.to === j);
+        dist[i][j] = edge ? edge.weight : Infinity;
+      }
+    });
+  });
+  // 应用 k=0 的更新
+  dist['B']['D'] = 11;
+  
+  const matrix = drawDistanceMatrix(p, dist);
+  tw(matrix, { o: 1 }, 0.5, 0.5);
+  
+  let t = 1.5;
+  const nodeB = graph._nodeElements['B'];
+  tw(nodeB.circle, { fill: CURRENT }, t, 0.4);
+  tw(nodeB.circle, { r: 35 }, t, 0.3, out);
+  tw(nodeB.circle, { r: 30 }, t + 0.3, 0.3, io);
+  t += 1;
+  
+  // 通过 B 优化的关键更新
+  const updates = [
+    { i: 'A', j: 'C', old: Infinity, via: 4 + 8, update: true },
+    { i: 'A', j: 'D', old: 7, via: 4 + 3, update: false },
+    { i: 'D', j: 'C', old: -5, via: Infinity, update: false },
+    { i: 'C', j: 'D', old: Infinity, via: 8 + 3, update: true }
+  ];
+  
+  updates.forEach(u => {
+    const key = `${u.i}-${u.j}`;
+    const cell = matrix._cells[key];
+    
+    tw(cell.rect, { fill: CELL_CHECKING }, t, 0.3);
+    tw(cell.rect, { stroke: PRIMARY, 'stroke-width': 3 }, t, 0.3);
+    
+    if (u.update && u.via < (u.old === Infinity ? Infinity : u.old)) {
+      dist[u.i][u.j] = u.via;
+      updateMatrixCell(matrix._cells, u.i, u.j, u.via, t + 0.5);
+      t += 1.3;
+    } else {
+      tw(cell.rect, { fill: CELL_INIT }, t + 0.5, 0.3);
+      tw(cell.rect, { stroke: '#bdc3c7', 'stroke-width': 2 }, t + 0.5, 0.3);
+      t += 1;
+    }
+  });
+  
+  tw(nodeB.circle, { fill: VISITED }, t, 0.5);
+  
+  const hint = T(p, 'A→C 和 C→D 通过 B 找到路径', {
+    x: W/2, y: 650, size: 20, fill: PRIMARY, anchor: 'middle', o: 0
+  });
+  tw(hint, { o: 1 }, t, 0.7);
+}],
+
+['demo_k2', 'Floyd-Warshall 演示：k = 2 (C)', (m, dur) => {
+  const p = stage(m);
+  
+  const title = T(p, '迭代：k = 2（中转点 C）', {
+    x: W/2, y: 80, size: 28, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+  });
+  tw(title, { o: 1 }, 0.5, 0.7);
+  
+  const graph = drawGraph(p);
+  tw(graph, { o: 1 }, 0.5, 0.5);
+  
+  const nodeKeys = Object.keys(NODES);
+  const dist = {};
+  nodeKeys.forEach(i => {
+    dist[i] = {};
+    nodeKeys.forEach(j => {
+      if (i === j) {
+        dist[i][j] = 0;
+      } else {
+        const edge = EDGES.find(e => e.from === i && e.to === j);
+        dist[i][j] = edge ? edge.weight : Infinity;
+      }
+    });
+  });
+  dist['B']['D'] = 11;
+  dist['A']['C'] = 12;
+  dist['C']['D'] = 11;
+  
+  const matrix = drawDistanceMatrix(p, dist);
+  tw(matrix, { o: 1 }, 0.5, 0.5);
+  
+  let t = 1.5;
+  const nodeC = graph._nodeElements['C'];
+  tw(nodeC.circle, { fill: CURRENT }, t, 0.4);
+  tw(nodeC.circle, { r: 35 }, t, 0.3, out);
+  tw(nodeC.circle, { r: 30 }, t + 0.3, 0.3, io);
+  t += 1;
+  
+  // C 是关键节点，连接负权边
+  const updates = [
+    { i: 'B', j: 'E', old: Infinity, via: 8 + 6, update: true },
+    { i: 'A', j: 'E', old: Infinity, via: 12 + 6, update: true },
+    { i: 'D', j: 'E', old: 3, via: -5 + 6, update: true },
+    { i: 'B', j: 'D', old: 3, via: 8 + Infinity, update: false }
+  ];
+  
+  updates.forEach(u => {
+    const key = `${u.i}-${u.j}`;
+    const cell = matrix._cells[key];
+    
+    tw(cell.rect, { fill: CELL_CHECKING }, t, 0.3);
+    tw(cell.rect, { stroke: PRIMARY, 'stroke-width': 3 }, t, 0.3);
+    
+    if (u.update && u.via < (u.old === Infinity ? Infinity : u.old)) {
+      dist[u.i][u.j] = u.via;
+      updateMatrixCell(matrix._cells, u.i, u.j, u.via, t + 0.5, {
+        flashColor: u.via < 0 || u.i === 'D' ? '#ffe5e5' : CELL_CHECKING
+      });
+      t += 1.4;
+    } else {
+      tw(cell.rect, { fill: CELL_INIT }, t + 0.5, 0.3);
+      tw(cell.rect, { stroke: '#bdc3c7', 'stroke-width': 2 }, t + 0.5, 0.3);
+      t += 1;
+    }
+  });
+  
+  tw(nodeC.circle, { fill: VISITED }, t, 0.5);
+  
+  const hint = T(p, '负权边 D→C 让 D→E 的距离优化为 1！', {
+    x: W/2, y: 650, size: 20, fill: EDGE_NEGATIVE, weight: 600, anchor: 'middle', o: 0
+  });
+  tw(hint, { o: 1 }, t, 0.7);
+}],
+
+['demo_final', 'Floyd-Warshall 演示：收敛', (m, dur) => {
+  const p = stage(m);
+  
+  const title = T(p, '迭代：k = 3, 4（D, E）→ 收敛', {
+    x: W/2, y: 80, size: 28, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+  });
+  tw(title, { o: 1 }, 0.5, 0.7);
+  
+  const graph = drawGraph(p);
+  tw(graph, { o: 1 }, 0.5, 0.5);
+  
+  const nodeKeys = Object.keys(NODES);
+  const dist = {};
+  nodeKeys.forEach(i => {
+    dist[i] = {};
+    nodeKeys.forEach(j => {
+      if (i === j) {
+        dist[i][j] = 0;
+      } else {
+        const edge = EDGES.find(e => e.from === i && e.to === j);
+        dist[i][j] = edge ? edge.weight : Infinity;
+      }
+    });
+  });
+  // 应用前面的更新
+  dist['B']['D'] = 11;
+  dist['A']['C'] = 12;
+  dist['C']['D'] = 11;
+  dist['B']['E'] = 14;
+  dist['A']['E'] = 18;
+  dist['D']['E'] = 1;
+  
+  // k=3 (D) 的关键更新
+  dist['A']['E'] = 7 + 1; // A→D→E = 8
+  dist['B']['E'] = 3 + 1; // B→D→E = 4
+  dist['A']['C'] = 7 + (-5); // A→D→C = 2
+  dist['B']['C'] = 3 + (-5); // B→D→C = -2
+  
+  const matrix = drawDistanceMatrix(p, dist);
+  tw(matrix, { o: 1 }, 0.5, 0.5);
+  
+  let t = 1.5;
+  
+  // k=3 高亮
+  const nodeD = graph._nodeElements['D'];
+  tw(nodeD.circle, { fill: CURRENT }, t, 0.4);
+  t += 1;
+  
+  // 几个关键单元格更新动画
+  const criticalUpdates = [
+    { i: 'A', j: 'E', val: 8 },
+    { i: 'B', j: 'E', val: 4 },
+    { i: 'A', j: 'C', val: 2 },
+    { i: 'B', j: 'C', val: -2 }
+  ];
+  
+  criticalUpdates.forEach(u => {
+    const cell = matrix._cells[`${u.i}-${u.j}`];
+    tw(cell.rect, { fill: CELL_UPDATED }, t, 0.4);
+    tw(cell.text, { s: 1.2 }, t, 0.3, out);
+    tw(cell.text, { s: 1 }, t + 0.3, 0.3, io);
+    t += 0.6;
+  });
+  
+  tw(nodeD.circle, { fill: VISITED }, t, 0.4);
+  t += 0.8;
+  
+  // k=4 快速过
+  const nodeE = graph._nodeElements['E'];
+  tw(nodeE.circle, { fill: CURRENT }, t, 0.3);
+  tw(nodeE.circle, { fill: VISITED }, t + 0.5, 0.3);
+  t += 1;
+  
+  // 所有单元格变蓝表示最终确定
+  Object.values(matrix._cells).forEach(cell => {
+    if (cell.value !== Infinity && cell.value !== 0) {
+      tw(cell.rect, { fill: CELL_FINAL }, t, 0.8);
+    }
+  });
+  
+  const hint = T(p, '✅ 算法收敛！所有点对最短距离已计算完成', {
+    x: W/2, y: 650, size: 22, fill: PRIMARY, weight: 600, anchor: 'middle', o: 0
+  });
+  tw(hint, { o: 1 }, t + 0.5, 0.8);
+}],
+
+['negative_cycle', '负权环检测', (m, dur) => {
+  const p = stage(m);
+  
+  const title = T(p, '负权环检测', {
+    x: W/2, y: 100, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+  });
+  tw(title, { o: 1 }, 0.5, 0.7);
+  
+  const def = T(p, '负权环 = 总权重为负的环路', {
+    x: 200, y: 210, size: 24, fill: EDGE_NEGATIVE, weight: 600, o: 0
+  });
+  tw(def, { o: 1 }, 2, 0.7);
+  
+  const problem = T(p, '问题：在环上绕圈，距离无限减小', {
+    x: 220, y: 270, size: 22, fill: COL.dim, o: 0
+  });
+  tw(problem, { o: 1 }, 3.5, 0.7);
+  
+  const method = T(p, '检测方法：', {
+    x: 200, y: 360, size: 26, fill: PRIMARY, weight: 600, o: 0
+  });
+  tw(method, { o: 1 }, 6, 0.6);
+  
+  const step1 = T(p, '1. 运行 Floyd-Warshall 算法', {
+    x: 220, y: 420, size: 22, fill: COL.dim, o: 0
+  });
+  tw(step1, { o: 1 }, 7.5, 0.6);
+  
+  const step2 = T(p, '2. 检查对角线：if dist[i][i] < 0', {
+    x: 220, y: 475, size: 22, fill: COL.dim, family: 'monospace', o: 0
+  });
+  tw(step2, { o: 1 }, 9, 0.6);
+  
+  const step3 = T(p, '3. 如果存在，说明节点 i 在负权环上', {
+    x: 220, y: 530, size: 22, fill: COL.dim, o: 0
+  });
+  tw(step3, { o: 1 }, 11, 0.6);
+  
+  const compare = T(p, 'vs Bellman-Ford：更直观，一次检查所有节点', {
+    x: W/2, y: 620, size: 22, fill: SECONDARY, anchor: 'middle', o: 0
+  });
+  tw(compare, { o: 1 }, 13.5, 0.7);
+}],
+
+['complexity', '复杂度分析', (m, dur) => {
+  const p = stage(m);
+  
+  const title = T(p, '复杂度分析', {
+    x: W/2, y: 100, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+  });
+  tw(title, { o: 1 }, 0.5, 0.7);
+  
+  const time = T(p, '⏱ 时间复杂度：O(V³)', {
+    x: 200, y: 220, size: 28, fill: PRIMARY, weight: 600, o: 0
+  });
+  tw(time, { o: 1 }, 2, 0.7);
+  
+  const timeDetail = T(p, '三重循环：每层 V 次迭代', {
+    x: 240, y: 280, size: 22, fill: COL.dim, o: 0
+  });
+  tw(timeDetail, { o: 1 }, 3.5, 0.6);
+  
+  const space = T(p, '💾 空间复杂度：O(V²)', {
+    x: 200, y: 370, size: 28, fill: PRIMARY, weight: 600, o: 0
+  });
+  tw(space, { o: 1 }, 5.5, 0.7);
+  
+  const spaceDetail = T(p, '距离矩阵：V × V', {
+    x: 240, y: 430, size: 22, fill: COL.dim, o: 0
+  });
+  tw(spaceDetail, { o: 1 }, 7, 0.6);
+  
+  const advantage1 = T(p, '✨ 优点：', {
+    x: 200, y: 520, size: 26, fill: SECONDARY, weight: 600, o: 0
+  });
+  tw(advantage1, { o: 1 }, 9, 0.6);
+  
+  const adv1 = T(p, '• 代码极其简洁（三重循环+一行松弛）', {
+    x: 240, y: 575, size: 20, fill: COL.dim, o: 0
+  });
+  tw(adv1, { o: 1 }, 10, 0.6);
+  
+  const adv2 = T(p, '• 支持负权边', {
+    x: 240, y: 620, size: 20, fill: COL.dim, o: 0
+  });
+  tw(adv2, { o: 1 }, 11.5, 0.6);
+  
+  const adv3 = T(p, '• 密集图时，比跑 V 次 Bellman-Ford 更快', {
+    x: 240, y: 665, size: 20, fill: COL.dim, o: 0
+  });
+  tw(adv3, { o: 1 }, 13, 0.6);
+}],
+
+['comparison', '算法对比', (m, dur) => {
+  const p = stage(m);
+  
+  const title = T(p, '最短路径算法对比', {
+    x: W/2, y: 80, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+  });
+  tw(title, { o: 1 }, 0.5, 0.7);
+  
+  // 表格
+  const table = [
+    ['算法', '类型', '策略', '复杂度', '负权边'],
+    ['Dijkstra', '单源', '贪心', 'O((V+E)logV)', '❌'],
+    ['Bellman-Ford', '单源', 'DP', 'O(VE)', '✅'],
+    ['Floyd-Warshall', '全源', 'DP', 'O(V³)', '✅']
+  ];
+  
+  const startX = 150;
+  const startY = 180;
+  const colWidths = [200, 120, 120, 200, 120];
+  const rowHeight = 60;
+  
+  table.forEach((row, i) => {
+    let x = startX;
+    row.forEach((cell, j) => {
+      const isHeader = i === 0;
+      const isDP = cell === 'DP';
+      const isFW = row[0] === 'Floyd-Warshall';
+      
+      let color = COL.dim;
+      if (isHeader) color = PRIMARY;
+      if (isFW && !isHeader) color = SECONDARY;
+      if (cell === '✅') color = '#27ae60';
+      if (cell === '❌') color = '#e74c3c';
+      
+      const text = T(p, cell, {
+        x: x + colWidths[j] / 2,
+        y: startY + i * rowHeight,
+        size: isHeader ? 20 : 18,
+        fill: color,
+        weight: isHeader || isFW ? 600 : 400,
+        anchor: 'middle',
+        o: 0
+      });
+      
+      const delay = 2 + i * 1.5 + j * 0.2;
+      tw(text, { o: 1 }, delay, 0.5);
+      
+      x += colWidths[j];
+    });
+  });
+  
+  const summary = T(p, '💡 选择策略：', {
+    x: 200, y: 560, size: 26, fill: PRIMARY, weight: 600, o: 0
+  });
+  tw(summary, { o: 1 }, 18, 0.7);
+  
+  const choice1 = T(p, '• 单源 + 非负权边 → Dijkstra（最快）', {
+    x: 240, y: 610, size: 20, fill: COL.dim, o: 0
+  });
+  tw(choice1, { o: 1 }, 19, 0.6);
+  
+  const choice2 = T(p, '• 单源 + 负权边 → Bellman-Ford', {
+    x: 240, y: 655, size: 20, fill: COL.dim, o: 0
+  });
+  tw(choice2, { o: 1 }, 20.5, 0.6);
+  
+  const choice3 = T(p, '• 全源最短路径 → Floyd-Warshall（最简洁）', {
+    x: 240, y: 700, size: 20, fill: SECONDARY, weight: 600, o: 0
+  });
+  tw(choice3, { o: 1 }, 22, 0.7);
+}],
+
+['summary', '总结', (m, dur) => {
+  const p = stage(m);
+  
+  const title = T(p, 'Floyd-Warshall 算法总结', {
+    x: W/2, y: 100, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle', o: 0
+  });
+  tw(title, { o: 1 }, 0.5, 0.8);
+  
+  const points = [
+    { emoji: '🎯', text: '目标：计算所有点对之间的最短距离', delay: 2 },
+    { emoji: '🧩', text: 'DP 状态：dist[i][j][k] = 经过前k个节点的最短路径', delay: 4 },
+    { emoji: '🔄', text: '状态转移：不经过k vs 经过k中转，取最小值', delay: 6.5 },
+    { emoji: '⚙️', text: '实现：三重循环（k在最外层），一行松弛操作', delay: 9.5 },
+    { emoji: '🚨', text: '负权环检测：检查对角线 dist[i][i] < 0', delay: 12.5 },
+    { emoji: '📊', text: '复杂度：O(V³) 时间，O(V²) 空间', delay: 15 },
+    { emoji: '✨', text: '特点：代码简洁、支持负权边、全源一次搞定', delay: 17.5 }
+  ];
+  
+  points.forEach((p, idx) => {
+    const y = 220 + idx * 70;
+    
+    const text = T(stage(m), `${p.emoji} ${p.text}`, {
+      x: 200, y, size: 22, fill: COL.dim, o: 0
+    });
+    tw(text, { o: 1 }, p.delay, 0.7);
+    
+    if (idx === points.length - 1) {
+      tw(text, { fill: PRIMARY, s: 1.1 }, p.delay + 1, 0.5, out);
+    }
+  });
+}]
+
+];
+
+// Normalize BEATS structure
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
+
+// Initialize the player
+boot();
+
+if (typeof module !== 'undefined') module.exports = { CHAPTER, BEATS };
+</script>
+</body>
+</html>

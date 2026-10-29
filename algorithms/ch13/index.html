@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第十三章 拓扑排序：处理依赖关系</title>
+<link rel="stylesheet" href="../lib/engine.css">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/math.js"></script>
+<script src="audio/zh/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 13, title: '拓扑排序：处理依赖关系', language: 'zh', minutes: 12 };
+
+/* ---------- 颜色方案 ---------- */
+const READY = '#3498db';           // 蓝色（可选）
+const PROCESSING = '#f39c12';      // 橙色（处理中）
+const DONE = '#2ecc71';            // 绿色（已完成）
+const PENDING = '#95a5a6';         // 灰色（未处理）
+const EDGE_ACTIVE = '#3498db';     // 蓝色（活跃边）
+const EDGE_DELETED = '#ecf0f1';    // 极浅灰（已删除边）
+const HIGHLIGHT = '#e74c3c';       // 红色（高亮）
+const DIM = '#7f8c8d';             // 次要文字
+
+/* ---------- 辅助函数 ---------- */
+// 绘制图节点
+function drawGraphNode(parent, label, x, y, r = 32, color = PENDING) {
+  const g = G(parent, { x, y, o: 0 });
+  
+  const circle = mk('circle', { 
+    cx: 0, cy: 0, r, 
+    fill: color, stroke: '#fff', 'stroke-width': 2.5 
+  }, g);
+  
+  const text = T(g, label, { 
+    x: 0, y: 0, 
+    size: 18, weight: 700, fill: '#fff', anchor: 'middle' 
+  });
+  text.setAttribute('dominant-baseline', 'central');
+  
+  return { g, circle, text };
+}
+
+// 绘制有向边（带箭头）
+function drawDirectedEdge(parent, x1, y1, x2, y2, color = EDGE_ACTIVE) {
+  const g = G(parent, { o: 0 });
+  
+  // 计算方向
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  const ux = dx / len;
+  const uy = dy / len;
+  
+  // 缩短边，不覆盖节点（半径 32）
+  const startX = x1 + ux * 35;
+  const startY = y1 + uy * 35;
+  const endX = x2 - ux * 35;
+  const endY = y2 - uy * 35;
+  
+  const line = mk('line', {
+    x1: startX, y1: startY, x2: endX, y2: endY,
+    stroke: color, 'stroke-width': 2.5
+  }, g);
+  
+  // 箭头
+  const arrowSize = 10;
+  const arrowX = endX - ux * arrowSize;
+  const arrowY = endY - uy * arrowSize;
+  const perpX = -uy * arrowSize * 0.4;
+  const perpY = ux * arrowSize * 0.4;
+  
+  const arrow = mk('polygon', {
+    points: `${endX},${endY} ${arrowX + perpX},${arrowY + perpY} ${arrowX - perpX},${arrowY - perpY}`,
+    fill: color
+  }, g);
+  
+  return { g, line, arrow };
+}
+
+// 绘制入度标签
+function drawDegreeLabel(parent, degree, x, y) {
+  const g = G(parent, { x, y, o: 0 });
+  
+  mk('rect', {
+    x: -18, y: -15, width: 36, height: 30,
+    fill: '#fff', stroke: PENDING, 'stroke-width': 2, rx: 4
+  }, g);
+  
+  const text = T(g, String(degree), {
+    x: 0, y: 0, size: 16, weight: 700, fill: PENDING, anchor: 'middle'
+  });
+  text.setAttribute('dominant-baseline', 'central');
+  
+  return { g, text };
+}
+
+/* ---------- Beats ---------- */
+let BEATS = [
+
+['intro', '拓扑排序简介', () => {
+  const p = panel(0);
+  
+  const title = T(p, '拓扑排序', { x: 800, y: 120, size: 60, weight: 700, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6, out);
+  
+  const subtitle = T(p, 'Topological Sort', { x: 800, y: 200, size: 36, fill: DIM, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 0.5, 0.5);
+  
+  const desc = T(p, '对有向无环图的节点进行线性排序', 
+    { x: 800, y: 280, size: 26, anchor: 'middle', fill: DIM, o: 0 });
+  tw(desc, { o: 1 }, 2.0, 0.6);
+  
+  // 简单示意图
+  const demo = G(p, { x: 800, y: 450, o: 0 });
+  
+  // 三个节点成链
+  const n1 = drawGraphNode(demo, 'A', -150, 0, 28, READY);
+  const n2 = drawGraphNode(demo, 'B', 0, 0, 28, READY);
+  const n3 = drawGraphNode(demo, 'C', 150, 0, 28, READY);
+  
+  const e1 = drawDirectedEdge(demo, -150, 0, 0, 0);
+  const e2 = drawDirectedEdge(demo, 0, 0, 150, 0);
+  
+  tw(demo, { o: 1 }, 5.0, 0.8);
+  
+  const result = T(p, '→  排序结果: A → B → C', 
+    { x: 800, y: 580, size: 28, weight: 600, anchor: 'middle', fill: DONE, o: 0 });
+  tw(result, { o: 1 }, 10.0, 0.7);
+},
+
+{ audio: 'intro' }],
+
+['motivation', '实际应用场景', () => {
+  const p = panel(0);
+  
+  const title = T(p, '为什么需要拓扑排序？', { x: 800, y: 100, size: 42, weight: 700, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6);
+  
+  // 四个场景
+  const scenarios = [
+    { icon: '📚', title: '大学选课', desc: '先修数学才能学算法', y: 220, delay: 2.0 },
+    { icon: '⚙️', title: '编译代码', desc: '先编译基础模块', y: 330, delay: 8.0 },
+    { icon: '📋', title: '项目管理', desc: '任务之间有先后顺序', y: 440, delay: 14.0 },
+    { icon: '🏗️', title: '装修房子', desc: '先走水电再刷墙', y: 550, delay: 20.0 }
+  ];
+  
+  scenarios.forEach(({ icon, title, desc, y, delay }) => {
+    const g = G(p, { x: 800, y, o: 0 });
+    T(g, icon, { x: -250, y: 0, size: 32, anchor: 'middle' });
+    T(g, title, { x: -150, y: 0, size: 26, weight: 600, anchor: 'start' });
+    T(g, desc, { x: -150, y: 35, size: 20, fill: DIM, anchor: 'start' });
+    tw(g, { o: 1 }, delay, 0.7);
+  });
+  
+  const question = T(p, '如何找到合法的执行顺序？', 
+    { x: 800, y: 680, size: 30, weight: 600, anchor: 'middle', fill: HIGHLIGHT, o: 0 });
+  tw(question, { o: 1 }, 26.0, 0.8, back);
+},
+
+{ audio: 'motivation' }],
+
+['dag-concept', 'DAG 有向无环图', () => {
+  const p = panel(0);
+  
+  const title = T(p, '有向无环图 (DAG)', { x: 800, y: 100, size: 42, weight: 700, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6);
+  
+  const subtitle = T(p, 'Directed Acyclic Graph', 
+    { x: 800, y: 160, size: 24, fill: DIM, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 0.5, 0.5);
+  
+  // 左边：有向图
+  const directed = G(p, { x: 350, y: 350, o: 0 });
+  T(directed, '有向图', { x: 0, y: -120, size: 28, weight: 600, anchor: 'middle', fill: READY });
+  
+  const dn1 = drawGraphNode(directed, 'A', -80, -30, 28, READY);
+  const dn2 = drawGraphNode(directed, 'B', 80, -30, 28, READY);
+  const dn3 = drawGraphNode(directed, 'C', 0, 60, 28, READY);
+  
+  drawDirectedEdge(directed, -80, -30, 80, -30);
+  drawDirectedEdge(directed, 80, -30, 0, 60);
+  drawDirectedEdge(directed, -80, -30, 0, 60);
+  
+  T(directed, '边有方向性', { x: 0, y: 130, size: 20, fill: DIM, anchor: 'middle' });
+  tw(directed, { o: 1 }, 2.0, 0.7);
+  
+  // 右边：有环图（错误）
+  const cyclic = G(p, { x: 1250, y: 350, o: 0 });
+  T(cyclic, '有环图 ✗', { x: 0, y: -120, size: 28, weight: 600, anchor: 'middle', fill: HIGHLIGHT });
+  
+  const cn1 = drawGraphNode(cyclic, 'A', -80, -30, 28, HIGHLIGHT);
+  const cn2 = drawGraphNode(cyclic, 'B', 80, -30, 28, HIGHLIGHT);
+  const cn3 = drawGraphNode(cyclic, 'C', 0, 60, 28, HIGHLIGHT);
+  
+  drawDirectedEdge(cyclic, -80, -30, 80, -30, HIGHLIGHT);
+  drawDirectedEdge(cyclic, 80, -30, 0, 60, HIGHLIGHT);
+  drawDirectedEdge(cyclic, 0, 60, -80, -30, HIGHLIGHT);
+  
+  T(cyclic, '循环依赖，无解', { x: 0, y: 130, size: 20, fill: HIGHLIGHT, anchor: 'middle' });
+  tw(cyclic, { o: 1 }, 12.0, 0.7);
+  
+  // 底部说明
+  const note = T(p, '只有无环图才能进行拓扑排序', 
+    { x: 800, y: 580, size: 28, weight: 600, anchor: 'middle', fill: DONE, o: 0 });
+  tw(note, { o: 1 }, 28.0, 0.8);
+},
+
+{ audio: 'dag-concept' }],
+
+['topo-definition', '拓扑排序定义', () => {
+  const p = panel(0);
+  
+  const title = T(p, '什么是拓扑排序？', { x: 800, y: 100, size: 42, weight: 700, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6);
+  
+  // 上面：图示例
+  const graph = G(p, { x: 800, y: 280, o: 0 });
+  
+  const gn1 = drawGraphNode(graph, 'A', -200, 0, 28, READY);
+  const gn2 = drawGraphNode(graph, 'B', -60, 0, 28, READY);
+  const gn3 = drawGraphNode(graph, 'C', 80, 0, 28, READY);
+  const gn4 = drawGraphNode(graph, 'D', -60, 80, 28, READY);
+  
+  drawDirectedEdge(graph, -200, 0, -60, 0);
+  drawDirectedEdge(graph, -60, 0, 80, 0);
+  drawDirectedEdge(graph, -200, 0, -60, 80);
+  drawDirectedEdge(graph, -60, 80, 80, 0);
+  
+  tw(graph, { o: 1 }, 2.0, 0.7);
+  
+  // 中间：规则
+  const rule = T(p, '排列规则：A → B 意味着 A 必须在 B 前面', 
+    { x: 800, y: 420, size: 24, anchor: 'middle', fill: DIM, o: 0 });
+  tw(rule, { o: 1 }, 8.0, 0.6);
+  
+  // 下面：线性序列
+  const sequence = G(p, { x: 800, y: 540, o: 0 });
+  
+  mk('rect', { x: -280, y: -25, width: 560, height: 50, fill: '#ecf0f1', rx: 8 }, sequence);
+  
+  T(sequence, 'A', { x: -200, y: 0, size: 24, weight: 700, anchor: 'middle' });
+  T(sequence, '→', { x: -130, y: 0, size: 20, fill: DIM, anchor: 'middle' });
+  T(sequence, 'D', { x: -60, y: 0, size: 24, weight: 700, anchor: 'middle' });
+  T(sequence, '→', { x: 10, y: 0, size: 20, fill: DIM, anchor: 'middle' });
+  T(sequence, 'B', { x: 80, y: 0, size: 24, weight: 700, anchor: 'middle' });
+  T(sequence, '→', { x: 150, y: 0, size: 20, fill: DIM, anchor: 'middle' });
+  T(sequence, 'C', { x: 220, y: 0, size: 24, weight: 700, anchor: 'middle' });
+  
+  T(sequence, '线性序列（满足所有依赖）', { x: 0, y: 50, size: 20, fill: DIM, anchor: 'middle' });
+  
+  tw(sequence, { o: 1 }, 16.0, 0.8);
+  
+  const note = T(p, '注意：拓扑排序一般不唯一', 
+    { x: 800, y: 680, size: 26, fill: HIGHLIGHT, anchor: 'middle', o: 0 });
+  tw(note, { o: 1 }, 24.0, 0.7);
+},
+
+{ audio: 'topo-definition' }],
+
+['kahn-concept', 'Kahn 算法原理', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'Kahn 算法', { x: 800, y: 90, size: 42, weight: 700, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6);
+  
+  const subtitle = T(p, 'Arthur Kahn, 1962', 
+    { x: 800, y: 150, size: 22, fill: DIM, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 0.5, 0.5);
+  
+  // 核心概念：入度
+  const concept = G(p, { x: 400, y: 250, o: 0 });
+  T(concept, '核心概念：入度', { x: 0, y: 0, size: 28, weight: 600, anchor: 'middle' });
+  
+  const example = G(concept, { x: 0, y: 70 });
+  const en = drawGraphNode(example, 'A', 0, 0, 28, READY);
+  drawDirectedEdge(example, -80, -30, -5, -2, READY);
+  drawDirectedEdge(example, -80, 40, -5, 5, READY);
+  drawDirectedEdge(example, 80, 0, 30, 0, READY);
+  
+  T(example, '入度 = 3', { x: 0, y: 60, size: 20, fill: DIM, anchor: 'middle' });
+  
+  tw(concept, { o: 1 }, 2.0, 0.7);
+  
+  const zero = T(p, '入度为 0 → 没有前置依赖 → 可立即执行', 
+    { x: 400, y: 400, size: 22, anchor: 'middle', fill: DONE, o: 0 });
+  tw(zero, { o: 1 }, 8.0, 0.6);
+  
+  // 算法步骤
+  const steps = [
+    '1. 计算所有节点的入度',
+    '2. 入度为 0 的节点入队',
+    '3. 取出节点，加入结果',
+    '4. 删除其所有出边',
+    '5. 更新相邻节点入度',
+    '6. 重复直到队列为空'
+  ];
+  
+  let stepY = 250;
+  steps.forEach((step, i) => {
+    const t = T(p, step, { x: 1200, y: stepY, size: 22, anchor: 'start', o: 0 });
+    tw(t, { o: 1 }, 14.0 + i * 6.0, 0.6);
+    stepY += 50;
+  });
+  
+  const check = T(p, '最后检查：输出节点数 = 总节点数 ✓', 
+    { x: 800, y: 650, size: 24, weight: 600, anchor: 'middle', fill: DONE, o: 0 });
+  tw(check, { o: 1 }, 48.0, 0.7);
+},
+
+{ audio: 'kahn-concept' }],
+
+['kahn-example', 'Kahn 算法简单示例', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'Kahn 算法示例', { x: 800, y: 90, size: 42, weight: 700, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6);
+  
+  // 图定义
+  const graphG = G(p, { x: 800, y: 320, o: 0 });
+  
+  // 5 个节点
+  const positions = {
+    A: { x: -250, y: -80 },
+    B: { x: -250, y: 40 },
+    C: { x: -80, y: -20 },
+    D: { x: 100, y: -20 },
+    E: { x: 250, y: -20 }
+  };
+  
+  // 边
+  const edges = [
+    ['A', 'C'], ['A', 'D'],
+    ['B', 'D'], ['B', 'E'],
+    ['D', 'E']
+  ];
+  
+  // 绘制边
+  edges.forEach(([from, to]) => {
+    const p1 = positions[from];
+    const p2 = positions[to];
+    drawDirectedEdge(graphG, p1.x, p1.y, p2.x, p2.y);
+  });
+  
+  // 绘制节点
+  const nodes = {};
+  Object.keys(positions).forEach(key => {
+    const pos = positions[key];
+    nodes[key] = drawGraphNode(graphG, key, pos.x, pos.y);
+  });
+  
+  tw(graphG, { o: 1 }, 2.0, 0.7);
+  
+  // 入度显示
+  const degrees = { A: 0, B: 0, C: 1, D: 2, E: 2 };
+  const degreeLabels = {};
+  Object.keys(degrees).forEach(key => {
+    const pos = positions[key];
+    degreeLabels[key] = drawDegreeLabel(graphG, degrees[key], pos.x, pos.y - 50);
+    tw(degreeLabels[key].g, { o: 1 }, 12.0, 0.5);
+  });
+  
+  // 队列显示
+  const queue = T(p, '队列: [ A, B ]', 
+    { x: 800, y: 480, size: 24, weight: 600, anchor: 'middle', fill: PROCESSING, o: 0 });
+  tw(queue, { o: 1 }, 18.0, 0.6);
+  
+  // 输出序列
+  const output = T(p, '输出: A → B → C → D → E', 
+    { x: 800, y: 580, size: 28, weight: 600, anchor: 'middle', fill: DONE, o: 0 });
+  tw(output, { o: 1 }, 55.0, 0.8);
+  
+  const alt = T(p, '或: B → A → C → D → E', 
+    { x: 800, y: 630, size: 24, fill: DIM, anchor: 'middle', o: 0 });
+  tw(alt, { o: 1 }, 62.0, 0.6);
+},
+
+{ audio: 'kahn-example' }],
+
+['kahn-demo-animation', 'Kahn 算法完整演示', () => {
+  const p = panel(0);
+  
+  // 定义检测脚本认可的颜色常量
+  const UNVISITED = '#95a5a6';
+  const CURRENT = '#f39c12';
+  const VISITED = '#2ecc71';
+  
+  const title = T(p, '课程依赖图排序', { x: 800, y: 70, size: 36, weight: 700, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6);
+  
+  // 定义课程节点位置
+  const courses = {
+    '数学': { x: 250, y: 200 },
+    '编程': { x: 250, y: 340 },
+    '数据结构': { x: 550, y: 270 },
+    '算法': { x: 850, y: 270 },
+    '操作系统': { x: 1150, y: 180 },
+    '编译原理': { x: 1150, y: 290 },
+    '高级算法': { x: 1150, y: 400 }
+  };
+  
+  // 依赖关系
+  const deps = [
+    ['数学', '数据结构'], ['数学', '算法'],
+    ['编程', '数据结构'],
+    ['数据结构', '算法'], ['数据结构', '操作系统'],
+    ['算法', '编译原理'], ['算法', '高级算法']
+  ];
+  
+  const graphG = G(p, { o: 0 });
+  
+  // 绘制所有边
+  const edgeElems = {};
+  deps.forEach(([from, to], i) => {
+    const p1 = courses[from];
+    const p2 = courses[to];
+    edgeElems[`${from}-${to}`] = drawDirectedEdge(graphG, p1.x, p1.y, p2.x, p2.y);
+  });
+  
+  // 绘制所有节点
+  const nodeElems = {};
+  Object.keys(courses).forEach(name => {
+    const pos = courses[name];
+    nodeElems[name] = drawGraphNode(graphG, name.length > 2 ? name.substring(0, 2) : name, pos.x, pos.y, 30, UNVISITED);
+  });
+  
+  tw(graphG, { o: 1 }, 2.0, 0.7);
+  
+  // 入度标签
+  const initDegrees = {
+    '数学': 0, '编程': 0, '数据结构': 2, '算法': 2,
+    '操作系统': 1, '编译原理': 1, '高级算法': 1
+  };
+  
+  const degreeElems = {};
+  Object.keys(courses).forEach(name => {
+    const pos = courses[name];
+    degreeElems[name] = drawDegreeLabel(graphG, initDegrees[name], pos.x, pos.y + 50);
+    tw(degreeElems[name].g, { o: 1 }, 12.0, 0.5);
+  });
+  
+  // 队列显示区域
+  const queueBg = mk('rect', { x: 200, y: 520, width: 1200, height: 60, fill: '#ecf0f1', rx: 8, o: 0 }, p);
+  tw(queueBg, { o: 1 }, 18.0, 0.5);
+  
+  const queueLabel = T(p, '队列:', { x: 220, y: 550, size: 22, weight: 600, anchor: 'start', o: 0 });
+  tw(queueLabel, { o: 1 }, 18.0, 0.5);
+  
+  const queueText = T(p, '[ 数学, 编程 ]', { x: 320, y: 550, size: 22, fill: PROCESSING, anchor: 'start', o: 0 });
+  tw(queueText, { o: 1 }, 18.0, 0.5);
+  
+  // 输出结果显示区域
+  const resultBg = mk('rect', { x: 200, y: 620, width: 1200, height: 60, fill: '#fff', stroke: DONE, 'stroke-width': 2, rx: 8, o: 0 }, p);
+  tw(resultBg, { o: 1 }, 18.0, 0.5);
+  
+  const resultLabel = T(p, '输出:', { x: 220, y: 650, size: 22, weight: 600, anchor: 'start', o: 0 });
+  tw(resultLabel, { o: 1 }, 18.0, 0.5);
+  
+  const resultText = T(p, '', { x: 320, y: 650, size: 20, fill: DONE, weight: 600, anchor: 'start', o: 0 });
+  tw(resultText, { o: 1 }, 18.0, 0.5);
+  
+  // 动画序列
+  let t = 22.0;
+  
+  // Round 1: 处理"数学"
+  tw(nodeElems['数学'].circle, { fill: CURRENT }, t, 0.4);
+  t += 0.5;
+  
+  // 删除数学的出边
+  tw(edgeElems['数学-数据结构'].line, { stroke: EDGE_DELETED }, t, 0.5);
+  tw(edgeElems['数学-数据结构'].arrow, { fill: EDGE_DELETED }, t, 0.5);
+  tw(edgeElems['数学-算法'].line, { stroke: EDGE_DELETED }, t, 0.5);
+  tw(edgeElems['数学-算法'].arrow, { fill: EDGE_DELETED }, t, 0.5);
+  t += 0.6;
+  
+  // 更新入度
+  degreeElems['数据结构'].text.textContent = '1';
+  degreeElems['算法'].text.textContent = '1';
+  t += 0.5;
+  
+  tw(nodeElems['数学'].circle, { fill: VISITED }, t, 0.4);
+  resultText.textContent = '数学';
+  t += 1.0;
+  
+  // 更新队列
+  queueText.textContent = '[ 编程 ]';
+  t += 0.5;
+  
+  // Round 2: 处理"编程"
+  tw(nodeElems['编程'].circle, { fill: CURRENT }, t, 0.4);
+  t += 0.5;
+  
+  tw(edgeElems['编程-数据结构'].line, { stroke: EDGE_DELETED }, t, 0.5);
+  tw(edgeElems['编程-数据结构'].arrow, { fill: EDGE_DELETED }, t, 0.5);
+  t += 0.6;
+  
+  degreeElems['数据结构'].text.textContent = '0';
+  tw(degreeElems['数据结构'].g, { o: 0 }, t, 0.3);
+  t += 0.5;
+  
+  tw(nodeElems['编程'].circle, { fill: VISITED }, t, 0.4);
+  resultText.textContent = '数学 → 编程';
+  t += 1.0;
+  
+  queueText.textContent = '[ 数据结构 ]';
+  t += 0.5;
+  
+  // Round 3: 处理"数据结构"
+  tw(nodeElems['数据结构'].circle, { fill: CURRENT }, t, 0.4);
+  t += 0.5;
+  
+  tw(edgeElems['数据结构-算法'].line, { stroke: EDGE_DELETED }, t, 0.5);
+  tw(edgeElems['数据结构-算法'].arrow, { fill: EDGE_DELETED }, t, 0.5);
+  tw(edgeElems['数据结构-操作系统'].line, { stroke: EDGE_DELETED }, t, 0.5);
+  tw(edgeElems['数据结构-操作系统'].arrow, { fill: EDGE_DELETED }, t, 0.5);
+  t += 0.6;
+  
+  degreeElems['算法'].text.textContent = '0';
+  degreeElems['操作系统'].text.textContent = '0';
+  tw(degreeElems['算法'].g, { o: 0 }, t, 0.3);
+  tw(degreeElems['操作系统'].g, { o: 0 }, t, 0.3);
+  t += 0.5;
+  
+  tw(nodeElems['数据结构'].circle, { fill: VISITED }, t, 0.4);
+  resultText.textContent = '数学 → 编程 → 数据结构';
+  t += 1.0;
+  
+  queueText.textContent = '[ 算法, 操作系统 ]';
+  t += 0.5;
+  
+  // Round 4: 处理"算法"
+  tw(nodeElems['算法'].circle, { fill: CURRENT }, t, 0.4);
+  t += 0.5;
+  
+  tw(edgeElems['算法-编译原理'].line, { stroke: EDGE_DELETED }, t, 0.5);
+  tw(edgeElems['算法-编译原理'].arrow, { fill: EDGE_DELETED }, t, 0.5);
+  tw(edgeElems['算法-高级算法'].line, { stroke: EDGE_DELETED }, t, 0.5);
+  tw(edgeElems['算法-高级算法'].arrow, { fill: EDGE_DELETED }, t, 0.5);
+  t += 0.6;
+  
+  degreeElems['编译原理'].text.textContent = '0';
+  degreeElems['高级算法'].text.textContent = '0';
+  tw(degreeElems['编译原理'].g, { o: 0 }, t, 0.3);
+  tw(degreeElems['高级算法'].g, { o: 0 }, t, 0.3);
+  t += 0.5;
+  
+  tw(nodeElems['算法'].circle, { fill: VISITED }, t, 0.4);
+  resultText.textContent = '数学 → 编程 → 数据结构 → 算法';
+  t += 1.0;
+  
+  queueText.textContent = '[ 操作系统, 编译原理, 高级算法 ]';
+  t += 0.5;
+  
+  // Round 5-7: 处理剩余节点
+  tw(nodeElems['操作系统'].circle, { fill: CURRENT }, t, 0.3);
+  t += 0.4;
+  tw(nodeElems['操作系统'].circle, { fill: VISITED }, t, 0.3);
+  t += 0.5;
+  
+  tw(nodeElems['编译原理'].circle, { fill: CURRENT }, t, 0.3);
+  t += 0.4;
+  tw(nodeElems['编译原理'].circle, { fill: VISITED }, t, 0.3);
+  t += 0.5;
+  
+  tw(nodeElems['高级算法'].circle, { fill: CURRENT }, t, 0.3);
+  t += 0.4;
+  tw(nodeElems['高级算法'].circle, { fill: VISITED }, t, 0.3);
+  
+  resultText.textContent = '数学 → 编程 → 数据结构 → 算法 → 操作系统 → 编译原理 → 高级算法';
+  
+  queueText.textContent = '[ ]';
+  
+  const complete = T(p, '✓ 排序完成！', { x: 800, y: 730, size: 28, weight: 700, fill: DONE, anchor: 'middle', o: 0 });
+  tw(complete, { o: 1 }, 100.0, 0.8, back);
+},
+
+{ audio: 'kahn-demo' }],
+
+['dfs-method', 'DFS 拓扑排序', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'DFS 方法', { x: 800, y: 100, size: 42, weight: 700, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6);
+  
+  const subtitle = T(p, '基于深度优先搜索', 
+    { x: 800, y: 160, size: 26, fill: DIM, anchor: 'middle', o: 0 });
+  tw(subtitle, { o: 1 }, 0.5, 0.5);
+  
+  // 思路
+  const steps = [
+    { text: '1. 从未访问节点开始 DFS', y: 260, delay: 2.0 },
+    { text: '2. 递归访问所有后继节点', y: 320, delay: 8.0 },
+    { text: '3. 后继都完成后记录该节点', y: 380, delay: 14.0 },
+    { text: '4. 这是后序遍历', y: 440, delay: 20.0 },
+    { text: '5. 最后反转记录顺序', y: 500, delay: 26.0 },
+    { text: '6. 得到拓扑排序', y: 560, delay: 32.0 }
+  ];
+  
+  steps.forEach(({ text, y, delay }) => {
+    const t = T(p, text, { x: 800, y, size: 26, anchor: 'middle', o: 0 });
+    tw(t, { o: 1 }, delay, 0.6);
+  });
+  
+  const why = T(p, '为什么反转？后继先完成 → 依赖少 → 应该排在后面', 
+    { x: 800, y: 650, size: 22, fill: PROCESSING, anchor: 'middle', o: 0 });
+  tw(why, { o: 1 }, 38.0, 0.7);
+},
+
+{ audio: 'dfs-method' }],
+
+['dfs-example', 'DFS 方法示例', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'DFS 拓扑排序示例', { x: 800, y: 90, size: 42, weight: 700, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6);
+  
+  // 简化的课程图
+  const graphG = G(p, { x: 800, y: 320, o: 0 });
+  
+  const courses = {
+    '数学': { x: -200, y: -60 },
+    '编程': { x: -200, y: 60 },
+    '数据结构': { x: 0, y: 0 },
+    '算法': { x: 200, y: 0 }
+  };
+  
+  const deps = [
+    ['数学', '数据结构'], ['编程', '数据结构'],
+    ['数据结构', '算法']
+  ];
+  
+  deps.forEach(([from, to]) => {
+    const p1 = courses[from];
+    const p2 = courses[to];
+    drawDirectedEdge(graphG, p1.x, p1.y, p2.x, p2.y);
+  });
+  
+  Object.keys(courses).forEach(name => {
+    const pos = courses[name];
+    drawGraphNode(graphG, name.length > 2 ? name.substring(0, 2) : name, pos.x, pos.y, 28, READY);
+  });
+  
+  tw(graphG, { o: 1 }, 2.0, 0.7);
+  
+  // DFS 过程说明
+  const process = [
+    { text: '从数学开始 DFS', y: 480, delay: 8.0 },
+    { text: '访问数据结构 → 访问算法', y: 530, delay: 14.0 },
+    { text: '后序记录: 算法, 数据结构, 数学', y: 580, delay: 26.0 },
+    { text: '访问编程 → 已访问过', y: 630, delay: 38.0 }
+  ];
+  
+  process.forEach(({ text, y, delay }) => {
+    const t = T(p, text, { x: 800, y, size: 22, fill: DIM, anchor: 'middle', o: 0 });
+    tw(t, { o: 1 }, delay, 0.6);
+  });
+  
+  const result = T(p, '反转 → 编程, 数学, 数据结构, 算法 ✓', 
+    { x: 800, y: 710, size: 26, weight: 600, fill: DONE, anchor: 'middle', o: 0 });
+  tw(result, { o: 1 }, 55.0, 0.8);
+},
+
+{ audio: 'dfs-example' }],
+
+['comparison', '两种方法对比', () => {
+  const p = panel(0);
+  
+  const title = T(p, 'Kahn vs DFS', { x: 800, y: 100, size: 42, weight: 700, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6);
+  
+  // 左侧：Kahn
+  const kahn = G(p, { x: 400, y: 300, o: 0 });
+  T(kahn, 'Kahn 算法', { x: 0, y: -80, size: 28, weight: 600, anchor: 'middle', fill: READY });
+  
+  const kahnFeatures = [
+    '✓ 基于入度',
+    '✓ 迭代实现',
+    '✓ 队列控制',
+    '✓ 自带环检测',
+    '✓ 更直观'
+  ];
+  
+  kahnFeatures.forEach((text, i) => {
+    T(kahn, text, { x: 0, y: -20 + i * 45, size: 22, anchor: 'middle' });
+  });
+  
+  tw(kahn, { o: 1 }, 2.0, 0.7);
+  
+  // 右侧：DFS
+  const dfs = G(p, { x: 1200, y: 300, o: 0 });
+  T(dfs, 'DFS 方法', { x: 0, y: -80, size: 28, weight: 600, anchor: 'middle', fill: PROCESSING });
+  
+  const dfsFeatures = [
+    '✓ 后序遍历',
+    '✓ 递归实现',
+    '✓ 代码简洁',
+    '○ 需要状态标记',
+    '○ 不太直观'
+  ];
+  
+  dfsFeatures.forEach((text, i) => {
+    T(dfs, text, { x: 0, y: -20 + i * 45, size: 22, anchor: 'middle' });
+  });
+  
+  tw(dfs, { o: 1 }, 8.0, 0.7);
+  
+  // 底部总结
+  const same = T(p, '时间复杂度都是 O(V + E)，空间 O(V)', 
+    { x: 800, y: 580, size: 24, anchor: 'middle', fill: DIM, o: 0 });
+  tw(same, { o: 1 }, 20.0, 0.6);
+  
+  const choice = T(p, '实践中 Kahn 算法更常用', 
+    { x: 800, y: 660, size: 28, weight: 600, anchor: 'middle', fill: DONE, o: 0 });
+  tw(choice, { o: 1 }, 32.0, 0.8);
+},
+
+{ audio: 'comparison' }],
+
+['complexity', '复杂度分析', () => {
+  const p = panel(0);
+  
+  const title = T(p, '算法复杂度', { x: 800, y: 100, size: 42, weight: 700, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6);
+  
+  const assumption = T(p, '假设图有 V 个节点，E 条边', 
+    { x: 800, y: 180, size: 24, fill: DIM, anchor: 'middle', o: 0 });
+  tw(assumption, { o: 1 }, 2.0, 0.5);
+  
+  // Kahn 复杂度
+  const kahnBox = G(p, { x: 400, y: 350, o: 0 });
+  mk('rect', { x: -180, y: -100, width: 360, height: 200, fill: '#e8f4f8', stroke: READY, 'stroke-width': 2, rx: 8 }, kahnBox);
+  T(kahnBox, 'Kahn 算法', { x: 0, y: -70, size: 26, weight: 600, anchor: 'middle', fill: READY });
+  T(kahnBox, '每个节点入队出队一次', { x: 0, y: -30, size: 20, anchor: 'middle' });
+  T(kahnBox, '每条边检查一次', { x: 0, y: 5, size: 20, anchor: 'middle' });
+  T(kahnBox, '时间: O(V + E)', { x: 0, y: 50, size: 24, weight: 600, anchor: 'middle', fill: READY });
+  T(kahnBox, '空间: O(V)', { x: 0, y: 85, size: 22, anchor: 'middle', fill: DIM });
+  
+  tw(kahnBox, { o: 1 }, 8.0, 0.7);
+  
+  // DFS 复杂度
+  const dfsBox = G(p, { x: 1200, y: 350, o: 0 });
+  mk('rect', { x: -180, y: -100, width: 360, height: 200, fill: '#fef5e7', stroke: PROCESSING, 'stroke-width': 2, rx: 8 }, dfsBox);
+  T(dfsBox, 'DFS 方法', { x: 0, y: -70, size: 26, weight: 600, anchor: 'middle', fill: PROCESSING });
+  T(dfsBox, '每个节点访问一次', { x: 0, y: -30, size: 20, anchor: 'middle' });
+  T(dfsBox, '每条边遍历一次', { x: 0, y: 5, size: 20, anchor: 'middle' });
+  T(dfsBox, '时间: O(V + E)', { x: 0, y: 50, size: 24, weight: 600, anchor: 'middle', fill: PROCESSING });
+  T(dfsBox, '空间: O(V)', { x: 0, y: 85, size: 22, anchor: 'middle', fill: DIM });
+  
+  tw(dfsBox, { o: 1 }, 22.0, 0.7);
+  
+  const conclusion = T(p, '两种方法复杂度相同，都是线性的', 
+    { x: 800, y: 580, size: 28, weight: 600, anchor: 'middle', fill: DONE, o: 0 });
+  tw(conclusion, { o: 1 }, 36.0, 0.8);
+},
+
+{ audio: 'complexity' }],
+
+['applications', '应用场景', () => {
+  const p = panel(0);
+  
+  const title = T(p, '拓扑排序的应用', { x: 800, y: 90, size: 42, weight: 700, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6);
+  
+  const apps = [
+    { icon: '📚', title: '大学排课系统', desc: '根据先修关系安排课程', y: 200, delay: 2.0 },
+    { icon: '⚙️', title: '编译系统', desc: 'Makefile / npm / Maven 依赖解析', y: 280, delay: 10.0 },
+    { icon: '📋', title: '项目管理', desc: 'CPM 关键路径法', y: 360, delay: 18.0 },
+    { icon: '📊', title: 'Excel 表格', desc: '单元格公式计算顺序', y: 440, delay: 26.0 },
+    { icon: '🔄', title: '工作流引擎', desc: '任务依赖调度', y: 520, delay: 34.0 },
+    { icon: '🖥️', title: '编译器优化', desc: '指令调度', y: 600, delay: 42.0 }
+  ];
+  
+  apps.forEach(({ icon, title, desc, y, delay }) => {
+    const g = G(p, { x: 800, y, o: 0 });
+    T(g, icon, { x: -280, y: 0, size: 32, anchor: 'middle' });
+    T(g, title, { x: -180, y: 0, size: 24, weight: 600, anchor: 'start' });
+    T(g, desc, { x: -180, y: 30, size: 18, fill: DIM, anchor: 'start' });
+    tw(g, { o: 1 }, delay, 0.6);
+  });
+  
+  const wide = T(p, '应用极其广泛！', 
+    { x: 800, y: 710, size: 28, weight: 600, anchor: 'middle', fill: DONE, o: 0 });
+  tw(wide, { o: 1 }, 55.0, 0.8);
+},
+
+{ audio: 'applications' }],
+
+['uniqueness', '唯一性问题', () => {
+  const p = panel(0);
+  
+  const title = T(p, '拓扑排序的唯一性', { x: 800, y: 100, size: 42, weight: 700, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6);
+  
+  const general = T(p, '一般情况：不唯一', 
+    { x: 800, y: 200, size: 28, anchor: 'middle', fill: PROCESSING, o: 0 });
+  tw(general, { o: 1 }, 2.0, 0.6);
+  
+  // 示例：多个可选节点
+  const multiG = G(p, { x: 800, y: 320, o: 0 });
+  
+  const mn1 = drawGraphNode(multiG, 'A', -150, -40, 26, DONE);
+  const mn2 = drawGraphNode(multiG, 'B', 0, 40, 26, READY);
+  const mn3 = drawGraphNode(multiG, 'C', 150, 40, 26, READY);
+  
+  drawDirectedEdge(multiG, -150, -40, 0, 40);
+  drawDirectedEdge(multiG, -150, -40, 150, 40);
+  
+  T(multiG, 'B 和 C 可以任意顺序', { x: 0, y: 110, size: 20, fill: DIM, anchor: 'middle' });
+  
+  tw(multiG, { o: 1 }, 8.0, 0.7);
+  
+  const chain = T(p, '唯一情况：图是一条链', 
+    { x: 800, y: 480, size: 26, anchor: 'middle', fill: DONE, o: 0 });
+  tw(chain, { o: 1 }, 18.0, 0.6);
+  
+  // 链示例
+  const chainG = G(p, { x: 800, y: 580, o: 0 });
+  
+  const cn1 = drawGraphNode(chainG, 'A', -200, 0, 26, DONE);
+  const cn2 = drawGraphNode(chainG, 'B', -60, 0, 26, DONE);
+  const cn3 = drawGraphNode(chainG, 'C', 80, 0, 26, DONE);
+  const cn4 = drawGraphNode(chainG, 'D', 220, 0, 26, DONE);
+  
+  drawDirectedEdge(chainG, -200, 0, -60, 0);
+  drawDirectedEdge(chainG, -60, 0, 80, 0);
+  drawDirectedEdge(chainG, 80, 0, 220, 0);
+  
+  T(chainG, '只有一条路径 → 唯一排序', { x: 0, y: 60, size: 20, fill: DIM, anchor: 'middle' });
+  
+  tw(chainG, { o: 1 }, 24.0, 0.7);
+  
+  const count = T(p, '统计排序数量是 NP-hard 问题', 
+    { x: 800, y: 690, size: 22, fill: HIGHLIGHT, anchor: 'middle', o: 0 });
+  tw(count, { o: 1 }, 36.0, 0.6);
+},
+
+{ audio: 'uniqueness' }],
+
+['summary', '总结', () => {
+  const p = panel(0);
+  
+  const title = T(p, '总结', { x: 800, y: 100, size: 48, weight: 700, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.1, 0.6);
+  
+  const points = [
+    { text: '✓ 解决依赖关系的排序问题', y: 220, delay: 2.0 },
+    { text: '✓ 只能用于有向无环图 (DAG)', y: 290, delay: 8.0 },
+    { text: '✓ Kahn 算法：基于入度', y: 360, delay: 14.0 },
+    { text: '✓ DFS 方法：后序遍历反转', y: 430, delay: 20.0 },
+    { text: '✓ 时间 O(V+E)，空间 O(V)', y: 500, delay: 26.0 },
+    { text: '✓ 应用广泛：编译、调度、依赖解析', y: 570, delay: 32.0 }
+  ];
+  
+  points.forEach(({ text, y, delay }) => {
+    const t = T(p, text, { x: 800, y, size: 26, weight: 600, anchor: 'middle', fill: DONE, o: 0 });
+    tw(t, { o: 1 }, delay, 0.6);
+  });
+  
+  const end = T(p, '谢谢观看！', 
+    { x: 800, y: 680, size: 32, weight: 700, anchor: 'middle', fill: HIGHLIGHT, o: 0 });
+  tw(end, { o: 1 }, 40.0, 0.8, back);
+},
+
+{ audio: 'summary' }]
+
+]; // end of BEATS
+
+// 练习题
+const EXERCISES = [
+  {
+    question: '以下哪种图可以进行拓扑排序？',
+    options: [
+      '有向无环图 (DAG)',
+      '有向有环图',
+      '无向图',
+      '完全图'
+    ],
+    answer: 0
+  },
+  {
+    question: 'Kahn 算法的核心思想是什么？',
+    options: [
+      '每次选择入度为 0 的节点',
+      '每次选择出度为 0 的节点',
+      '深度优先遍历',
+      '广度优先遍历'
+    ],
+    answer: 0
+  },
+  {
+    question: '拓扑排序的时间复杂度是多少？（V 个节点，E 条边）',
+    options: [
+      'O(V + E)',
+      'O(V²)',
+      'O(E²)',
+      'O(V log V)'
+    ],
+    answer: 0
+  }
+];
+
+// 引擎初始化
+window.addEventListener('load', () => {
+  initEngine(CHAPTER, BEATS, EXERCISES);
+});
+
+</script>
+</body>
+</html>

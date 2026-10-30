@@ -20,9 +20,12 @@ const PROCESSING = '#f39c12';      // 橙色（处理中）
 const DONE = '#2ecc71';            // 绿色（已完成）
 const PENDING = '#95a5a6';         // 灰色（未处理）
 const EDGE_ACTIVE = '#3498db';     // 蓝色（活跃边）
-const EDGE_DELETED = '#ecf0f1';    // 极浅灰（已删除边）
+const EDGE_DELETED = '#bdc3c7';    // 浅灰（已删除边，提高对比度）
 const HIGHLIGHT = '#e74c3c';       // 红色（高亮）
 const DIM = '#7f8c8d';             // 次要文字
+const READY_DARK = '#2c3e50';      // 深蓝灰（用于白背景标签）
+const PROCESSING_DARK = '#d68910'; // 深橙（用于白背景文字）
+const DONE_DARK = '#27ae60';       // 深绿（用于白背景文字）
 
 /* ---------- 辅助函数 ---------- */
 // 绘制图节点
@@ -82,7 +85,7 @@ function drawDirectedEdge(parent, x1, y1, x2, y2, color = EDGE_ACTIVE) {
 
 // 绘制入度标签
 function drawDegreeLabel(parent, degree, x, y) {
-  const g = G(parent, { x, y, o: 0 });
+  const g = G(parent, { x, y });
   
   mk('rect', {
     x: -18, y: -15, width: 36, height: 30,
@@ -174,7 +177,7 @@ let BEATS = [
   
   // 左边：有向图
   const directed = G(p, { x: 350, y: 350, o: 0 });
-  T(directed, '有向图', { x: 0, y: -120, size: 28, weight: 600, anchor: 'middle', fill: READY });
+  T(directed, '有向图', { x: 0, y: -120, size: 28, weight: 600, anchor: 'middle', fill: READY_DARK });
   
   const dn1 = drawGraphNode(directed, 'A', -80, -30, 28, READY);
   const dn2 = drawGraphNode(directed, 'B', 80, -30, 28, READY);
@@ -448,7 +451,7 @@ let BEATS = [
   const queueLabel = T(p, '队列:', { x: 220, y: 550, size: 22, weight: 600, anchor: 'start', o: 0 });
   tw(queueLabel, { o: 1 }, 18.0, 0.5);
   
-  const queueText = T(p, '[ 数学, 编程 ]', { x: 320, y: 550, size: 22, fill: PROCESSING, anchor: 'start', o: 0 });
+  const queueText = T(p, '[ 数学, 编程 ]', { x: 320, y: 550, size: 22, fill: PROCESSING_DARK, anchor: 'start', o: 0 });
   tw(queueText, { o: 1 }, 18.0, 0.5);
   
   // 输出结果显示区域
@@ -458,7 +461,7 @@ let BEATS = [
   const resultLabel = T(p, '输出:', { x: 220, y: 650, size: 22, weight: 600, anchor: 'start', o: 0 });
   tw(resultLabel, { o: 1 }, 18.0, 0.5);
   
-  const resultText = T(p, '', { x: 320, y: 650, size: 20, fill: DONE, weight: 600, anchor: 'start', o: 0 });
+  const resultText = T(p, '', { x: 320, y: 650, size: 20, fill: DONE_DARK, weight: 600, anchor: 'start', o: 0 });
   tw(resultText, { o: 1 }, 18.0, 0.5);
   
   // 动画序列
@@ -572,7 +575,7 @@ let BEATS = [
   
   queueText.textContent = '[ ]';
   
-  const complete = T(p, '✓ 排序完成！', { x: 800, y: 730, size: 28, weight: 700, fill: DONE, anchor: 'middle', o: 0 });
+  const complete = T(p, '✓ 排序完成！', { x: 800, y: 730, size: 28, weight: 700, fill: DONE_DARK, anchor: 'middle', o: 0 });
   tw(complete, { o: 1 }, 100.0, 0.8, back);
 },
 
@@ -854,7 +857,7 @@ let BEATS = [
   ];
   
   points.forEach(({ text, y, delay }) => {
-    const t = T(p, text, { x: 800, y, size: 26, weight: 600, anchor: 'middle', fill: DONE, o: 0 });
+    const t = T(p, text, { x: 800, y, size: 26, weight: 600, anchor: 'middle', fill: DONE_DARK, o: 0 });
     tw(t, { o: 1 }, delay, 0.6);
   });
   

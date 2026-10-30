@@ -27,7 +27,7 @@ const DIM = '#7f8c8d';             // 次要文字
 /* ---------- 辅助函数 ---------- */
 // 绘制图节点
 function drawGraphNode(parent, label, x, y, r = 32, color = PENDING) {
-  const g = G(parent, { x, y, o: 0 });
+  const g = G(parent, { x, y });
   
   const circle = mk('circle', { 
     cx: 0, cy: 0, r, 
@@ -45,7 +45,7 @@ function drawGraphNode(parent, label, x, y, r = 32, color = PENDING) {
 
 // 绘制有向边（带箭头）
 function drawDirectedEdge(parent, x1, y1, x2, y2, color = EDGE_ACTIVE) {
-  const g = G(parent, { o: 0 });
+  const g = G(parent, {});
   
   // 计算方向
   const dx = x2 - x1;

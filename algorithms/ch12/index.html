@@ -27,7 +27,7 @@ const DIM = '#95a5a6';               // 次要文字
 /* ---------- 辅助函数 ---------- */
 // 绘制树节点
 function drawTreeNode(parent, value, x, y, r = 28, color = NORMAL) {
-  const g = G(parent, { x, y, o: 0 });
+  const g = G(parent, { x, y });
   
   const circle = mk('circle', { 
     cx: 0, cy: 0, r, 

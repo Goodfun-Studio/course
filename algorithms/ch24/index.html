@@ -27,7 +27,7 @@ const TEXT_COLOR = '#2c3e50';      // 深色文字
 
 /* ---------- 辅助函数 ---------- */
 function drawNode(parent, x, y, label, color = '#fff') {
-  const g = G(parent, { x, y, o: 0 });
+  const g = G(parent, { x, y });
   mk('circle', { cx: 0, cy: 0, r: 30, fill: color, stroke: TEXT_COLOR, 'stroke-width': 3 }, g);
   const text = T(g, label, { x: 0, y: 0, size: 24, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
   text.setAttribute('dominant-baseline', 'central');
@@ -35,7 +35,7 @@ function drawNode(parent, x, y, label, color = '#fff') {
 }
 
 function drawEdge(parent, x1, y1, x2, y2, capacity, flow = 0, showArrow = true) {
-  const g = G(parent, { o: 0 });
+  const g = G(parent, { });
   
   // 计算箭头位置（留出节点半径30）
   const dx = x2 - x1;
@@ -161,7 +161,7 @@ let BEATS = [
     const g = G(p, { x: 100, y, o: 0 });
     T(g, icon, { x: 0, y: 0, size: 32 });
     T(g, text, { x: 60, y: 0, size: 20, weight: 600, fill: TEXT_COLOR });
-    tw(g, { o: 1 }, 0.5, null, i * 0.15);
+    tw(g, { o: 1 }, 0.5 + i * 0.15);
   });
 }],
 
@@ -193,7 +193,7 @@ let BEATS = [
   
   concepts.forEach(({ text, y, color }, i) => {
     const t = T(p, text, { x: 100, y, size: 20, weight: 600, fill: color, o: 0 });
-    tw(t, { o: 1 }, 0.5, null, 0.5 + i * 0.2);
+    tw(t, { o: 1 }, 0.5 + 0.5 + i * 0.2);
   });
 }],
 
@@ -218,7 +218,7 @@ let BEATS = [
   const example = G(p, { x: 200, y: 420, o: 0 });
   T(example, '例：水管网络，每个管道有容量限制', { x: 200, y: 0, size: 20, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
   T(example, '找到从水源到终点的最大输水量', { x: 200, y: 40, size: 20, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
-  tw(example, { o: 1 }, 0.5, null, 0.5);
+  tw(example, { o: 1 }, 0.5 + 0.5);
 }],
 
 ['residual', '残余网络', () => {
@@ -255,10 +255,10 @@ let BEATS = [
   const backward = drawEdge(resG, 300, 65, 100, 65, 7, 0);
   T(resG, '反向: 7（撤销）', { x: 200, y: 100, size: 16, weight: 600, fill: PATH, anchor: 'middle' });
   
-  tw(residual, { o: 1 }, 0.5, null, 0.5);
+  tw(residual, { o: 1 }, 0.5 + 0.5);
   
   const note = T(p, '残余网络允许撤销之前的流量决策', { x: 550, y: 500, size: 20, weight: 600, fill: HIGHLIGHT, o: 0, anchor: 'middle' });
-  tw(note, { o: 1 }, 0.5, null, 1);
+  tw(note, { o: 1 }, 0.5 + 1);
 }],
 
 ['augmenting', '增广路径', () => {
@@ -277,7 +277,7 @@ let BEATS = [
   
   concepts.forEach(({ text, y }, i) => {
     const t = T(p, text, { x: 100, y, size: 22, weight: 600, fill: TEXT_COLOR, o: 0 });
-    tw(t, { o: 1 }, 0.5, null, i * 0.2);
+    tw(t, { o: 1 }, 0.5 + i * 0.2);
   });
 }],
 
@@ -309,7 +309,7 @@ let BEATS = [
   
   // 流量显示
   const flowText = T(p, '当前流量: 0', { x: 400, y: 550, size: 28, weight: 700, fill: FLOW, o: 0, anchor: 'middle' });
-  tw(flowText, { o: 1 }, 0.5, null, 0.5);
+  tw(flowText, { o: 1 }, 0.5 + 0.5);
   
   let totalFlow = 0;
   let delay = 1;
@@ -465,12 +465,12 @@ let BEATS = [
   let y = 140;
   codeLines.forEach((line, i) => {
     const t = T(p, line, { x: 80, y: y, size: 16, weight: 500, fill: TEXT_COLOR, o: 0, family: 'monospace' });
-    tw(t, { o: 1 }, 0.3, null, i * 0.1);
+    tw(t, { o: 1 }, 0.3 + i * 0.1);
     y += 22;
   });
   
   const note = T(p, 'BFS保证找到最短增广路径', { x: 400, y: 530, size: 20, weight: 600, fill: HIGHLIGHT, o: 0, anchor: 'middle' });
-  tw(note, { o: 1 }, 0.5, null, 2);
+  tw(note, { o: 1 }, 0.5 + 2);
 }],
 
 ['complexity', '复杂度分析', () => {
@@ -489,13 +489,13 @@ let BEATS = [
     const g = G(p, { x: 150, y, o: 0 });
     T(g, label + ':', { x: 0, y: 0, size: 24, weight: 700, fill: TEXT_COLOR });
     T(g, value, { x: 220, y: 0, size: 24, weight: 700, fill: color });
-    tw(g, { o: 1 }, 0.5, null, i * 0.3);
+    tw(g, { o: 1 }, 0.5 + i * 0.3);
   });
   
   const note = G(p, { x: 150, y: 470, o: 0 });
   T(note, '注意：对于实数容量，可能不收敛', { x: 0, y: 0, size: 20, weight: 600, fill: CAPACITY });
   T(note, 'Dinic算法可优化到 O(V²×E)', { x: 0, y: 40, size: 20, weight: 600, fill: RESIDUAL });
-  tw(note, { o: 1 }, 0.5, null, 1.2);
+  tw(note, { o: 1 }, 0.5 + 1.2);
 }],
 
 ['mincut', '最大流最小割', () => {
@@ -534,10 +534,10 @@ let BEATS = [
   const cutLine = mk('line', { x1: 270, y1: 20, x2: 270, y2: 140, stroke: HIGHLIGHT, 'stroke-width': 5, 'stroke-dasharray': '10,5' }, cutG);
   T(cutG, '最小割', { x: 275, y: 0, size: 20, weight: 700, fill: HIGHLIGHT });
   
-  tw(example, { o: 1 }, 0.5, null, 0.5);
+  tw(example, { o: 1 }, 0.5 + 0.5);
   
   const note = T(p, '这个定理保证了Ford-Fulkerson算法的正确性', { x: 400, y: 520, size: 20, weight: 600, fill: HIGHLIGHT, o: 0, anchor: 'middle' });
-  tw(note, { o: 1 }, 0.5, null, 1);
+  tw(note, { o: 1 }, 0.5 + 1);
 }],
 
 ['applications', '应用场景', () => {
@@ -558,7 +558,7 @@ let BEATS = [
     T(g, icon, { x: 0, y: 0, size: 36 });
     T(g, title, { x: 60, y: -5, size: 24, weight: 700, fill: TEXT_COLOR });
     T(g, desc, { x: 60, y: 25, size: 18, weight: 500, fill: CAPACITY });
-    tw(g, { o: 1 }, 0.5, null, i * 0.2);
+    tw(g, { o: 1 }, 0.5 + i * 0.2);
   });
 }],
 
@@ -585,10 +585,10 @@ let BEATS = [
   T(variant2, '添加超级源S*连所有源，超级汇T*连所有汇', { x: 300, y: 65, size: 18, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
   T(variant2, '转化为单源单汇问题', { x: 300, y: 95, size: 18, weight: 500, fill: CAPACITY, anchor: 'middle' });
   
-  tw(variant2, { o: 1 }, 0.5, null, 0.5);
+  tw(variant2, { o: 1 }, 0.5 + 0.5);
   
   const note = T(p, '变体问题丰富了算法的应用范围', { x: 400, y: 500, size: 20, weight: 600, fill: HIGHLIGHT, o: 0, anchor: 'middle' });
-  tw(note, { o: 1 }, 0.5, null, 1);
+  tw(note, { o: 1 }, 0.5 + 1);
 }],
 
 ['summary', '总结', () => {
@@ -609,7 +609,7 @@ let BEATS = [
     const g = G(p, { x: 120, y, o: 0 });
     T(g, icon, { x: 0, y: 0, size: 32 });
     T(g, text, { x: 60, y: 0, size: 22, weight: 600, fill: TEXT_COLOR });
-    tw(g, { o: 1 }, 0.5, null, i * 0.2);
+    tw(g, { o: 1 }, 0.5 + i * 0.2);
   });
 }]
 

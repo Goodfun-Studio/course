@@ -479,16 +479,18 @@ let BEATS = [
   t += 0.6;
   
   // 更新入度
-  degreeElems['数据结构'].text.textContent = '1';
-  degreeElems['算法'].text.textContent = '1';
+  prog(() => {
+    degreeElems['数据结构'].text.textContent = '1';
+    degreeElems['算法'].text.textContent = '1';
+  }, t, 0.01);
   t += 0.5;
   
   tw(nodeElems['数学'].circle, { fill: VISITED }, t, 0.4);
-  resultText.textContent = '数学';
+  prog(() => { resultText.textContent = '数学'; }, t, 0.01);
   t += 1.0;
   
   // 更新队列
-  queueText.textContent = '[ 编程 ]';
+  prog(() => { queueText.textContent = '[ 编程 ]'; }, t, 0.01);
   t += 0.5;
   
   // Round 2: 处理"编程"
@@ -499,15 +501,15 @@ let BEATS = [
   tw(edgeElems['编程-数据结构'].arrow, { fill: EDGE_DELETED }, t, 0.5);
   t += 0.6;
   
-  degreeElems['数据结构'].text.textContent = '0';
+  prog(() => { degreeElems['数据结构'].text.textContent = '0'; }, t, 0.01);
   tw(degreeElems['数据结构'].g, { o: 0 }, t, 0.3);
   t += 0.5;
   
   tw(nodeElems['编程'].circle, { fill: VISITED }, t, 0.4);
-  resultText.textContent = '数学 → 编程';
+  prog(() => { resultText.textContent = '数学 → 编程'; }, t, 0.01);
   t += 1.0;
   
-  queueText.textContent = '[ 数据结构 ]';
+  prog(() => { queueText.textContent = '[ 数据结构 ]'; }, t, 0.01);
   t += 0.5;
   
   // Round 3: 处理"数据结构"
@@ -520,17 +522,19 @@ let BEATS = [
   tw(edgeElems['数据结构-操作系统'].arrow, { fill: EDGE_DELETED }, t, 0.5);
   t += 0.6;
   
-  degreeElems['算法'].text.textContent = '0';
-  degreeElems['操作系统'].text.textContent = '0';
+  prog(() => {
+    degreeElems['算法'].text.textContent = '0';
+    degreeElems['操作系统'].text.textContent = '0';
+  }, t, 0.01);
   tw(degreeElems['算法'].g, { o: 0 }, t, 0.3);
   tw(degreeElems['操作系统'].g, { o: 0 }, t, 0.3);
   t += 0.5;
   
   tw(nodeElems['数据结构'].circle, { fill: VISITED }, t, 0.4);
-  resultText.textContent = '数学 → 编程 → 数据结构';
+  prog(() => { resultText.textContent = '数学 → 编程 → 数据结构'; }, t, 0.01);
   t += 1.0;
   
-  queueText.textContent = '[ 算法, 操作系统 ]';
+  prog(() => { queueText.textContent = '[ 算法, 操作系统 ]'; }, t, 0.01);
   t += 0.5;
   
   // Round 4: 处理"算法"
@@ -543,17 +547,19 @@ let BEATS = [
   tw(edgeElems['算法-高级算法'].arrow, { fill: EDGE_DELETED }, t, 0.5);
   t += 0.6;
   
-  degreeElems['编译原理'].text.textContent = '0';
-  degreeElems['高级算法'].text.textContent = '0';
+  prog(() => {
+    degreeElems['编译原理'].text.textContent = '0';
+    degreeElems['高级算法'].text.textContent = '0';
+  }, t, 0.01);
   tw(degreeElems['编译原理'].g, { o: 0 }, t, 0.3);
   tw(degreeElems['高级算法'].g, { o: 0 }, t, 0.3);
   t += 0.5;
   
   tw(nodeElems['算法'].circle, { fill: VISITED }, t, 0.4);
-  resultText.textContent = '数学 → 编程 → 数据结构 → 算法';
+  prog(() => { resultText.textContent = '数学 → 编程 → 数据结构 → 算法'; }, t, 0.01);
   t += 1.0;
   
-  queueText.textContent = '[ 操作系统, 编译原理, 高级算法 ]';
+  prog(() => { queueText.textContent = '[ 操作系统, 编译原理, 高级算法 ]'; }, t, 0.01);
   t += 0.5;
   
   // Round 5-7: 处理剩余节点
@@ -571,9 +577,10 @@ let BEATS = [
   t += 0.4;
   tw(nodeElems['高级算法'].circle, { fill: VISITED }, t, 0.3);
   
-  resultText.textContent = '数学 → 编程 → 数据结构 → 算法 → 操作系统 → 编译原理 → 高级算法';
-  
-  queueText.textContent = '[ ]';
+  prog(() => {
+    resultText.textContent = '数学 → 编程 → 数据结构 → 算法 → 操作系统 → 编译原理 → 高级算法';
+    queueText.textContent = '[ ]';
+  }, t, 0.01);
   
   const complete = T(p, '✓ 排序完成！', { x: 800, y: 730, size: 28, weight: 700, fill: DONE_DARK, anchor: 'middle', o: 0 });
   tw(complete, { o: 1 }, 100.0, 0.8, back);

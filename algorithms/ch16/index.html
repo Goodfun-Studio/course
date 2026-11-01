@@ -245,7 +245,7 @@ let BEATS = [
   tw(nodeElements['A'].circle, { fill: VISITING }, 2.0);
   tw(nodeElements['A'].circle, { fill: VISITED }, 2.4);
   order.push('A');
-  orderText.textContent = 'A';
+  prog(() => { orderText.textContent = 'A'; }, 2.4, 0.01);
   
   // A 入栈
   const stackA = drawStack(p, 50, 560);
@@ -261,7 +261,7 @@ let BEATS = [
   tw(nodeElements['B'].circle, { fill: VISITING }, 3.5);
   tw(nodeElements['B'].circle, { fill: VISITED }, 3.9);
   order.push('B');
-  orderText.textContent = 'A → B';
+  prog(() => { orderText.textContent = 'A → B'; }, 3.9, 0.01);
   
   // B 入栈
   const stackB = drawStack(p, 50, 545);
@@ -277,7 +277,7 @@ let BEATS = [
   tw(nodeElements['D'].circle, { fill: VISITING }, 5.0);
   tw(nodeElements['D'].circle, { fill: VISITED }, 5.4);
   order.push('D');
-  orderText.textContent = 'A → B → D';
+  prog(() => { orderText.textContent = 'A → B → D'; }, 5.4, 0.01);
   
   // D 入栈
   const stackD = drawStack(p, 50, 530);
@@ -298,7 +298,7 @@ let BEATS = [
   tw(nodeElements['E'].circle, { fill: VISITING }, 7.3);
   tw(nodeElements['E'].circle, { fill: VISITED }, 7.7);
   order.push('E');
-  orderText.textContent = 'A → B → D → E';
+  prog(() => { orderText.textContent = 'A → B → D → E'; }, 7.7, 0.01);
   
   // E 入栈
   const stackE = drawStack(p, 50, 530);
@@ -324,7 +324,7 @@ let BEATS = [
   tw(nodeElements['C'].circle, { fill: VISITING }, 10.4);
   tw(nodeElements['C'].circle, { fill: VISITED }, 10.8);
   order.push('C');
-  orderText.textContent = 'A → B → D → E → C';
+  prog(() => { orderText.textContent = 'A → B → D → E → C'; }, 10.8, 0.01);
   
   // C 入栈
   const stackC = drawStack(p, 50, 545);
@@ -340,7 +340,7 @@ let BEATS = [
   tw(nodeElements['F'].circle, { fill: VISITING }, 11.9);
   tw(nodeElements['F'].circle, { fill: VISITED }, 12.3);
   order.push('F');
-  orderText.textContent = 'A → B → D → E → C → F';
+  prog(() => { orderText.textContent = 'A → B → D → E → C → F'; }, 12.3, 0.01);
   
   // F 入栈
   const stackF = drawStack(p, 50, 530);
@@ -361,7 +361,7 @@ let BEATS = [
   tw(nodeElements['G'].circle, { fill: VISITING }, 14.2);
   tw(nodeElements['G'].circle, { fill: VISITED }, 14.6);
   order.push('G');
-  orderText.textContent = 'A → B → D → E → C → F → G';
+  prog(() => { orderText.textContent = 'A → B → D → E → C → F → G'; }, 14.6, 0.01);
   
   // G 入栈
   const stackG = drawStack(p, 50, 530);

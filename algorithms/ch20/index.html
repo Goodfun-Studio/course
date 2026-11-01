@@ -74,12 +74,11 @@ function highlightBox(box, color, duration = 0.5) {
   tw(rect, { fill: color }, duration);
 }
 
-function updateDPValue(box, value, duration = 0.5) {
+function updateDPValue(box, value, t0, dur = 0.3) {
   const text = box.querySelector('text');
-  tw(text, { o: 0 }, duration / 2, () => {
-    text.textContent = value.toString();
-    tw(text, { o: 1 }, duration / 2);
-  });
+  tw(text, { o: 0 }, t0, dur / 2);
+  prog(() => { text.textContent = value.toString(); }, t0 + dur / 2, 0.01);
+  tw(text, { o: 1 }, t0 + dur / 2, dur / 2);
 }
 
 /* ---------- Beats ---------- */
@@ -230,7 +229,7 @@ let BEATS = [
   highlightBox(table.numsBoxes[2], COMPARE, 0.3);
   tw(T(p, 'i=3: nums[3]=5 > nums[2]=2 ✓', { x: 50, y: 410, size: 20, fill: SUCCESS, anchor: 'start', o: 0 }), { o: 1 }, time);
   time += 0.5;
-  updateDPValue(table.dpBoxes[3], 2, 0.5);
+  updateDPValue(table.dpBoxes[3], 2, time, 0.5);
   highlightBox(table.dpBoxes[3], SUCCESS, 0.5);
   time += 1;
   
@@ -242,7 +241,7 @@ let BEATS = [
   highlightBox(table.numsBoxes[4], CURRENT, 0.3);
   highlightBox(table.numsBoxes[2], COMPARE, 0.3);
   time += 0.5;
-  updateDPValue(table.dpBoxes[4], 2, 0.5);
+  updateDPValue(table.dpBoxes[4], 2, time, 0.5);
   highlightBox(table.dpBoxes[4], SUCCESS, 0.5);
   time += 1;
   
@@ -255,7 +254,7 @@ let BEATS = [
   time += 0.3;
   highlightBox(table.numsBoxes[3], COMPARE, 0.3);
   time += 0.3;
-  updateDPValue(table.dpBoxes[5], 3, 0.5);
+  updateDPValue(table.dpBoxes[5], 3, time, 0.5);
   highlightBox(table.dpBoxes[5], SUCCESS, 0.5);
   time += 1;
   
@@ -268,7 +267,7 @@ let BEATS = [
   time += 0.3;
   highlightBox(table.numsBoxes[5], COMPARE, 0.3);
   time += 0.3;
-  updateDPValue(table.dpBoxes[6], 4, 0.5);
+  updateDPValue(table.dpBoxes[6], 4, time, 0.5);
   highlightBox(table.dpBoxes[6], SUCCESS, 0.5);
   time += 1;
   
@@ -281,7 +280,7 @@ let BEATS = [
   time += 0.3;
   highlightBox(table.numsBoxes[5], COMPARE, 0.3);
   time += 0.3;
-  updateDPValue(table.dpBoxes[7], 4, 0.5);
+  updateDPValue(table.dpBoxes[7], 4, time, 0.5);
   highlightBox(table.dpBoxes[7], SUCCESS, 0.5);
   time += 1;
   

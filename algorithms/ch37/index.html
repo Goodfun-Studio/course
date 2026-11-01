@@ -614,13 +614,12 @@ let BEATS = [
 ];
 
 /* ---------- boot ---------- */
-function boot() {
-  panel(0, 0, 1600, 800, COL.bg);
-  
-  marks(marks_zh);
-  play();
-}
+/* ---------- 初始化 ---------- */
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
 boot();
+
+if (typeof module !== 'undefined') module.exports = { CHAPTER, BEATS };
 </script>
 </body>
 </html>

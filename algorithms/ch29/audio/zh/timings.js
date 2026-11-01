@@ -1,6 +1,6 @@
-const TIMINGS = {
+window.TIMINGS = {
   "intro": {
-    "audio": "intro",
+    "dur": 48.35,
     "marks": {
       "concept": 0.0,
       "problem": 8.06,
@@ -8,10 +8,11 @@ const TIMINGS = {
       "social": 24.18,
       "game": 32.24,
       "solution": 40.29
-    }
+    },
+    "cues": []
   },
   "complexity-problem": {
-    "audio": "complexity-problem",
+    "dur": 46.32,
     "marks": {
       "formula": 0.0,
       "exponential": 6.62,
@@ -20,10 +21,11 @@ const TIMINGS = {
       "visual": 26.47,
       "bottleneck": 33.08,
       "need": 39.7
-    }
+    },
+    "cues": []
   },
   "bidirectional-idea": {
-    "audio": "bidirectional-idea",
+    "dur": 35.16,
     "marks": {
       "both": 0.0,
       "meet": 5.86,
@@ -31,10 +33,11 @@ const TIMINGS = {
       "smart": 17.58,
       "half": 23.44,
       "magic": 29.3
-    }
+    },
+    "cues": []
   },
   "complexity-optimization": {
-    "audio": "complexity-optimization",
+    "dur": 46.29,
     "marks": {
       "formula": 0.0,
       "split": 5.14,
@@ -45,10 +48,11 @@ const TIMINGS = {
       "why": 30.86,
       "visual": 36.0,
       "power": 41.15
-    }
+    },
+    "cues": []
   },
   "bidirectional-animation": {
-    "audio": "bidirectional-animation",
+    "dur": 74.66,
     "marks": {
       "grid": 0.0,
       "init": 8.3,
@@ -59,10 +63,11 @@ const TIMINGS = {
       "meet": 49.77,
       "done": 58.07,
       "complete": 66.36
-    }
+    },
+    "cues": []
   },
   "algorithm-implementation": {
-    "audio": "algorithm-implementation",
+    "dur": 60.21,
     "marks": {
       "queues": 0.0,
       "visited": 5.47,
@@ -75,10 +80,11 @@ const TIMINGS = {
       "found": 43.79,
       "add": 49.26,
       "repeat": 54.74
-    }
+    },
+    "cues": []
   },
   "meet-detection": {
-    "audio": "meet-detection",
+    "dur": 49.53,
     "marks": {
       "two-sets": 0.0,
       "when": 8.25,
@@ -86,10 +92,11 @@ const TIMINGS = {
       "important": 24.76,
       "multiple": 33.02,
       "timing": 41.27
-    }
+    },
+    "cues": []
   },
   "path-reconstruction": {
-    "audio": "path-reconstruction",
+    "dur": 51.12,
     "marks": {
       "two-parts": 0.0,
       "parent": 7.3,
@@ -98,10 +105,11 @@ const TIMINGS = {
       "backward-path": 29.21,
       "combine": 36.52,
       "complete": 43.82
-    }
+    },
+    "cues": []
   },
   "optimization-smaller": {
-    "audio": "optimization-smaller",
+    "dur": 39.97,
     "marks": {
       "why": 0.0,
       "unbalanced": 5.71,
@@ -110,10 +118,11 @@ const TIMINGS = {
       "choose": 22.84,
       "effect": 28.55,
       "simple": 34.26
-    }
+    },
+    "cues": []
   },
   "applications": {
-    "audio": "applications",
+    "dur": 58.83,
     "marks": {
       "navigation": 0.0,
       "social-distance": 9.8,
@@ -121,10 +130,11 @@ const TIMINGS = {
       "puzzle": 29.41,
       "compiler": 39.22,
       "network": 49.02
-    }
+    },
+    "cues": []
   },
   "comparison": {
-    "audio": "comparison",
+    "dur": 61.26,
     "marks": {
       "time": 0.0,
       "space": 10.21,
@@ -132,10 +142,11 @@ const TIMINGS = {
       "when-use": 30.63,
       "when-not": 40.84,
       "trade-off": 51.05
-    }
+    },
+    "cues": []
   },
   "summary": {
-    "audio": "summary",
+    "dur": 53.81,
     "marks": {
       "core": 0.0,
       "complexity": 7.69,
@@ -144,6 +155,7 @@ const TIMINGS = {
       "applications": 30.75,
       "trade-off": 38.44,
       "powerful": 46.12
-    }
+    },
+    "cues": []
   }
 };

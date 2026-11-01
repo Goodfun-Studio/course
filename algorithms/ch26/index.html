@@ -836,12 +836,12 @@ window.BEATS = [
 ];
 
 /* ---------- Boot ---------- */
-function boot() {
-  const bg = mk('rect', { x: 0, y: 0, width: 800, height: 600, fill: LIGHT_BG }, panel(0));
-  bg.style.pointerEvents = 'none';
-}
-
+/* ---------- 初始化 ---------- */
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
 boot();
+
+if (typeof module !== 'undefined') module.exports = { CHAPTER, BEATS };
 </script>
 </body>
 </html>

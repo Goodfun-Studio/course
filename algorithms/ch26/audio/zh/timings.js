@@ -1,58 +1,72 @@
 window.TIMINGS = {
   "intro": {
-    "start": 0.0,
-    "duration": 23.93
+    "dur": 23.93,
+    "marks": {},
+    "cues": []
   },
   "problem": {
-    "start": 23.93,
-    "duration": 47.1
+    "dur": 47.1,
+    "marks": {},
+    "cues": []
   },
   "definition": {
-    "start": 71.03,
-    "duration": 39.21
+    "dur": 39.21,
+    "marks": {},
+    "cues": []
   },
   "lowbit": {
-    "start": 110.24,
-    "duration": 49.21
+    "dur": 49.21,
+    "marks": {},
+    "cues": []
   },
   "structure": {
-    "start": 159.45,
-    "duration": 48.46
+    "dur": 48.46,
+    "marks": {},
+    "cues": []
   },
   "update-demo": {
-    "start": 207.91,
-    "duration": 57.55
+    "dur": 57.55,
+    "marks": {},
+    "cues": []
   },
   "update-code": {
-    "start": 265.46,
-    "duration": 39.31
+    "dur": 39.31,
+    "marks": {},
+    "cues": []
   },
   "query-demo": {
-    "start": 304.77,
-    "duration": 58.75
+    "dur": 58.75,
+    "marks": {},
+    "cues": []
   },
   "query-code": {
-    "start": 363.52,
-    "duration": 41.25
+    "dur": 41.25,
+    "marks": {},
+    "cues": []
   },
   "complexity": {
-    "start": 404.77,
-    "duration": 45.9
+    "dur": 45.9,
+    "marks": {},
+    "cues": []
   },
   "init": {
-    "start": 450.66,
-    "duration": 48.09
+    "dur": 48.09,
+    "marks": {},
+    "cues": []
   },
   "applications": {
-    "start": 498.76,
-    "duration": 50.42
+    "dur": 50.42,
+    "marks": {},
+    "cues": []
   },
   "comparison": {
-    "start": 549.17,
-    "duration": 56.27
+    "dur": 56.27,
+    "marks": {},
+    "cues": []
   },
   "summary": {
-    "start": 605.44,
-    "duration": 37.12
+    "dur": 37.12,
+    "marks": {},
+    "cues": []
   }
 };

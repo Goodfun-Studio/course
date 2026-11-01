@@ -682,13 +682,7 @@ let BEATS = [
 
 ];
 
-/* ---------- Boot ---------- */
-function boot() {
-  const nav = build(BEATS, CHAPTER);
-  requestAnimationFrame(() => panel(800));
-}
-
-// 标准化 beats
+/* ---------- 标准化 beats ---------- */
 BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
 window.BEATS = BEATS;
 boot();

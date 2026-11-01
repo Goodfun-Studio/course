@@ -716,20 +716,12 @@ window.BEATS = [
 ];
 
 /* ---------- 引导程序 ---------- */
-function boot() {
-  const main = el('#main');
-  panel(0, main);
-  panel(800, main);
-  
-  applyMarks(window.BEATS, window.MARKS);
-  runChapter(CHAPTER, window.BEATS);
-}
+/* ---------- 初始化 ---------- */
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
+boot();
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', boot);
-} else {
-  boot();
-}
+if (typeof module !== 'undefined') module.exports = { CHAPTER, BEATS };
 </script>
 </body>
 </html>

@@ -596,10 +596,12 @@ let BEATS = [
 ];
 
 /* ---------- setup ---------- */
-function boot() {
-  defs();
-  beats(BEATS);
-}
+/* ---------- 初始化 ---------- */
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
+boot();
+
+if (typeof module !== 'undefined') module.exports = { CHAPTER, BEATS };
 
 function defs() {
   const svg = document.querySelector('svg');

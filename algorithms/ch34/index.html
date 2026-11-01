@@ -782,9 +782,12 @@ function drawArrow(panel, x1, y1, x2, y2, color, initialOpacity) {
 }
 
 /* ---------- engine ---------- */
-function boot() {
-  animaze(BEATS);
-}
+/* ---------- 初始化 ---------- */
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
+boot();
+
+if (typeof module !== 'undefined') module.exports = { CHAPTER, BEATS };
 </script>
 </body>
 </html>

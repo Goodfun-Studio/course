@@ -1,6 +1,6 @@
-const TIMINGS = {
+window.TIMINGS = {
   "intro": {
-    "audio": "intro",
+    "dur": 33.04,
     "marks": {
       "trie": 4.72,
       "autocomplete": 9.44,
@@ -8,10 +8,11 @@ const TIMINGS = {
       "behind": 18.88,
       "prefix": 23.6,
       "today": 28.32
-    }
+    },
+    "cues": []
   },
   "structure": {
-    "audio": "structure",
+    "dur": 44.96,
     "marks": {
       "tree": 4.5,
       "path": 8.99,
@@ -22,10 +23,11 @@ const TIMINGS = {
       "reuse": 31.47,
       "second": 35.97,
       "share": 40.46
-    }
+    },
+    "cues": []
   },
   "operations": {
-    "audio": "operations",
+    "dur": 48.01,
     "marks": {
       "three": 4.36,
       "insert": 8.73,
@@ -37,10 +39,11 @@ const TIMINGS = {
       "check": 34.92,
       "prefix": 39.28,
       "partial": 43.65
-    }
+    },
+    "cues": []
   },
   "insert-demo": {
-    "audio": "insert-demo",
+    "dur": 71.13,
     "marks": {
       "demo": 5.08,
       "words": 10.16,
@@ -55,10 +58,11 @@ const TIMINGS = {
       "new_branch": 55.89,
       "banana": 60.97,
       "compact": 66.05
-    }
+    },
+    "cues": []
   },
   "search-demo": {
-    "audio": "search-demo",
+    "dur": 56.08,
     "marks": {
       "demo": 4.67,
       "apple_search": 9.35,
@@ -71,10 +75,11 @@ const TIMINGS = {
       "not_found": 42.06,
       "prefix_search": 46.74,
       "prefix_ok": 51.41
-    }
+    },
+    "cues": []
   },
   "implementation": {
-    "audio": "implementation",
+    "dur": 64.24,
     "marks": {
       "code": 4.28,
       "node": 8.56,
@@ -90,10 +95,11 @@ const TIMINGS = {
       "return_end": 51.39,
       "prefix_code": 55.67,
       "prefix_true": 59.95
-    }
+    },
+    "cues": []
   },
   "complexity": {
-    "audio": "complexity",
+    "dur": 43.68,
     "marks": {
       "analysis": 4.85,
       "insert_time": 9.71,
@@ -103,10 +109,11 @@ const TIMINGS = {
       "space": 29.12,
       "worst_space": 33.97,
       "best_space": 38.82
-    }
+    },
+    "cues": []
   },
   "optimization": {
-    "audio": "optimization",
+    "dur": 49.42,
     "marks": {
       "optimization": 4.94,
       "waste": 9.88,
@@ -117,10 +124,11 @@ const TIMINGS = {
       "array": 34.6,
       "small": 39.54,
       "fixed": 44.48
-    }
+    },
+    "cues": []
   },
   "autocomplete": {
-    "audio": "autocomplete",
+    "dur": 38.56,
     "marks": {
       "autocomplete": 4.82,
       "prefix": 9.64,
@@ -129,10 +137,11 @@ const TIMINGS = {
       "collect": 24.1,
       "time": 28.92,
       "applications": 33.74
-    }
+    },
+    "cues": []
   },
   "spellcheck": {
-    "audio": "spellcheck",
+    "dur": 44.25,
     "marks": {
       "spellcheck": 4.92,
       "suggestion": 9.83,
@@ -142,20 +151,22 @@ const TIMINGS = {
       "prune": 29.5,
       "collect": 34.42,
       "complexity": 39.33
-    }
+    },
+    "cues": []
   },
   "applications": {
-    "audio": "applications",
+    "dur": 32.08,
     "marks": {
       "more": 5.35,
       "ip": 10.69,
       "frequency": 16.04,
       "filter": 21.39,
       "dna": 26.73
-    }
+    },
+    "cues": []
   },
   "comparison": {
-    "audio": "comparison",
+    "dur": 42.42,
     "marks": {
       "comparison": 5.3,
       "hash": 10.61,
@@ -164,10 +175,11 @@ const TIMINGS = {
       "no_conflict": 26.51,
       "exact": 31.82,
       "prefix_ops": 37.12
-    }
+    },
+    "cues": []
   },
   "variants": {
-    "audio": "variants",
+    "dur": 37.12,
     "marks": {
       "variants": 4.64,
       "suffix": 9.28,
@@ -176,10 +188,11 @@ const TIMINGS = {
       "space": 23.2,
       "ac": 27.84,
       "multi": 32.48
-    }
+    },
+    "cues": []
   },
   "finish": {
-    "audio": "finish",
+    "dur": 44.8,
     "marks": {
       "powerful": 5.6,
       "structure": 11.2,
@@ -188,6 +201,7 @@ const TIMINGS = {
       "tradeoff": 28.0,
       "master": 33.6,
       "core": 39.2
-    }
+    },
+    "cues": []
   }
 };

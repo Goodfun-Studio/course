@@ -677,10 +677,12 @@ let BEATS = [
 ];
 
 /* ---------- 初始化 ---------- */
-function boot() {
-  setupBeats(BEATS);
-  console.log('✓ ch20 LIS ready');
-}
+/* ---------- 初始化 ---------- */
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
+boot();
+
+if (typeof module !== 'undefined') module.exports = { CHAPTER, BEATS };
 </script>
 </body>
 </html>

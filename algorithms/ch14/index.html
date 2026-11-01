@@ -305,8 +305,14 @@ let BEATS = [
       }
       
       // Update value
-      prog(() => { cellTexts[`${i}-${w}`].textContent = dp[i][w].toString(); }, time + 0.4, 0.01);
-      tw(cellTexts[`${i}-${w}`], { o: 1, fill: '#2c3e50' }, time + 0.4, 0.2);
+      prog(() => { 
+        const _x = 150 + (w + 1) * 50;
+        const _y = 300 + (i + 1) * 50;
+        cellTexts[`${i}-${w}`].remove(); 
+        cellTexts[`${i}-${w}`] = T(p, dp[i][w].toString(), { x: _x + 50 / 2, y: _y + 50 / 2,
+        size: 18, fill: '#7f8c8d', anchor: 'middle', baseline: 'middle' });
+        tw(cellTexts[`${i}-${w}`], { o: 1, fill: '#2c3e50' }, 0.2);
+      }, time + 0.4, 0.01);
       
       // Mark as filled
       tw(cells[`${i}-${w}`], { fill: FILLED }, time + 0.6, 0.2);
@@ -334,8 +340,14 @@ let BEATS = [
       }
       dp[i][w] = Math.max(notTake, take);
       
-      prog(() => { cellTexts[`${i}-${w}`].textContent = dp[i][w].toString(); }, time, 0.01);
-      tw(cellTexts[`${i}-${w}`], { o: 1, fill: '#2c3e50' }, time, 0.2);
+      prog(() => { 
+        const _x = 150 + (w + 1) * 50;
+        const _y = 300 + (i + 1) * 50;
+        cellTexts[`${i}-${w}`].remove(); 
+        cellTexts[`${i}-${w}`] = T(p, dp[i][w].toString(), { x: _x + 50 / 2, y: _y + 50 / 2,
+        size: 18, fill: '#7f8c8d', anchor: 'middle', baseline: 'middle' });
+        tw(cellTexts[`${i}-${w}`], { o: 1, fill: '#2c3e50' }, 0.2);
+      }, time, 0.01);
       tw(cells[`${i}-${w}`], { fill: FILLED }, time, 0.2);
       
       time += 0.05;

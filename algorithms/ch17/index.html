@@ -270,7 +270,7 @@ let BEATS = [
   
   // 说明区域
   const explainY = 320;
-  const explain = T(p, '', { x: 400, y: explainY, size: 22, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
+  let explain = T(p, '', { x: 400, y: explainY, size: 22, fill: TEXT_COLOR, anchor: 'middle'});
   
   let time = 1.5;
   const step = 0.6;
@@ -302,7 +302,12 @@ let BEATS = [
     time += step * 0.5;
     
     // 更新 next 值
-    prog(() => { nextCells[i].text.textContent = nextVal.toString(); }, time, 0.01);
+    prog(() => {
+      if (nextCells[i].text) nextCells[i].text.remove();
+      const newText = T(nextCells[i].g, nextVal.toString(), { x: 0, y: 0, size: 24, weight: 700, fill: '#fff', anchor: 'middle' });
+      newText.setAttribute('dominant-baseline', 'central');
+      nextCells[i].text = newText;
+    }, time, 0.01);
     tw(nextCells[i].g, { o: 1 }, time);
     tw(nextCells[i].box, { fill: MATCH_COLOR }, time);
     
@@ -397,7 +402,7 @@ let BEATS = [
   tw(jPtr.g, { o: 1 }, 1.2);
   
   // 说明
-  const explain = T(p, '', { x: 400, y: 310, size: 20, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
+  let explain = T(p, '', { x: 400, y: 310, size: 20, fill: TEXT_COLOR, anchor: 'middle'});
   
   let time = 1.5;
   const step = 0.5;
@@ -415,7 +420,7 @@ let BEATS = [
       tw(patternChars[j].box, { fill: MATCH_COLOR }, time);
       
       const _i1 = i, _j1 = j;
-      prog(() => { explain.textContent = `匹配成功：${text[_i1]} = ${pattern[_j1]}`; }, time, 0.01);
+      prog(() => { explain.remove(); explain = T(p, `匹配成功：${text[_i1]} = ${pattern[_j1]}`, { x: 400, y: explainY, size: 22, fill: TEXT_COLOR, anchor: 'middle'}); }, time, 0.01);
       tw(explain, { o: 1 }, time);
       
       if (j === 0) matchStart = i;
@@ -426,7 +431,7 @@ let BEATS = [
       if (j === pattern.length) {
         // 找到完整匹配
         const _matchStart1 = matchStart;
-        prog(() => { explain.textContent = `找到匹配！位置 ${_matchStart1}`; }, time, 0.01);
+        prog(() => { explain.remove(); explain = T(p, `找到匹配！位置 ${_matchStart1}`, { x: 400, y: explainY, size: 22, fill: TEXT_COLOR, anchor: 'middle'}); }, time, 0.01);
         tw(explain, { o: 1, fill: MATCH_COLOR }, time);
         time += step * 2;
         break;
@@ -440,7 +445,7 @@ let BEATS = [
         tw(patternChars[j].box, { fill: MISMATCH_COLOR }, time);
         
         const _i2 = i, _j2 = j;
-        prog(() => { explain.textContent = `失配：${text[_i2]} ≠ ${pattern[_j2]}，j 跳到 next[${_j2-1}] = ${next[_j2-1]}`; }, time, 0.01);
+        prog(() => { explain.remove(); explain = T(p, `失配：${text[_i2]} ≠ ${pattern[_j2]}，j 跳到 next[${_j2-1}] = ${next[_j2-1]}`, { x: 400, y: explainY, size: 22, fill: TEXT_COLOR, anchor: 'middle'}); }, time, 0.01);
         tw(explain, { o: 1 }, time);
         time += step;
         
@@ -466,7 +471,7 @@ let BEATS = [
         tw(patternChars[0].box, { fill: MISMATCH_COLOR }, time);
         
         const _i3 = i;
-        prog(() => { explain.textContent = `失配：${text[_i3]} ≠ ${pattern[0]}，i++`; }, time, 0.01);
+        prog(() => { explain.remove(); explain = T(p, `失配：${text[_i3]} ≠ ${pattern[0]}，i++`, { x: 400, y: explainY, size: 22, fill: TEXT_COLOR, anchor: 'middle'}); }, time, 0.01);
         tw(explain, { o: 1 }, time);
         time += step * 0.7;
         

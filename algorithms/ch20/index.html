@@ -75,10 +75,15 @@ function highlightBox(box, color, duration = 0.5) {
 }
 
 function updateDPValue(box, value, t0, dur = 0.3) {
-  const text = box.querySelector('text');
-  tw(text, { o: 0 }, t0, dur / 2);
-  prog(() => { text.textContent = value.toString(); }, t0 + dur / 2, 0.01);
-  tw(text, { o: 1 }, t0 + dur / 2, dur / 2);
+  const oldText = box.querySelector('text');
+  tw(oldText, { o: 0 }, t0, dur / 2);
+  prog(() => {
+    oldText.remove();
+    const parent = box;
+    // 获取旧文本的样式
+    const newText = T(parent, value.toString(), { x: 0, y: 0, size: 20, fill: TEXT_COLOR, anchor: 'middle' });
+    newText.setAttribute('dominant-baseline', 'central');
+  }, t0 + dur / 2, 0.01);
 }
 
 /* ---------- Beats ---------- */

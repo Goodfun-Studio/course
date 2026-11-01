@@ -445,23 +445,23 @@ let BEATS = [
   });
   
   // 队列显示区域
-  const queueBg = mk('rect', { x: 200, y: 520, width: 1200, height: 60, fill: '#ecf0f1', rx: 8, o: 0 }, p);
+  const queueBg = mk('rect', { x: 200, y: 520, width: 1200, height: 60, fill: '#22322d', stroke: '#3a5047', 'stroke-width': 2, rx: 8, o: 0 }, p);
   tw(queueBg, { o: 1 }, 18.0, 0.5);
   
-  const queueLabel = T(p, '队列:', { x: 220, y: 550, size: 22, weight: 600, anchor: 'start', o: 0 });
+  const queueLabel = T(p, '队列:', { x: 220, y: 550, size: 22, weight: 600, fill: '#ece8dc', anchor: 'start', o: 0 });
   tw(queueLabel, { o: 1 }, 18.0, 0.5);
   
-  const queueText = T(p, '[ 数学, 编程 ]', { x: 320, y: 550, size: 22, fill: PROCESSING_DARK, anchor: 'start', o: 0 });
+  const queueText = T(p, '[ 数学, 编程 ]', { x: 320, y: 550, size: 22, fill: '#f39c12', anchor: 'start', o: 0 });
   tw(queueText, { o: 1 }, 18.0, 0.5);
   
   // 输出结果显示区域
-  const resultBg = mk('rect', { x: 200, y: 620, width: 1200, height: 60, fill: '#fff', stroke: DONE, 'stroke-width': 2, rx: 8, o: 0 }, p);
+  const resultBg = mk('rect', { x: 200, y: 620, width: 1200, height: 60, fill: '#22322d', stroke: DONE, 'stroke-width': 2, rx: 8, o: 0 }, p);
   tw(resultBg, { o: 1 }, 18.0, 0.5);
   
-  const resultLabel = T(p, '输出:', { x: 220, y: 650, size: 22, weight: 600, anchor: 'start', o: 0 });
+  const resultLabel = T(p, '输出:', { x: 220, y: 650, size: 22, weight: 600, fill: '#ece8dc', anchor: 'start', o: 0 });
   tw(resultLabel, { o: 1 }, 18.0, 0.5);
   
-  const resultText = T(p, '', { x: 320, y: 650, size: 20, fill: DONE_DARK, weight: 600, anchor: 'start', o: 0 });
+  const resultText = T(p, '', { x: 320, y: 650, size: 20, fill: '#2ecc71', weight: 600, anchor: 'start', o: 0 });
   tw(resultText, { o: 1 }, 18.0, 0.5);
   
   // 动画序列

@@ -305,7 +305,7 @@ let BEATS = [
       }
       
       // Update value
-      cellTexts[`${i}-${w}`].textContent = dp[i][w].toString();
+      prog(() => { cellTexts[`${i}-${w}`].textContent = dp[i][w].toString(); }, time + 0.4, 0.01);
       tw(cellTexts[`${i}-${w}`], { o: 1, fill: '#2c3e50' }, time + 0.4, 0.2);
       
       // Mark as filled
@@ -334,7 +334,7 @@ let BEATS = [
       }
       dp[i][w] = Math.max(notTake, take);
       
-      cellTexts[`${i}-${w}`].textContent = dp[i][w].toString();
+      prog(() => { cellTexts[`${i}-${w}`].textContent = dp[i][w].toString(); }, time, 0.01);
       tw(cellTexts[`${i}-${w}`], { o: 1, fill: '#2c3e50' }, time, 0.2);
       tw(cells[`${i}-${w}`], { fill: FILLED }, time, 0.2);
       

@@ -793,11 +793,11 @@ window.BEATS = [
     
     rowData.forEach((cell, ci) => {
       const g = G(p, { x, y, o: 0 });
-      mk('rect', { x: 0, y: 0, width: colWidths[ci], height: 45, fill: '#fff', stroke: DARK_COLOR, 'stroke-width': 1 }, g);
+      mk('rect', { x: 0, y: 0, width: colWidths[ci], height: 45, fill: '#22322d', stroke: '#9aaba3', 'stroke-width': 1 }, g);
       T(g, cell, { 
         x: colWidths[ci] / 2, y: 28, 
         size: ci === 0 ? 16 : 15, weight: ci === 0 ? 600 : 400, 
-        fill: DARK_COLOR, anchor: 'middle' 
+        fill: '#ece8dc', anchor: 'middle' 
       });
       tw(g, { o: 1 }, 2.5 + ri * 0.3 + ci * 0.1, 0.3);
       x += colWidths[ci];

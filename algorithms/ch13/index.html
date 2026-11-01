@@ -242,15 +242,15 @@ let BEATS = [
   // 下面：线性序列
   const sequence = G(p, { x: 800, y: 540, o: 0 });
   
-  mk('rect', { x: -280, y: -25, width: 560, height: 50, fill: '#ecf0f1', rx: 8 }, sequence);
+  mk('rect', { x: -280, y: -25, width: 560, height: 50, fill: '#22322d', stroke: '#3a5047', 'stroke-width': 1.5, rx: 8 }, sequence);
   
-  T(sequence, 'A', { x: -200, y: 0, size: 24, weight: 700, anchor: 'middle' });
+  T(sequence, 'A', { x: -200, y: 0, size: 24, weight: 700, fill: '#ece8dc', anchor: 'middle' });
   T(sequence, '→', { x: -130, y: 0, size: 20, fill: DIM, anchor: 'middle' });
-  T(sequence, 'D', { x: -60, y: 0, size: 24, weight: 700, anchor: 'middle' });
+  T(sequence, 'D', { x: -60, y: 0, size: 24, weight: 700, fill: '#ece8dc', anchor: 'middle' });
   T(sequence, '→', { x: 10, y: 0, size: 20, fill: DIM, anchor: 'middle' });
-  T(sequence, 'B', { x: 80, y: 0, size: 24, weight: 700, anchor: 'middle' });
+  T(sequence, 'B', { x: 80, y: 0, size: 24, weight: 700, fill: '#ece8dc', anchor: 'middle' });
   T(sequence, '→', { x: 150, y: 0, size: 20, fill: DIM, anchor: 'middle' });
-  T(sequence, 'C', { x: 220, y: 0, size: 24, weight: 700, anchor: 'middle' });
+  T(sequence, 'C', { x: 220, y: 0, size: 24, weight: 700, fill: '#ece8dc', anchor: 'middle' });
   
   T(sequence, '线性序列（满足所有依赖）', { x: 0, y: 50, size: 20, fill: DIM, anchor: 'middle' });
   

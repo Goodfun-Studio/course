@@ -33,8 +33,8 @@ function drawArray(parent, x, y, arr, label = '') {
   const boxes = [];
   arr.forEach((val, i) => {
     const box = G(g, { x: i * 60, y: 0 });
-    mk('rect', { x: 0, y: 0, width: 55, height: 50, fill: '#fff', stroke: TEXT_COLOR, 'stroke-width': 2 }, box);
-    const text = T(box, val.toString(), { x: 27.5, y: 25, size: 22, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+    mk('rect', { x: 0, y: 0, width: 55, height: 50, fill: '#22322d', stroke: '#9aaba3', 'stroke-width': 2 }, box);
+    const text = T(box, val.toString(), { x: 27.5, y: 25, size: 22, weight: 700, fill: '#ece8dc', anchor: 'middle' });
     text.setAttribute('dominant-baseline', 'central');
     boxes.push(box);
   });
@@ -49,8 +49,8 @@ function drawDPTable(parent, x, y, nums, dp) {
   const numsBoxes = [];
   nums.forEach((val, i) => {
     const box = G(g, { x: 100 + i * 60, y: 0 });
-    mk('rect', { x: 0, y: 0, width: 55, height: 50, fill: '#fff', stroke: TEXT_COLOR, 'stroke-width': 2 }, box);
-    const text = T(box, val.toString(), { x: 27.5, y: 25, size: 20, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
+    mk('rect', { x: 0, y: 0, width: 55, height: 50, fill: '#22322d', stroke: '#9aaba3', 'stroke-width': 2 }, box);
+    const text = T(box, val.toString(), { x: 27.5, y: 25, size: 20, weight: 600, fill: '#ece8dc', anchor: 'middle' });
     text.setAttribute('dominant-baseline', 'central');
     numsBoxes.push(box);
   });
@@ -60,7 +60,7 @@ function drawDPTable(parent, x, y, nums, dp) {
   const dpBoxes = [];
   dp.forEach((val, i) => {
     const box = G(g, { x: 100 + i * 60, y: 70 });
-    mk('rect', { x: 0, y: 0, width: 55, height: 50, fill: '#fff', stroke: DP_COLOR, 'stroke-width': 2 }, box);
+    mk('rect', { x: 0, y: 0, width: 55, height: 50, fill: '#22322d', stroke: DP_COLOR, 'stroke-width': 2 }, box);
     const text = T(box, val.toString(), { x: 27.5, y: 25, size: 22, weight: 700, fill: DP_COLOR, anchor: 'middle' });
     text.setAttribute('dominant-baseline', 'central');
     dpBoxes.push(box);

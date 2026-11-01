@@ -453,8 +453,10 @@ let BEATS = [
   tw(nodes[5].text, { o: 0 }, t, 0.2);
   t += 0.3;
   
-  nodes[2].text.textContent = '8';
-  nodes[5].text.textContent = '3';
+  prog(() => {
+    nodes[2].text.textContent = '8';
+    nodes[5].text.textContent = '3';
+  }, t, 0.01);
   tw(nodes[2].text, { o: 1 }, t, 0.3);
   tw(nodes[5].text, { o: 1 }, t, 0.3);
   tw(nodes[2].circle, { fill: NORMAL }, t, 0.3);
@@ -484,8 +486,10 @@ let BEATS = [
   tw(nodes[1].text, { o: 0 }, t, 0.2);
   t += 0.3;
   
-  nodes[0].text.textContent = '10';
-  nodes[1].text.textContent = '4';
+  prog(() => {
+    nodes[0].text.textContent = '10';
+    nodes[1].text.textContent = '4';
+  }, t, 0.01);
   tw(nodes[0].text, { o: 1 }, t, 0.3);
   tw(nodes[1].text, { o: 1 }, t, 0.3);
   t += 1.0;
@@ -502,8 +506,10 @@ let BEATS = [
   tw(nodes[3].text, { o: 0 }, t, 0.2);
   t += 0.3;
   
-  nodes[1].text.textContent = '5';
-  nodes[3].text.textContent = '4';
+  prog(() => {
+    nodes[1].text.textContent = '5';
+    nodes[3].text.textContent = '4';
+  }, t, 0.01);
   tw(nodes[1].text, { o: 1 }, t, 0.3);
   tw(nodes[3].text, { o: 1 }, t, 0.3);
   tw(nodes[0].circle, { fill: PRIMARY }, t, 0.3);
@@ -529,8 +535,10 @@ let BEATS = [
   tw(nodes[6].text, { o: 0 }, t, 0.3);
   t += 0.4;
   
-  nodes[0].text.textContent = '2';
-  nodes[6].text.textContent = '10';
+  prog(() => {
+    nodes[0].text.textContent = '2';
+    nodes[6].text.textContent = '10';
+  }, t, 0.01);
   tw(nodes[0].text, { o: 1 }, t, 0.3);
   tw(nodes[6].text, { o: 1 }, t, 0.3);
   tw(nodes[6].circle, { fill: SORTED }, t, 0.4);
@@ -548,8 +556,10 @@ let BEATS = [
   tw(nodes[2].text, { o: 0 }, t, 0.2);
   t += 0.3;
   
-  nodes[0].text.textContent = '8';
-  nodes[2].text.textContent = '2';
+  prog(() => {
+    nodes[0].text.textContent = '8';
+    nodes[2].text.textContent = '2';
+  }, t, 0.01);
   tw(nodes[0].text, { o: 1 }, t, 0.3);
   tw(nodes[2].text, { o: 1 }, t, 0.3);
   tw(nodes[0].circle, { fill: PRIMARY }, t, 0.3);
@@ -563,8 +573,10 @@ let BEATS = [
   tw(nodes[5].text, { o: 0 }, t, 0.3);
   t += 0.4;
   
-  nodes[0].text.textContent = '3';
-  nodes[5].text.textContent = '8';
+  prog(() => {
+    nodes[0].text.textContent = '3';
+    nodes[5].text.textContent = '8';
+  }, t, 0.01);
   tw(nodes[0].text, { o: 1 }, t, 0.3);
   tw(nodes[5].text, { o: 1 }, t, 0.3);
   tw(nodes[5].circle, { fill: SORTED }, t, 0.4);
@@ -582,8 +594,10 @@ let BEATS = [
   tw(nodes[1].text, { o: 0 }, t, 0.2);
   t += 0.3;
   
-  nodes[0].text.textContent = '5';
-  nodes[1].text.textContent = '3';
+  prog(() => {
+    nodes[0].text.textContent = '5';
+    nodes[1].text.textContent = '3';
+  }, t, 0.01);
   tw(nodes[0].text, { o: 1 }, t, 0.3);
   tw(nodes[1].text, { o: 1 }, t, 0.3);
   tw(nodes[0].circle, { fill: PRIMARY }, t, 0.3);

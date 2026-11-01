@@ -1,142 +1,19 @@
-window.TIMINGS = {
- "applications": {
-  "dur": 12.192,
-  "marks": {},
-  "cues": [
-   [
-    0.1,
-    ""
-   ]
-  ]
- },
- "backtrack": {
-  "dur": 17.4,
-  "marks": {},
-  "cues": [
-   [
-    0.1,
-    ""
-   ]
-  ]
- },
- "complete-knapsack": {
-  "dur": 15.936,
-  "marks": {},
-  "cues": [
-   [
-    0.1,
-    ""
-   ]
-  ]
- },
- "definition": {
-  "dur": 13.944,
-  "marks": {},
-  "cues": [
-   [
-    0.1,
-    ""
-   ]
-  ]
- },
- "dp-demo": {
-  "dur": 16.896,
-  "marks": {},
-  "cues": [
-   [
-    0.1,
-    ""
-   ]
-  ]
- },
- "dp-formula": {
-  "dur": 17.904,
-  "marks": {},
-  "cues": [
-   [
-    0.1,
-    ""
-   ]
-  ]
- },
- "dp-intro": {
-  "dur": 13.128,
-  "marks": {},
-  "cues": [
-   [
-    0.1,
-    ""
-   ]
-  ]
- },
- "greedy-fail": {
-  "dur": 16.008,
-  "marks": {},
-  "cues": [
-   [
-    0.1,
-    ""
-   ]
-  ]
- },
- "implementation": {
-  "dur": 13.992,
-  "marks": {},
-  "cues": [
-   [
-    0.1,
-    ""
-   ]
-  ]
- },
- "intro": {
-  "dur": 13.416,
-  "marks": {},
-  "cues": [
-   [
-    0.1,
-    ""
-   ]
-  ]
- },
- "pseudo-poly": {
-  "dur": 16.944,
-  "marks": {},
-  "cues": [
-   [
-    0.1,
-    ""
-   ]
-  ]
- },
- "space-opt": {
-  "dur": 15.336,
-  "marks": {},
-  "cues": [
-   [
-    0.1,
-    ""
-   ]
-  ]
- },
- "summary": {
-  "dur": 13.968,
-  "marks": {},
-  "cues": [
-   [
-    0.1,
-    ""
-   ]
-  ]
- },
- "variants": {
-  "dur": 13.704,
-  "marks": {},
-  "cues": [
-   [
-    0.1,
-    ""
-   ]
-  ]
- }
+// Ch14 Audio Timings
+// Auto-generated placeholder - no audio cues defined yet
+
+const TIMINGS = {
+  'intro': { dur: 0, marks: {}, cues: [] },
+  'definition': { dur: 0, marks: {}, cues: [] },
+  'greedy-fail': { dur: 0, marks: {}, cues: [] },
+  'dp-intro': { dur: 0, marks: {}, cues: [] },
+  'dp-formula': { dur: 0, marks: {}, cues: [] },
+  'dp-demo': { dur: 0, marks: {}, cues: [] },
+  'implementation': { dur: 0, marks: {}, cues: [] },
+  'space-opt': { dur: 0, marks: {}, cues: [] },
+  'backtrack': { dur: 0, marks: {}, cues: [] },
+  'complete-knapsack': { dur: 0, marks: {}, cues: [] },
+  'variants': { dur: 0, marks: {}, cues: [] },
+  'applications': { dur: 0, marks: {}, cues: [] },
+  'pseudo-poly': { dur: 0, marks: {}, cues: [] },
+  'summary': { dur: 0, marks: {}, cues: [] },
 };

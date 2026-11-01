@@ -1,62 +1,62 @@
-const TIMINGS = {
+window.TIMINGS = {
   "intro": {
-    "audio": "intro",
     "dur": 38.35,
-    "marks": {}
+    "marks": {},
+    "cues": []
   },
   "fixed-length": {
-    "audio": "fixed-length",
     "dur": 40.03,
-    "marks": {}
+    "marks": {},
+    "cues": []
   },
   "variable-length": {
-    "audio": "variable-length",
     "dur": 29.11,
-    "marks": {}
+    "marks": {},
+    "cues": []
   },
   "prefix-code": {
-    "audio": "prefix-code",
     "dur": 30.72,
-    "marks": {}
+    "marks": {},
+    "cues": []
   },
   "huffman-tree-demo": {
-    "audio": "huffman-tree-demo",
     "dur": 66.67,
-    "marks": {}
+    "marks": {},
+    "cues": []
   },
   "tree-to-code": {
-    "audio": "tree-to-code",
     "dur": 42.43,
-    "marks": {}
+    "marks": {},
+    "cues": []
   },
   "encode-decode-demo": {
-    "audio": "encode-decode-demo",
     "dur": 65.54,
-    "marks": {}
+    "marks": {},
+    "cues": []
   },
   "implementation": {
-    "audio": "implementation",
     "dur": 45.86,
-    "marks": {}
+    "marks": {},
+    "cues": []
   },
   "complexity": {
-    "audio": "complexity",
     "dur": 47.45,
-    "marks": {}
+    "marks": {},
+    "cues": []
   },
   "optimality": {
-    "audio": "optimality",
     "dur": 51.41,
-    "marks": {}
+    "marks": {},
+    "cues": []
   },
   "applications": {
-    "audio": "applications",
     "dur": 43.63,
-    "marks": {}
+    "marks": {},
+    "cues": []
   },
   "limitations": {
-    "audio": "limitations",
     "dur": 62.69,
-    "marks": {}
+    "marks": {},
+    "cues": []
   }
 };

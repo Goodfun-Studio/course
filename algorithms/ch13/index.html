@@ -451,7 +451,7 @@ let BEATS = [
   const queueLabel = T(p, '队列:', { x: 220, y: 550, size: 22, weight: 600, fill: '#ece8dc', anchor: 'start', o: 0 });
   tw(queueLabel, { o: 1 }, 18.0, 0.5);
   
-  const queueText = T(p, '[ 数学, 编程 ]', { x: 320, y: 550, size: 22, fill: '#f39c12', anchor: 'start', o: 0 });
+  let queueText = T(p, '[ 数学, 编程 ]', { x: 320, y: 550, size: 22, fill: '#f39c12', anchor: 'start'});
   tw(queueText, { o: 1 }, 18.0, 0.5);
   
   // 输出结果显示区域
@@ -461,7 +461,7 @@ let BEATS = [
   const resultLabel = T(p, '输出:', { x: 220, y: 650, size: 22, weight: 600, fill: '#ece8dc', anchor: 'start', o: 0 });
   tw(resultLabel, { o: 1 }, 18.0, 0.5);
   
-  const resultText = T(p, '', { x: 320, y: 650, size: 20, fill: '#2ecc71', weight: 600, anchor: 'start', o: 0 });
+  let resultText = T(p, '', { x: 320, y: 650, size: 20, fill: '#2ecc71', weight: 600, anchor: 'start'});
   tw(resultText, { o: 1 }, 18.0, 0.5);
   
   // 动画序列
@@ -486,11 +486,11 @@ let BEATS = [
   t += 0.5;
   
   tw(nodeElems['数学'].circle, { fill: VISITED }, t, 0.4);
-  prog(() => { resultText.textContent = '数学'; }, t, 0.01);
+  prog(() => { resultText.remove(); resultText = T(p, '数学', {  x: 320, y: 650, size: 20, fill: '#2ecc71', weight: 600, anchor: 'start' }); }, t, 0.01);
   t += 1.0;
   
   // 更新队列
-  prog(() => { queueText.textContent = '[ 编程 ]'; }, t, 0.01);
+  prog(() => { queueText.remove(); queueText = T(p, '[ 编程 ]', {  x: 320, y: 550, size: 22, fill: '#f39c12', anchor: 'start' }); }, t, 0.01);
   t += 0.5;
   
   // Round 2: 处理"编程"
@@ -506,10 +506,10 @@ let BEATS = [
   t += 0.5;
   
   tw(nodeElems['编程'].circle, { fill: VISITED }, t, 0.4);
-  prog(() => { resultText.textContent = '数学 → 编程'; }, t, 0.01);
+  prog(() => { resultText.remove(); resultText = T(p, '数学 → 编程', {  x: 320, y: 650, size: 20, fill: '#2ecc71', weight: 600, anchor: 'start' }); }, t, 0.01);
   t += 1.0;
   
-  prog(() => { queueText.textContent = '[ 数据结构 ]'; }, t, 0.01);
+  prog(() => { queueText.remove(); queueText = T(p, '[ 数据结构 ]', {  x: 320, y: 550, size: 22, fill: '#f39c12', anchor: 'start' }); }, t, 0.01);
   t += 0.5;
   
   // Round 3: 处理"数据结构"
@@ -531,10 +531,10 @@ let BEATS = [
   t += 0.5;
   
   tw(nodeElems['数据结构'].circle, { fill: VISITED }, t, 0.4);
-  prog(() => { resultText.textContent = '数学 → 编程 → 数据结构'; }, t, 0.01);
+  prog(() => { resultText.remove(); resultText = T(p, '数学 → 编程 → 数据结构', {  x: 320, y: 650, size: 20, fill: '#2ecc71', weight: 600, anchor: 'start' }); }, t, 0.01);
   t += 1.0;
   
-  prog(() => { queueText.textContent = '[ 算法, 操作系统 ]'; }, t, 0.01);
+  prog(() => { queueText.remove(); queueText = T(p, '[ 算法, 操作系统 ]', {  x: 320, y: 550, size: 22, fill: '#f39c12', anchor: 'start' }); }, t, 0.01);
   t += 0.5;
   
   // Round 4: 处理"算法"
@@ -556,10 +556,10 @@ let BEATS = [
   t += 0.5;
   
   tw(nodeElems['算法'].circle, { fill: VISITED }, t, 0.4);
-  prog(() => { resultText.textContent = '数学 → 编程 → 数据结构 → 算法'; }, t, 0.01);
+  prog(() => { resultText.remove(); resultText = T(p, '数学 → 编程 → 数据结构 → 算法', {  x: 320, y: 650, size: 20, fill: '#2ecc71', weight: 600, anchor: 'start' }); }, t, 0.01);
   t += 1.0;
   
-  prog(() => { queueText.textContent = '[ 操作系统, 编译原理, 高级算法 ]'; }, t, 0.01);
+  prog(() => { queueText.remove(); queueText = T(p, '[ 操作系统, 编译原理, 高级算法 ]', {  x: 320, y: 550, size: 22, fill: '#f39c12', anchor: 'start' }); }, t, 0.01);
   t += 0.5;
   
   // Round 5-7: 处理剩余节点
@@ -578,8 +578,8 @@ let BEATS = [
   tw(nodeElems['高级算法'].circle, { fill: VISITED }, t, 0.3);
   
   prog(() => {
-    resultText.textContent = '数学 → 编程 → 数据结构 → 算法 → 操作系统 → 编译原理 → 高级算法';
-    queueText.textContent = '[ ]';
+    resultText.remove(); resultText = T(p, '数学 → 编程 → 数据结构 → 算法 → 操作系统 → 编译原理 → 高级算法', {  x: 320, y: 650, size: 20, fill: '#2ecc71', weight: 600, anchor: 'start' });
+    queueText.remove(); queueText = T(p, '[ ]', {  x: 320, y: 550, size: 22, fill: '#f39c12', anchor: 'start' });
   }, t, 0.01);
   
   const complete = T(p, '✓ 排序完成！', { x: 800, y: 730, size: 28, weight: 700, fill: DONE_DARK, anchor: 'middle', o: 0 });

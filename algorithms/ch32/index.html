@@ -131,7 +131,7 @@ let BEATS = [
     const x = startX + col * cellW;
     const y = startY + row * cellH;
     
-    const rect = R(p, x - 35, y - 25, 70, 50, { fill: GRID_COLOR, o: 0.3 });
+    const rect = mk('rect', { x: x - 35, y: y - 25, width: 70, height: 50, rx: 8, fill: GRID_COLOR, o: 0.3 }, p);
     const num = T(p, String(i), { x, y, size: 28, fill: COL.chalk, anchor: 'middle', baseline: 'middle', o: 0 });
     tw(num, { o: 1 }, 0.5 + idx * 0.02, 0.3);
     

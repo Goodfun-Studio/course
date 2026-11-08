@@ -25,6 +25,12 @@ const LOSE_COLOR = '#95a5a6';       // 灰色（必败）
 const STONE_COLOR = '#34495e';      // 深灰（石子）
 
 /* ---------- beats ---------- */
+
+/* ---------- helpers ---------- */
+function C(parent, r, attrs = {}) {
+  return mk('circle', Object.assign({ r }, attrs), parent);
+}
+
 let BEATS = [
 
 ['intro', '问题引入', () => {

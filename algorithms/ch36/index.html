@@ -62,16 +62,36 @@ function drawBBox(p, x1, y1, x2, y2, color) {
   const minY = Math.min(y1, y2);
   const maxY = Math.max(y1, y2);
   
-  return R(p, minX, minY, maxX - minX, maxY - minY, { 
+  return mk('rect', {
+    x: minX, y: minY, width: maxX - minX, height: maxY - minY,
     stroke: color, 
     'stroke-width': 2, 
     'stroke-dasharray': '5,5',
     fill: 'none',
     o: 0 
-  });
+  }, p);
 }
 
 /* ---------- beats ---------- */
+
+/* ---------- helpers ---------- */
+function L(parent, x1, y1, x2, y2, attrs = {}) {
+  return mk('line', Object.assign({ x1, y1, x2, y2 }, attrs), parent);
+}
+
+
+/* ---------- helpers ---------- */
+function C(parent, x, y, r, attrs = {}) {
+  return mk('circle', Object.assign({ cx: x, cy: y, r }, attrs), parent);
+}
+
+
+function Poly(parent, pts, attrs = {}){
+  const points = [];
+  for (let i = 0; i < pts.length; i += 2) points.push(`${pts[i]},${pts[i+1]}`);
+  return mk('polygon', Object.assign({ points: points.join(' ') }, attrs), parent);
+}
+
 let BEATS = [
 
 ['intro', '问题引入', () => {

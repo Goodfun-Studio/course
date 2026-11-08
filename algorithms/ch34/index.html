@@ -25,6 +25,25 @@ const STATE_COLOR = '#1abc9c';     // 青色（状态转移）
 const DIM_COLOR = '#7f8c8d';       // 灰色（辅助）
 
 /* ---------- beats ---------- */
+
+/* ---------- helpers ---------- */
+function C(parent, x, y, r, attrs = {}) {
+  return mk('circle', Object.assign({ cx: x, cy: y, r }, attrs), parent);
+}
+
+
+/* ---------- helpers ---------- */
+function L(parent, x1, y1, x2, y2, attrs = {}) {
+  return mk('line', Object.assign({ x1, y1, x2, y2 }, attrs), parent);
+}
+
+
+function PO(parent, pts, attrs = {}){
+  const points = [];
+  for (let i = 0; i < pts.length; i += 2) points.push(`${pts[i]},${pts[i+1]}`);
+  return mk('polygon', Object.assign({ points: points.join(' ') }, attrs), parent);
+}
+
 let BEATS = [
 
 ['intro', '问题引入', () => {

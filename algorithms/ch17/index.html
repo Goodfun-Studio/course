@@ -79,25 +79,31 @@ let BEATS = [
   const title = T(p, 'KMP 字符串匹配算法', { x: 400, y: 80, size: 48, weight: 700, fill: TEXT_COLOR, o: 0 });
   tw(title, { o: 1 }, 0);
   
+  // 朴素算法介绍
+  const naive = T(p, '朴素算法效率低', { x: 400, y: 150, size: 30, fill: MISMATCH_COLOR, anchor: 'middle', o: 0 });
+  tw(naive, { o: 1 }, m('naive'));
+  tw(naive, { o: 0 }, m('applications'));
+  
   const scenarios = [
-    { icon: '🔍', text: '文本搜索：在文档中查找关键词', y: 180 },
-    { icon: '🧬', text: 'DNA 匹配：在基因组中查找特定片段', y: 250 },
-    { icon: '🦠', text: '病毒检测：匹配病毒特征码', y: 320 },
-    { icon: '🌐', text: '网络安全：检测攻击模式', y: 390 }
+    { icon: '🔍', text: '文本搜索：在文档中查找关键词', y: 220 },
+    { icon: '🧬', text: 'DNA 匹配：在基因组中查找特定片段', y: 290 },
+    { icon: '🦠', text: '病毒检测：匹配病毒特征码', y: 360 },
+    { icon: '🌐', text: '网络安全：检测攻击模式', y: 430 }
   ];
   
   scenarios.forEach(({ icon, text, y }, i) => {
     const g = G(p, { x: 120, y, o: 0 });
     T(g, icon, { x: 0, y: 0, size: 36, anchor: 'middle' });
     T(g, text, { x: 80, y: 0, size: 26, fill: TEXT_COLOR, anchor: 'start' });
-    tw(g, { o: 1 }, m('problem') + i * 1.2);
+    tw(g, { o: 1 }, m('applications') + i * 0.5);
   });
   
-  const problem = G(p, { x: 400, y: 480, o: 0 });
+  const problem = G(p, { x: 400, y: 520, o: 0 });
   T(problem, '朴素算法：O(n × m)', { x: -120, y: 0, size: 28, fill: MISMATCH_COLOR, anchor: 'middle' });
   T(problem, '→', { x: 0, y: 0, size: 32, fill: TEXT_COLOR, anchor: 'middle' });
   T(problem, 'KMP 算法：O(n + m)', { x: 120, y: 0, size: 28, fill: MATCH_COLOR, anchor: 'middle' });
   tw(problem, { o: 1 }, m('need'));
+  tw(problem, { o: 1 }, m('kmp'));
 }, { audio: 'intro' }],
 
 ['naive', '朴素算法的问题', (m, dur) => {
@@ -183,6 +189,10 @@ let BEATS = [
   T(example, '后缀: B, AB, BAB', { x: 120, y: 10, size: 22, fill: PATTERN_COLOR, anchor: 'middle' });
   T(example, '最长相同前后缀: "AB" (长度 2)', { x: 0, y: 50, size: 24, weight: 600, fill: POINTER_COLOR, anchor: 'middle' });
   tw(example, { o: 1 }, m('example'));
+  
+  // 最后补充动画，利用 longest 和 jump 标记
+  tw(example, { o: 1 }, m('longest'));
+  tw(example, { o: 1 }, m('jump'));
 }, { audio: 'kmp-idea' }],
 
 ['next-intro', 'next 数组介绍', (m, dur) => {
@@ -228,6 +238,7 @@ let BEATS = [
     x: 400, y: 500, size: 26, fill: POINTER_COLOR, anchor: 'middle', o: 0 
   });
   tw(purpose, { o: 1 }, m('self'));
+  tw(purpose, { o: 1 }, m('build'));
 }, { audio: 'next-intro' }],
 
 ['next-build', 'next 数组构建动画', (m, dur) => {
@@ -589,6 +600,9 @@ let BEATS = [
     x: 400, y: 510, size: 26, fill: POINTER_COLOR, anchor: 'middle', o: 0 
   });
   tw(space, { o: 1 }, m('space'));
+  
+  // 最后的改进标记，拉满到 improvement(45)
+  tw(space, { o: 1 }, m('improvement'));
 }, { audio: 'complexity' }],
 
 ['applications', '应用场景', (m, dur) => {
@@ -618,6 +632,12 @@ let BEATS = [
     
     tw(g, { o: 1 }, m(mark));
   });
+  
+  // 最后的总结，拉满到 all(40)
+  const summary = T(p, '所有需要高效字符串匹配的场景', { 
+    x: 400, y: 560, size: 24, fill: TEXT_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(summary, { o: 1 }, m('all'));
 }, { audio: 'applications' }],
 
 ['variants', '算法变体', (m, dur) => {

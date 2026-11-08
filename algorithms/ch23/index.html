@@ -83,36 +83,38 @@ function drawInfoBox(parent, x, y, label, value) {
 /* ---------- Beats ---------- */
 let BEATS = [
 
-['intro', '问题引入', () => {
+['intro', '问题引入', (m, dur) => {
   const p = panel(0);
 
-  T(p, '强连通分量（SCC）', { x: 400, y: 80, size: 48, weight: 700, fill: TEXT_COLOR, o: 0 });
+  const title = T(p, '强连通分量（SCC）', { x: 400, y: 80, size: 48, weight: 700, fill: TEXT_COLOR, o: 0 });
+  tw(title, { o: 1 }, 0.3, 0);
   
   const scenarios = [
-    { icon: '🌐', text: '网页链接群组', y: 180 },
-    { icon: '👥', text: '社交网络社区', y: 250 },
-    { icon: '🔄', text: '软件循环依赖', y: 320 },
-    { icon: '⚡', text: '电路反馈环路', y: 390 },
-    { icon: '🗑️', text: '垃圾回收引用', y: 460 }
+    { icon: '🌐', text: '网页链接群组', y: 180, mark: 'web' },
+    { icon: '👥', text: '社交网络社区', y: 250, mark: 'group' },
+    { icon: '🔄', text: '软件循环依赖', y: 320, mark: 'social' },
+    { icon: '⚡', text: '电路反馈环路', y: 390, mark: 'dependency' },
+    { icon: '🗑️', text: '垃圾回收引用', y: 460, mark: 'scenarios' }
   ];
   
-  scenarios.forEach(({ icon, text, y }, i) => {
+  scenarios.forEach(({ icon, text, y, mark }) => {
     const g = G(p, { x: 150, y, o: 0 });
     T(g, icon, { x: 0, y: 0, size: 36, anchor: 'middle' });
     T(g, text, { x: 70, y: 0, size: 26, fill: TEXT_COLOR, anchor: 'start' });
-    tw(g, { o: 1 }, 0.5 + i * 0.3);
+    tw(g, { o: 1 }, 0.5, m(mark));
   });
   
   const question = T(p, '如何在线性时间内找出所有强连通分量？', { 
     x: 400, y: 550, size: 28, weight: 600, fill: NODE_CURRENT, anchor: 'middle', o: 0 
   });
-  tw(question, { o: 1 }, 2.5);
+  tw(question, { o: 1 }, 0.5, m('algorithms'));
 }, { audio: 'intro' }],
 
-['definition', '强连通定义', () => {
+['definition', '强连通定义', (m, dur) => {
   const p = panel(0);
   
-  T(p, '强连通：任意两点互相可达', { x: 400, y: 80, size: 36, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  const title = T(p, '强连通：任意两点互相可达', { x: 400, y: 80, size: 36, weight: 700, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.3, 0);
   
   // Simple example: 3 nodes in a cycle
   const nodes = [
@@ -122,7 +124,7 @@ let BEATS = [
   ];
   
   const nodeObjs = nodes.map(n => drawNode(p, n.x, n.y, n.label, NODE_DEFAULT));
-  nodeObjs.forEach((n, i) => tw(n.g, { o: 1 }, 0.5 + i * 0.3));
+  nodeObjs.forEach((n, i) => tw(n.g, { o: 1 }, 0.4, m('mutual') + i * 0.15));
   
   const edges = [
     { x1: 250, y1: 250, x2: 550, y2: 250 },
@@ -131,25 +133,26 @@ let BEATS = [
   ];
   
   const edgeObjs = edges.map(e => drawEdge(p, e.x1, e.y1, e.x2, e.y2, EDGE_DEFAULT));
-  edgeObjs.forEach((e, i) => tw(e.g, { o: 1 }, 1.5 + i * 0.4));
+  edgeObjs.forEach((e, i) => tw(e.g, { o: 1 }, 0.4, m('equivalence') + i * 0.15));
   
   // Properties
   const props = [
-    '自反性：v → v',
-    '对称性：u → v ⇔ v → u',
-    '传递性：u → v, v → w ⇒ u → w'
+    { text: '自反性：v → v', mark: 'reflexive' },
+    { text: '对称性：u → v ⇔ v → u', mark: 'symmetric' },
+    { text: '传递性：u → v, v → w ⇒ u → w', mark: 'transitive' }
   ];
   
-  props.forEach((text, i) => {
-    const t = T(p, text, { x: 400, y: 480 + i * 40, size: 24, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
-    tw(t, { o: 1 }, 3.0 + i * 0.5);
+  props.forEach(({ text, mark }) => {
+    const t = T(p, text, { x: 400, y: 480 + props.indexOf(props.find(p => p.mark === mark)) * 40, size: 24, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
+    tw(t, { o: 1 }, 0.5, m(mark));
   });
 }, { audio: 'definition' }],
 
-['scc-concept', 'SCC概念', () => {
+['scc-concept', 'SCC概念', (m, dur) => {
   const p = panel(0);
   
-  T(p, '强连通分量：极大的强连通子图', { x: 400, y: 70, size: 32, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  const title = T(p, '强连通分量：极大的强连通子图', { x: 400, y: 70, size: 32, weight: 700, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
+  tw(title, { o: 1 }, 0.3, 0);
   
   // Graph with 4 SCCs
   const nodes = [
@@ -167,7 +170,7 @@ let BEATS = [
   
   const nodeObjs = nodes.map(n => {
     const obj = drawNode(p, n.x, n.y, n.label, NODE_DEFAULT);
-    tw(obj.g, { o: 1 }, 0.3);
+    tw(obj.g, { o: 1 }, 0.3, m('example'));
     return obj;
   });
   
@@ -182,26 +185,28 @@ let BEATS = [
     const n2 = nodes[e.to];
     return drawEdge(p, n1.x, n1.y, n2.x, n2.y, EDGE_DEFAULT);
   });
-  edgeObjs.forEach(e => tw(e.g, { o: 1 }, 0.8));
+  edgeObjs.forEach(e => tw(e.g, { o: 1 }, 0.3, m('eight')));
   
   // Highlight SCCs
-  setTimeout(() => {
-    nodeObjs.forEach((obj, i) => {
-      const color = sccColors[nodes[i].scc];
-      tw(obj.circle, { fill: color }, 0.5);
+  const sccMarks = ['scc1', 'scc2', 'scc3', 'scc3'];
+  [1, 2, 3, 4].forEach((sccIdx, i) => {
+    nodeObjs.forEach((obj, nodeIdx) => {
+      if (nodes[nodeIdx].scc === sccIdx) {
+        tw(obj.circle, { fill: sccColors[sccIdx] }, 0.5, m(sccMarks[i]));
+      }
     });
-  }, 2000);
+  });
   
   const sccLabels = [
-    'SCC1: {0,1,2}',
-    'SCC2: {3,4,5}',
-    'SCC3: {6}',
-    'SCC4: {7}'
+    { text: 'SCC1: {0,1,2}', mark: 'scc1' },
+    { text: 'SCC2: {3,4,5}', mark: 'scc2' },
+    { text: 'SCC3: {6}', mark: 'scc3' },
+    { text: 'SCC4: {7}', mark: 'total' }
   ];
   
-  sccLabels.forEach((text, i) => {
+  sccLabels.forEach(({ text, mark }, i) => {
     const t = T(p, text, { x: 100, y: 400 + i * 35, size: 22, weight: 600, fill: sccColors[i + 1], anchor: 'start', o: 0 });
-    tw(t, { o: 1 }, 2.5 + i * 0.3);
+    tw(t, { o: 1 }, 0.4, m(mark));
   });
 }, { audio: 'scc-concept' }],
 

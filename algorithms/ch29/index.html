@@ -111,6 +111,11 @@ let BEATS = [
   
   const start = mk('circle', { cx: center.x, cy: center.y, r: 8, fill: START, o: 0 }, p);
   tw(start, { o: 1 }, m('bottleneck'), 0.5);
+  
+  // Add final highlight for 'need'
+  const needLabel = T(p, '需要更聪明的方法', { x: 800, y: 750, size: 32, fill: MEETING, anchor: 'middle', weight: 600, o: 0 });
+  tw(needLabel, { o: 1 }, m('need'), 0.8);
+  tw(needLabel, { o: 0 }, dur * 0.95, 0.3);
 }],
 
 ['bidirectional-idea', '双向搜索思想', (m, dur) => {
@@ -163,6 +168,11 @@ let BEATS = [
   
   const halfLabel = T(p, '每个方向只需搜索一半距离', { x: 800, y: 620, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
   tw(halfLabel, { o: 1 }, m('half'), 0.6);
+  
+  // Add final magic highlight
+  const magicLabel = T(p, '神奇的是，搜索空间以指数级减少！', { x: 800, y: 700, size: 30, fill: PATH, anchor: 'middle', weight: 600, o: 0 });
+  tw(magicLabel, { o: 1 }, m('magic'), 0.8);
+  tw(magicLabel, { o: 0 }, dur * 0.95, 0.3);
 }],
 
 ['complexity-optimization', '复杂度优化', (m, dur) => {
@@ -331,6 +341,11 @@ let BEATS = [
   // Path highlight
   const pathLabel = T(p, '找到最短路径', { x: 800, y: 670, size: 32, fill: PATH, anchor: 'middle', o: 0 });
   tw(pathLabel, { o: 1 }, time, 0.6);
+  
+  // Complete summary
+  const completeLabel = T(p, '搜索完成，节点数远少于单向BFS', { x: 800, y: 730, size: 28, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(completeLabel, { o: 1 }, m('complete'), 0.8);
+  tw(completeLabel, { o: 0 }, dur * 0.95, 0.3);
 }],
 
 ['algorithm-implementation', '算法实现', (m, dur) => {
@@ -362,6 +377,14 @@ let BEATS = [
   
   const found = T(p, '如果在 → 相遇 → 找到路径！', { x: 800, y: 710, size: 32, fill: PATH, anchor: 'middle', o: 0 });
   tw(found, { o: 1 }, m('found'), 0.6);
+  
+  // Add additional steps
+  const addStep = T(p, '否则，将邻居加入队列和已访问集合', { x: 800, y: 770, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(addStep, { o: 1 }, m('add'), 0.6);
+  
+  const repeatStep = T(p, '重复此过程，直到找到路径或队列为空', { x: 800, y: 820, size: 28, fill: TEXT, anchor: 'middle', o: 0 });
+  tw(repeatStep, { o: 1 }, m('repeat'), 0.7);
+  tw(repeatStep, { o: 0 }, dur * 0.95, 0.3);
 }],
 
 ['meet-detection', '相遇检测', (m, dur) => {
@@ -403,6 +426,14 @@ let BEATS = [
   
   const meetNode = T(p, '这个节点就是相遇点', { x: 800, y: 700, size: 36, fill: MEETING, anchor: 'middle', weight: 700, o: 0 });
   tw(meetNode, { o: 1 }, m('multiple'), 0.7);
+  
+  // Add multiple and timing info
+  const multipleNote = T(p, '可能有多个相遇点，需找第一个', { x: 800, y: 760, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(multipleNote, { o: 1 }, m('multiple'), 0.6);
+  
+  const timingNote = T(p, '检测时机：每次加入新节点时就检查', { x: 800, y: 810, size: 28, fill: TEXT, anchor: 'middle', o: 0 });
+  tw(timingNote, { o: 1 }, m('timing'), 0.7);
+  tw(timingNote, { o: 0 }, dur * 0.95, 0.3);
 }],
 
 ['path-reconstruction', '路径重建', (m, dur) => {

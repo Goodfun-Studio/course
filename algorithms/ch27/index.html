@@ -82,32 +82,33 @@ function manhattanDistance(row1, col1, row2, col2) {
 /* ---------- Beats ---------- */
 window.BEATS = [
 
-['intro', '问题引入', () => {
+['intro', '问题引入', (m, dur) => {
   const p = panel(0);
 
-  T(p, 'A* 启发式搜索', { x: 400, y: 70, size: 48, weight: 700, fill: TEXT_COLOR, o: 0 });
+  const title = T(p, 'A* 启发式搜索', { x: 400, y: 70, size: 48, weight: 700, fill: TEXT_COLOR, o: 0 });
+  tw(title, { o: 1 }, 0.3, 0);
   
   const scenarios = [
-    { icon: '🎮', text: '游戏 AI 寻路', y: 160 },
-    { icon: '🗺️', text: '地图导航', y: 240 },
-    { icon: '🤖', text: '机器人路径规划', y: 320 },
-    { icon: '🧩', text: '拼图游戏求解', y: 400 }
+    { icon: '🎮', text: '游戏 AI 寻路', y: 160, mark: 'game' },
+    { icon: '🗺️', text: '地图导航', y: 240, mark: 'navigation' },
+    { icon: '🤖', text: '机器人路径规划', y: 320, mark: 'planning' },
+    { icon: '🧩', text: '拼图游戏求解', y: 400, mark: 'smart' }
   ];
   
-  scenarios.forEach(({ icon, text, y }, i) => {
+  scenarios.forEach(({ icon, text, y, mark }) => {
     const g = G(p, { x: 150, y, o: 0 });
     T(g, icon, { x: 0, y: 0, size: 40, anchor: 'middle' });
     T(g, text, { x: 80, y: 0, size: 28, fill: TEXT_COLOR, anchor: 'start' });
-    tw(g, { o: 1 }, 0.5 + i * 0.3);
+    tw(g, { o: 1 }, 0.5, m(mark));
   });
   
   const question = T(p, '核心问题：如何智能地找到最短路径？', { 
     x: 400, y: 510, size: 30, weight: 600, fill: HIGHLIGHT, anchor: 'middle', o: 0 
   });
-  tw(question, { o: 1 }, 2.5);
+  tw(question, { o: 1 }, 0.5, m('smart'));
 }],
 
-['bfs-limitation', 'BFS 的局限', () => {
+['bfs-limitation', 'BFS 的局限', (m, dur) => {
   const p = panel(0);
   
   T(p, 'BFS：盲目搜索', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
@@ -123,17 +124,17 @@ window.BEATS = [
       const x = startX + j * cellSize;
       const y = startY + i * cellSize;
       const cell = drawCell(p, x, y, cellSize, GRID_COLOR);
-      tw(cell.g, { o: 1 }, 0.2);
+      tw(cell.g, { o: 1 }, 0.2, m('bfs'));
       grid.push({ cell, i, j, x, y });
     }
   }
   
   // 起点和终点
   const start = drawCell(p, startX, startY, cellSize, START_COLOR, 'S');
-  tw(start.g, { o: 1 }, 0.5);
+  tw(start.g, { o: 1 }, 0.3, m('wave'));
   
   const end = drawCell(p, startX + 5 * cellSize, startY + 5 * cellSize, cellSize, END_COLOR, 'E');
-  tw(end.g, { o: 1 }, 0.8);
+  tw(end.g, { o: 1 }, 0.3, m('position'));
   
   // BFS波浪式扩展
   const layers = [
@@ -143,24 +144,23 @@ window.BEATS = [
     [{ i: 0, j: 4 }, { i: 1, j: 3 }, { i: 2, j: 2 }, { i: 3, j: 1 }, { i: 4, j: 0 }]
   ];
   
-  let time = 1.5;
-  layers.forEach(layer => {
+  const layerTimes = [m('expand'), m('waste'), m('guarantee'), m('blind')];
+  layers.forEach((layer, idx) => {
     layer.forEach(pos => {
       const cell = grid.find(c => c.i === pos.i && c.j === pos.j);
       if (cell) {
-        tw(cell.cell.rect, { fill: BFS_COLOR }, 0.3, time);
+        tw(cell.cell.rect, { fill: BFS_COLOR }, 0.3, layerTimes[idx]);
       }
     });
-    time += 0.5;
   });
   
   const note = T(p, '向所有方向均匀扩展，效率低', { 
     x: 500, y: 200, size: 24, fill: TEXT_COLOR, o: 0 
   });
-  tw(note, { o: 1 }, 3.5);
+  tw(note, { o: 1 }, 0.5, m('guide'));
 }],
 
-['heuristic', '启发式搜索', () => {
+['heuristic', '启发式搜索', (m, dur) => {
   const p = panel(0);
   
   T(p, '启发式搜索：利用目标信息', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
@@ -170,7 +170,7 @@ window.BEATS = [
   const formula = T(p, 'f(n) = g(n) + h(n)', { 
     x: 400, y: formulaY, size: 42, weight: 700, fill: HIGHLIGHT, anchor: 'middle', o: 0 
   });
-  tw(formula, { o: 1 }, 0.5);
+  tw(formula, { o: 1 }, 0.5, m('formula'));
   
   // 解释各部分
   const gBox = G(p, { x: 100, y: 250, o: 0 });
@@ -178,31 +178,31 @@ window.BEATS = [
   T(gBox, 'g(n)', { x: 90, y: 30, size: 32, weight: 700, fill: '#fff', anchor: 'middle' });
   T(gBox, '起点到 n 的', { x: 90, y: 65, size: 18, fill: '#fff', anchor: 'middle' });
   T(gBox, '实际代价', { x: 90, y: 90, size: 18, fill: '#fff', anchor: 'middle' });
-  tw(gBox, { o: 1 }, 1);
+  tw(gBox, { o: 1 }, 0.5, m('g'));
   
   const hBox = G(p, { x: 310, y: 250, o: 0 });
   mk('rect', { x: 0, y: 0, width: 180, height: 120, fill: OPEN_COLOR, rx: 10 }, hBox);
   T(hBox, 'h(n)', { x: 90, y: 30, size: 32, weight: 700, fill: '#fff', anchor: 'middle' });
   T(hBox, 'n 到终点的', { x: 90, y: 65, size: 18, fill: '#fff', anchor: 'middle' });
   T(hBox, '估计代价', { x: 90, y: 90, size: 18, fill: '#fff', anchor: 'middle' });
-  tw(hBox, { o: 1 }, 1.5);
+  tw(hBox, { o: 1 }, 0.5, m('h'));
   
   const fBox = G(p, { x: 520, y: 250, o: 0 });
   mk('rect', { x: 0, y: 0, width: 180, height: 120, fill: PATH_COLOR, rx: 10 }, fBox);
   T(fBox, 'f(n)', { x: 90, y: 30, size: 32, weight: 700, fill: '#fff', anchor: 'middle' });
   T(fBox, '总估计', { x: 90, y: 65, size: 18, fill: '#fff', anchor: 'middle' });
   T(fBox, '代价', { x: 90, y: 90, size: 18, fill: '#fff', anchor: 'middle' });
-  tw(fBox, { o: 1 }, 2);
+  tw(fBox, { o: 1 }, 0.5, m('evaluation'));
   
   const principle = T(p, '每次选择 f(n) 最小的节点扩展', { 
     x: 400, y: 430, size: 26, weight: 600, fill: TEXT_COLOR, anchor: 'middle', o: 0 
   });
-  tw(principle, { o: 1 }, 2.5);
+  tw(principle, { o: 1 }, 0.5, m('queue'));
   
   const guide = T(p, '朝着目标方向优先搜索', { 
     x: 400, y: 490, size: 26, weight: 600, fill: HIGHLIGHT, anchor: 'middle', o: 0 
   });
-  tw(guide, { o: 1 }, 3);
+  tw(guide, { o: 1 }, 0.5, m('priority'));
 }],
 
 ['astar-demo', 'A* 搜索动画', () => {

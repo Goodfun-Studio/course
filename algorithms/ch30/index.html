@@ -284,7 +284,23 @@ window.BEATS = [
   const note = T(p, '左转保留在凸包上，右转需要弹出栈顶', { 
     x: 400, y: 500, size: 22, weight: 600, fill: PURPLE, anchor: 'middle', o: 0 
   });
-  tw(note, { o: 1 }, m('area'));
+  tw(note, { o: 1 }, m('sign'));
+  
+  // 添加详细说明（使用后续 marks）
+  const ccwNote = T(p, '✓ 逆时针转向：点在凸包上', { 
+    x: 150, y: 540, size: 20, weight: 600, fill: HULL_COLOR, o: 0 
+  });
+  tw(ccwNote, { o: 1 }, m('ccw'));
+  
+  const cwNote = T(p, '✗ 顺时针转向：弹出上一点', { 
+    x: 450, y: 540, size: 20, weight: 600, fill: START_COLOR, o: 0 
+  });
+  tw(cwNote, { o: 1 }, m('cw'));
+  
+  const collinearNote = T(p, '共线情况：按距离处理', { 
+    x: 300, y: 570, size: 18, fill: TEXT_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(collinearNote, { o: 1 }, m('collinear'));
 }],
 
 ['polar_sort', '极角排序动画', (m, dur) => {

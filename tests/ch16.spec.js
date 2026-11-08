@@ -69,6 +69,66 @@ test.describe('Chapter 16 - DFS Animation Tests', () => {
     expect(allPass).toBe(true);
   });
 
+  test('all beats should have content coverage >= 0.7', async ({ page }) => {
+    const results = await page.evaluate(() => {
+      const results = [];
+      
+      for (let i = 0; i < BEATS.length; i++) {
+        const beat = BEATS[i];
+        const beatId = beat.id;
+        const timing = TIMINGS[beatId];
+        
+        if (!timing) {
+          results.push({ beatId, error: 'No timing data' });
+          continue;
+        }
+        
+        try {
+          // Reset state
+          window.P = { i: 0, t: 0, end: 0 };
+          window.TW = [];
+          P.i = i;
+          P.end = runBeat(i);
+          
+          const narrationDur = timing.dur;
+          
+          // Find the last animation start time (when last content appears)
+          const lastAnimStart = TW.length > 0 ? Math.max(...TW.map(w => w.t0)) : 0;
+          const coverage = lastAnimStart / narrationDur;
+          
+          results.push({
+            beatId,
+            lastStart: lastAnimStart.toFixed(1),
+            narrationDur: narrationDur.toFixed(1),
+            coverage: coverage.toFixed(3),
+            pass: coverage >= 0.7
+          });
+        } catch (error) {
+          results.push({ beatId, error: error.message });
+        }
+      }
+      
+      return results;
+    });
+
+    console.log('\nContent Coverage Results (last animation start):');
+    console.log('=================================================');
+    
+    let allPass = true;
+    results.forEach(r => {
+      if (r.error) {
+        console.log(`${r.beatId}: ERROR - ${r.error}`);
+        allPass = false;
+      } else {
+        const status = r.pass ? '✓' : '✗';
+        console.log(`${status} ${r.beatId}: lastStart=${r.lastStart}s, narr=${r.narrationDur}s, coverage=${r.coverage}`);
+        if (!r.pass) allPass = false;
+      }
+    });
+    
+    expect(allPass).toBe(true);
+  });
+
   test('no JavaScript errors in console', async ({ page }) => {
     const errors = [];
     page.on('pageerror', error => {
@@ -87,3 +147,4 @@ test.describe('Chapter 16 - DFS Animation Tests', () => {
     expect(errors).toEqual([]);
   });
 });
+

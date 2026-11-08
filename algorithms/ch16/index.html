@@ -173,8 +173,20 @@ let BEATS = [
   });
   tw(note, { o: 1 }, m('elegant'));
   
-  // 添加填充动画
-  tw(note, { o: 1 }, m('common') + 1);
+  // automatic 标记：新增内容
+  const note2 = T(p, '递归返回时自然回到上一层，不需手动管理栈', { 
+    x: 400, y: 510, size: 24, fill: STACK_BG, anchor: 'middle', o: 0 
+  });
+  tw(note2, { o: 1 }, m('automatic'));
+  
+  // common 标记：新增内容
+  const note3 = T(p, '最常见的写法，简单直观，适合大多数场景', { 
+    x: 400, y: 485, size: 24, fill: EDGE_ACTIVE, anchor: 'middle', o: 0 
+  });
+  tw(note3, { o: 1 }, m('common'));
+  
+  // 添加填充动画到接近结束
+  tw(note3, { o: 1 }, dur * 0.95);
 }, { audio: 'recursive' }],
 
 ['iterative', '迭代实现', (m, dur) => {

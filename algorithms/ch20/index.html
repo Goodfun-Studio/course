@@ -348,7 +348,7 @@ let BEATS = [
 }],
 
 ['binary-demo', '二分优化演示', (m, dur) => {
-  const p = panel(800);
+  const p = panel(0);
 
   T(p, '二分优化演示', { x: 400, y: 50, size: 42, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
   
@@ -448,8 +448,6 @@ let BEATS = [
     x: 400, y: 400, size: 32, weight: 700, fill: HIGHLIGHT, anchor: 'middle', o: 0 
   });
   tw(answer, { o: 1 }, m('step8') + 2);
-}],
-
 }],
 
 ['binary-code', '二分优化代码', (m, dur) => {

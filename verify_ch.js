@@ -13,6 +13,12 @@ const root = '/Users/ivywu/course/algorithms';
   await page.click('#coverGo').catch(()=>{});
   await page.waitForTimeout(500);
 
+  // 暂停播放器：页面的 requestAnimationFrame 循环也在调 evalTo(P.t)，
+  // 会与我们的采样互相干扰，导致结果不确定。
+  await page.evaluate(() => {
+    try { P.playing = false; if (P.audio) P.audio.pause(); } catch (e) {}
+  });
+
   const beats = await page.evaluate(() => (window.BEATS||[]).map((b,i)=>({i,id:b.id,dur:TIMINGS[b.id]?.dur||0,ask:!!b.ask})));
   if (!beats.length) { console.log(`${ch}: ❌ window.BEATS 为空`); await browser.close(); return; }
 
@@ -21,7 +27,7 @@ const root = '/Users/ivywu/course/algorithms';
   let badR=0, badC=0;
 
   for (const b of beats) {
-    await page.evaluate((i)=>{ P.i=i; P.t=0; runBeat(i); }, b.i);
+    await page.evaluate((i)=>{ P.playing = false; P.i=i; P.t=0; runBeat(i); }, b.i);
     const animEnd = await page.evaluate(() => Math.max(0, ...TW.map(w=>w.t0+(typeof w.dur==='number'?w.dur:0))));
     const r = b.dur ? animEnd / b.dur : NaN;
 

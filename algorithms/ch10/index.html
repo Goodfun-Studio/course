@@ -93,23 +93,18 @@ let BEATS = [
   tw(subtitle, { o: 1 }, 0.5, 0.5);
   
   const question = T(p, '如何保证排序的稳定性和最坏情况性能？', 
-    { x: 800, y: 300, size: 36, weight: 600, anchor: 'middle', o: 0 });
+    { x: 800, y: 320, size: 36, weight: 600, anchor: 'middle', o: 0 });
   tw(question, { o: 1 }, 2.0, 0.6);
   
   const def = T(p, '归并排序：分治思想的经典应用', 
-    { x: 800, y: 420, size: 32, fill: PRIMARY, anchor: 'middle', o: 0 });
+    { x: 800, y: 450, size: 32, fill: PRIMARY, anchor: 'middle', o: 0 });
   tw(def, { o: 1 }, 5.5, 0.7);
   
-  const features = [
-    { text: '✓ 稳定排序', color: LEFT_COLOR, y: 500 },
-    { text: '✓ O(n log n) 保证', color: RIGHT_COLOR, y: 560 },
-    { text: '✓ 适合外部排序', color: MERGED_COLOR, y: 620 }
-  ];
-  
-  features.forEach((f, i) => {
-    const t = T(p, f.text, { x: 800, y: f.y, size: 28, fill: f.color, weight: 600, anchor: 'middle', o: 0 });
-    tw(t, { o: 1 }, 9.0 + i * 0.3, 0.8);
-  });
+  const features = G(p, { x: 800, y: 550, o: 0 });
+  T(features, '✓ 稳定排序', { x: -200, y: 0, size: 28, fill: LEFT_COLOR, weight: 600 });
+  T(features, '✓ O(n log n) 保证', { x: 0, y: 0, size: 28, fill: RIGHT_COLOR, weight: 600, anchor: 'middle' });
+  T(features, '✓ 适合外部排序', { x: 200, y: 0, size: 28, fill: MERGED_COLOR, weight: 600, anchor: 'end' });
+  tw(features, { o: 1 }, 9.0, 0.8);
   
   const apps = T(p, '应用场景：链表排序 · 外部排序 · 需要稳定性的场景', 
     { x: 800, y: 680, size: 24, fill: DIM, anchor: 'middle', o: 0 });
@@ -244,23 +239,23 @@ let BEATS = [
   const p = panel(0);
   
   const title = T(p, '合并两个有序数组', { x: 800, y: 80, size: 42, weight: 600, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.5);
+  tw(title, { o: 1 }, 0.07, 0.5);
   
   const left = [3, 7];
   const right = [2, 8];
   
   const leftLabel = T(p, '左边', { x: 400, y: 180, size: 28, fill: LEFT_COLOR, weight: 600, anchor: 'middle', o: 0 });
-  tw(leftLabel, { o: 1 }, 1.0, 0.4);
+  tw(leftLabel, { o: 1 }, 0.75, 0.4);
   const leftArr = drawArray(p, left, 330, 220, 50, 60);
-  tw(leftArr, { o: 1 }, 1.5, 0.5);
+  tw(leftArr, { o: 1 }, 1.12, 0.5);
   
   const rightLabel = T(p, '右边', { x: 1000, y: 180, size: 28, fill: RIGHT_COLOR, weight: 600, anchor: 'middle', o: 0 });
-  tw(rightLabel, { o: 1 }, 2.0, 0.4);
+  tw(rightLabel, { o: 1 }, 1.49, 0.4);
   const rightArr = drawArray(p, right, 930, 220, 50, 60);
-  tw(rightArr, { o: 1 }, 2.5, 0.5);
+  tw(rightArr, { o: 1 }, 1.87, 0.5);
   
   const resultLabel = T(p, '结果', { x: 800, y: 400, size: 28, fill: MERGED_COLOR, weight: 600, anchor: 'middle', o: 0 });
-  tw(resultLabel, { o: 1 }, 4.0, 0.4);
+  tw(resultLabel, { o: 1 }, 2.99, 0.4);
   
   const resultBg = G(p, { x: 580, y: 440, o: 0 });
   [0, 1, 2, 3].forEach(i => {
@@ -269,46 +264,46 @@ let BEATS = [
       fill: '#2c3e50', stroke: '#fff', 'stroke-width': 2 
     }, resultBg);
   });
-  tw(resultBg, { o: 1 }, 4.5, 0.5);
+  tw(resultBg, { o: 1 }, 3.36, 0.5);
   
   const step1 = T(p, '① 比较 3 vs 2 → 2 较小', 
     { x: 800, y: 560, size: 26, fill: DIM, anchor: 'middle', o: 0 });
-  tw(step1, { o: 1 }, 6.0, 0.5);
+  tw(step1, { o: 1 }, 4.48, 0.5);
   
   const val1 = T(resultBg, '2', { x: 25, y: 30, size: 24, weight: 600, fill: RIGHT_COLOR, anchor: 'middle', o: 0 });
   val1.setAttribute('dominant-baseline', 'central');
-  tw(val1, { o: 1 }, 7.0, 0.5);
+  tw(val1, { o: 1 }, 5.23, 0.5);
   
   const step2 = T(p, '② 比较 3 vs 8 → 3 较小', 
     { x: 800, y: 600, size: 26, fill: DIM, anchor: 'middle', o: 0 });
-  tw(step2, { o: 1 }, 9.0, 0.5);
+  tw(step2, { o: 1 }, 6.72, 0.5);
   
   const val2 = T(resultBg, '3', { x: 80, y: 30, size: 24, weight: 600, fill: LEFT_COLOR, anchor: 'middle', o: 0 });
   val2.setAttribute('dominant-baseline', 'central');
-  tw(val2, { o: 1 }, 10.0, 0.5);
+  tw(val2, { o: 1 }, 7.47, 0.5);
   
   const step3 = T(p, '③ 比较 7 vs 8 → 7 较小', 
     { x: 800, y: 640, size: 26, fill: DIM, anchor: 'middle', o: 0 });
-  tw(step3, { o: 1 }, 12.0, 0.5);
+  tw(step3, { o: 1 }, 8.96, 0.5);
   
   const val3 = T(resultBg, '7', { x: 135, y: 30, size: 24, weight: 600, fill: LEFT_COLOR, anchor: 'middle', o: 0 });
   val3.setAttribute('dominant-baseline', 'central');
-  tw(val3, { o: 1 }, 13.0, 0.5);
+  tw(val3, { o: 1 }, 9.71, 0.5);
   
   const step4 = T(p, '④ 右边剩余 8，直接加入', 
     { x: 800, y: 680, size: 26, fill: DIM, anchor: 'middle', o: 0 });
-  tw(step4, { o: 1 }, 15.0, 0.5);
+  tw(step4, { o: 1 }, 11.2, 0.5);
   
   const val4 = T(resultBg, '8', { x: 190, y: 30, size: 24, weight: 600, fill: RIGHT_COLOR, anchor: 'middle', o: 0 });
   val4.setAttribute('dominant-baseline', 'central');
-  tw(val4, { o: 1 }, 16.0, 0.5);
+  tw(val4, { o: 1 }, 11.95, 0.5);
   
   const conclusion = T(p, '时间复杂度：O(n)　空间复杂度：O(n)', 
     { x: 800, y: 750, size: 24, fill: PRIMARY, anchor: 'middle', o: 0 });
-  tw(conclusion, { o: 1 }, 18.0, 0.6);
+  tw(conclusion, { o: 1 }, 13.44, 0.6);
   
   clockRun(t => {
-    if (t > 16) {
+    if (t > 11.95) {
       const glow = 0.7 + Math.sin(t * 2) * 0.3;
       put(resultBg, { o: glow });
     }
@@ -320,7 +315,7 @@ let BEATS = [
   const p = panel(0);
   
   const title = T(p, '递归分解与合并', { x: 800, y: 60, size: 38, weight: 600, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.5);
+  tw(title, { o: 1 }, 0.06, 0.5);
   
   const arr = [38, 27, 43, 3, 9, 82, 10, 15];
   
@@ -329,122 +324,122 @@ let BEATS = [
   
   // 第一层：完整数组
   const level0 = drawTreeNode(tree, arr, 0, 0, 0);
-  tw(level0, { o: 1 }, 1.0, 0.5);
+  tw(level0, { o: 1 }, 0.57, 0.5);
   
   // 第二层：分成两半
   const arrow1 = drawArrow(tree, -30, 20, -150, 80, LEFT_COLOR);
-  tw(arrow1, { o: 1 }, 3.0, 0.4);
+  tw(arrow1, { o: 1 }, 1.7, 0.4);
   const arrow2 = drawArrow(tree, 30, 20, 150, 80, RIGHT_COLOR);
-  tw(arrow2, { o: 1 }, 3.0, 0.4);
+  tw(arrow2, { o: 1 }, 1.7, 0.4);
   
   const level1a = drawTreeNode(tree, [38, 27, 43, 3], -200, 100, 1);
-  tw(level1a, { o: 1 }, 3.5, 0.5);
+  tw(level1a, { o: 1 }, 1.98, 0.5);
   const level1b = drawTreeNode(tree, [9, 82, 10, 15], 200, 100, 1);
-  tw(level1b, { o: 1 }, 3.5, 0.5);
+  tw(level1b, { o: 1 }, 1.98, 0.5);
   
   // 第三层：继续分解
   const arrow3 = drawArrow(tree, -230, 120, -300, 180, LEFT_COLOR);
-  tw(arrow3, { o: 1 }, 5.5, 0.4);
+  tw(arrow3, { o: 1 }, 3.12, 0.4);
   const arrow4 = drawArrow(tree, -170, 120, -100, 180, RIGHT_COLOR);
-  tw(arrow4, { o: 1 }, 5.5, 0.4);
+  tw(arrow4, { o: 1 }, 3.12, 0.4);
   const arrow5 = drawArrow(tree, 170, 120, 100, 180, LEFT_COLOR);
-  tw(arrow5, { o: 1 }, 5.5, 0.4);
+  tw(arrow5, { o: 1 }, 3.12, 0.4);
   const arrow6 = drawArrow(tree, 230, 120, 300, 180, RIGHT_COLOR);
-  tw(arrow6, { o: 1 }, 5.5, 0.4);
+  tw(arrow6, { o: 1 }, 3.12, 0.4);
   
   const level2a = drawTreeNode(tree, [38, 27], -350, 200, 2);
-  tw(level2a, { o: 1 }, 6.0, 0.5);
+  tw(level2a, { o: 1 }, 3.4, 0.5);
   const level2b = drawTreeNode(tree, [43, 3], -50, 200, 2);
-  tw(level2b, { o: 1 }, 6.0, 0.5);
+  tw(level2b, { o: 1 }, 3.4, 0.5);
   const level2c = drawTreeNode(tree, [9, 82], 50, 200, 2);
-  tw(level2c, { o: 1 }, 6.0, 0.5);
+  tw(level2c, { o: 1 }, 3.4, 0.5);
   const level2d = drawTreeNode(tree, [10, 15], 350, 200, 2);
-  tw(level2d, { o: 1 }, 6.0, 0.5);
+  tw(level2d, { o: 1 }, 3.4, 0.5);
   
   // 第四层：单个元素
   const arrow7 = drawArrow(tree, -380, 220, -420, 280, LEFT_COLOR);
-  tw(arrow7, { o: 1 }, 8.0, 0.3);
+  tw(arrow7, { o: 1 }, 4.54, 0.3);
   const arrow8 = drawArrow(tree, -320, 220, -280, 280, RIGHT_COLOR);
-  tw(arrow8, { o: 1 }, 8.0, 0.3);
+  tw(arrow8, { o: 1 }, 4.54, 0.3);
   const arrow9 = drawArrow(tree, -80, 220, -120, 280, LEFT_COLOR);
-  tw(arrow9, { o: 1 }, 8.0, 0.3);
+  tw(arrow9, { o: 1 }, 4.54, 0.3);
   const arrow10 = drawArrow(tree, -20, 220, 20, 280, RIGHT_COLOR);
-  tw(arrow10, { o: 1 }, 8.0, 0.3);
+  tw(arrow10, { o: 1 }, 4.54, 0.3);
   const arrow11 = drawArrow(tree, 20, 220, -20, 280, LEFT_COLOR);
-  tw(arrow11, { o: 1 }, 8.0, 0.3);
+  tw(arrow11, { o: 1 }, 4.54, 0.3);
   const arrow12 = drawArrow(tree, 80, 220, 120, 280, RIGHT_COLOR);
-  tw(arrow12, { o: 1 }, 8.0, 0.3);
+  tw(arrow12, { o: 1 }, 4.54, 0.3);
   const arrow13 = drawArrow(tree, 320, 220, 280, 280, LEFT_COLOR);
-  tw(arrow13, { o: 1 }, 8.0, 0.3);
+  tw(arrow13, { o: 1 }, 4.54, 0.3);
   const arrow14 = drawArrow(tree, 380, 220, 420, 280, RIGHT_COLOR);
-  tw(arrow14, { o: 1 }, 8.0, 0.3);
+  tw(arrow14, { o: 1 }, 4.54, 0.3);
   
   const level3a = drawTreeNode(tree, [38], -450, 300, 3);
-  tw(level3a, { o: 1 }, 8.5, 0.4);
+  tw(level3a, { o: 1 }, 4.82, 0.4);
   const level3b = drawTreeNode(tree, [27], -250, 300, 3);
-  tw(level3b, { o: 1 }, 8.5, 0.4);
+  tw(level3b, { o: 1 }, 4.82, 0.4);
   const level3c = drawTreeNode(tree, [43], -150, 300, 3);
-  tw(level3c, { o: 1 }, 8.5, 0.4);
+  tw(level3c, { o: 1 }, 4.82, 0.4);
   const level3d = drawTreeNode(tree, [3], 50, 300, 3);
-  tw(level3d, { o: 1 }, 8.5, 0.4);
+  tw(level3d, { o: 1 }, 4.82, 0.4);
   const level3e = drawTreeNode(tree, [9], -50, 300, 3);
-  tw(level3e, { o: 1 }, 8.5, 0.4);
+  tw(level3e, { o: 1 }, 4.82, 0.4);
   const level3f = drawTreeNode(tree, [82], 150, 300, 3);
-  tw(level3f, { o: 1 }, 8.5, 0.4);
+  tw(level3f, { o: 1 }, 4.82, 0.4);
   const level3g = drawTreeNode(tree, [10], 250, 300, 3);
-  tw(level3g, { o: 1 }, 8.5, 0.4);
+  tw(level3g, { o: 1 }, 4.82, 0.4);
   const level3h = drawTreeNode(tree, [15], 450, 300, 3);
-  tw(level3h, { o: 1 }, 8.5, 0.4);
+  tw(level3h, { o: 1 }, 4.82, 0.4);
   
-  tw(tree, { o: 1 }, 1.0, 0.5);
+  tw(tree, { o: 1 }, 0.57, 0.5);
   
   // 合并过程说明
   const mergeLabel = T(p, '合并过程', { x: 800, y: 500, size: 32, fill: MERGED_COLOR, weight: 600, anchor: 'middle', o: 0 });
-  tw(mergeLabel, { o: 1 }, 10.0, 0.5);
+  tw(mergeLabel, { o: 1 }, 5.67, 0.5);
   
   // 第一次合并：[38] + [27] → [27, 38]
   const merge1 = T(p, '[38] + [27] → [27, 38]', 
     { x: 800, y: 550, size: 24, fill: SORTED, anchor: 'middle', o: 0 });
-  tw(merge1, { o: 1 }, 11.0, 0.5);
-  tw(level2a, { fill: SORTED }, 11.5, 0.4);
+  tw(merge1, { o: 1 }, 6.24, 0.5);
+  tw(level2a, { fill: SORTED }, 6.52, 0.4);
   
   // 第二次合并：[43] + [3] → [3, 43]
   const merge2 = T(p, '[43] + [3] → [3, 43]', 
     { x: 800, y: 590, size: 24, fill: SORTED, anchor: 'middle', o: 0 });
-  tw(merge2, { o: 1 }, 13.0, 0.5);
-  tw(level2b, { fill: SORTED }, 13.5, 0.4);
+  tw(merge2, { o: 1 }, 7.37, 0.5);
+  tw(level2b, { fill: SORTED }, 7.65, 0.4);
   
   // 第三次合并：[9] + [82] → [9, 82]
   const merge3 = T(p, '[9] + [82] → [9, 82]', 
     { x: 800, y: 630, size: 24, fill: SORTED, anchor: 'middle', o: 0 });
-  tw(merge3, { o: 1 }, 15.0, 0.5);
-  tw(level2c, { fill: SORTED }, 15.5, 0.4);
+  tw(merge3, { o: 1 }, 8.5, 0.5);
+  tw(level2c, { fill: SORTED }, 8.79, 0.4);
   
   // 第四次合并：[10] + [15] → [10, 15]
   const merge4 = T(p, '[10] + [15] → [10, 15]', 
     { x: 800, y: 670, size: 24, fill: SORTED, anchor: 'middle', o: 0 });
-  tw(merge4, { o: 1 }, 17.0, 0.5);
-  tw(level2d, { fill: SORTED }, 17.5, 0.4);
+  tw(merge4, { o: 1 }, 9.64, 0.5);
+  tw(level2d, { fill: SORTED }, 9.92, 0.4);
   
   // 更大的合并
   const merge5 = T(p, '[27,38] + [3,43] → [3,27,38,43]', 
     { x: 800, y: 710, size: 24, fill: MERGED_COLOR, anchor: 'middle', o: 0 });
-  tw(merge5, { o: 1 }, 19.0, 0.5);
-  tw(level1a, { fill: MERGED_COLOR }, 19.5, 0.4);
+  tw(merge5, { o: 1 }, 10.77, 0.5);
+  tw(level1a, { fill: MERGED_COLOR }, 11.06, 0.4);
   
   const merge6 = T(p, '[9,82] + [10,15] → [9,10,15,82]', 
     { x: 800, y: 750, size: 24, fill: MERGED_COLOR, anchor: 'middle', o: 0 });
-  tw(merge6, { o: 1 }, 21.0, 0.5);
-  tw(level1b, { fill: MERGED_COLOR }, 21.5, 0.4);
+  tw(merge6, { o: 1 }, 11.91, 0.5);
+  tw(level1b, { fill: MERGED_COLOR }, 12.19, 0.4);
   
   // 最终合并
   const finalMerge = T(p, '最终合并 → [3,9,10,15,27,38,43,82]', 
     { x: 800, y: 790, size: 26, fill: HIGHLIGHT, weight: 700, anchor: 'middle', o: 0 });
-  tw(finalMerge, { o: 1 }, 23.0, 0.7);
-  tw(level0, { fill: HIGHLIGHT }, 23.5, 0.5);
+  tw(finalMerge, { o: 1 }, 13.04, 0.7);
+  tw(level0, { fill: HIGHLIGHT }, 13.32, 0.5);
   
   clockRun(t => {
-    if (t > 23) {
+    if (t > 13.04) {
       const pulse = 1 + Math.sin(t * 2.5) * 0.1;
       put(finalMerge, { s: pulse });
     }
@@ -456,42 +451,42 @@ let BEATS = [
   const p = panel(0);
   
   const title = T(p, '递归树的深度', { x: 800, y: 100, size: 42, weight: 600, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.5);
+  tw(title, { o: 1 }, 0.05, 0.5);
   
   const explain = T(p, '每次将数组分成两半，直到只剩一个元素', 
     { x: 800, y: 200, size: 28, fill: DIM, anchor: 'middle', o: 0 });
-  tw(explain, { o: 1 }, 2.0, 0.5);
+  tw(explain, { o: 1 }, 1.01, 0.5);
   
   const ex1 = T(p, 'n = 8　→　层数 = log₂8 = 3', 
     { x: 800, y: 300, size: 32, fill: PRIMARY, anchor: 'middle', o: 0 });
-  tw(ex1, { o: 1 }, 5.0, 0.6);
+  tw(ex1, { o: 1 }, 2.52, 0.6);
   
   const ex2 = T(p, 'n = 16　→　层数 = log₂16 = 4', 
     { x: 800, y: 360, size: 32, fill: PRIMARY, anchor: 'middle', o: 0 });
-  tw(ex2, { o: 1 }, 8.0, 0.6);
+  tw(ex2, { o: 1 }, 4.04, 0.6);
   
   const ex3 = T(p, 'n = 1024　→　层数 = log₂1024 = 10', 
     { x: 800, y: 420, size: 32, fill: PRIMARY, anchor: 'middle', o: 0 });
-  tw(ex3, { o: 1 }, 11.0, 0.6);
+  tw(ex3, { o: 1 }, 5.55, 0.6);
   
   const formula = T(p, '递归深度 = ⌈log₂n⌉', 
     { x: 800, y: 520, size: 38, fill: HIGHLIGHT, weight: 700, anchor: 'middle', o: 0 });
-  tw(formula, { o: 1 }, 15.0, 0.7);
+  tw(formula, { o: 1 }, 7.57, 0.7);
   
   const perLevel = T(p, '每一层都要合并 n 个元素', 
     { x: 800, y: 620, size: 30, fill: DIM, anchor: 'middle', o: 0 });
-  tw(perLevel, { o: 1 }, 18.0, 0.6);
+  tw(perLevel, { o: 1 }, 9.08, 0.6);
   
   const total = T(p, '总时间 = 层数 × 每层时间 = log n × n', 
     { x: 800, y: 680, size: 30, fill: MERGED_COLOR, anchor: 'middle', o: 0 });
-  tw(total, { o: 1 }, 21.0, 0.6);
+  tw(total, { o: 1 }, 10.59, 0.6);
   
   const conclusion = T(p, '= O(n log n)', 
     { x: 800, y: 750, size: 42, fill: HIGHLIGHT, weight: 700, anchor: 'middle', o: 0 });
-  tw(conclusion, { o: 1 }, 24.0, 0.8);
+  tw(conclusion, { o: 1 }, 12.11, 0.8);
   
   clockRun(t => {
-    if (t > 24) {
+    if (t > 12.11) {
       const pulse = 1 + Math.sin(t * 2) * 0.1;
       put(conclusion, { s: pulse });
     }
@@ -503,46 +498,46 @@ let BEATS = [
   const p = panel(0);
   
   const title = T(p, '时间复杂度分析', { x: 800, y: 100, size: 44, weight: 600, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.5);
+  tw(title, { o: 1 }, 0.06, 0.5);
   
   const best = T(p, '最好情况：O(n log n)', 
     { x: 800, y: 230, size: 36, fill: LEFT_COLOR, weight: 600, anchor: 'middle', o: 0 });
-  tw(best, { o: 1 }, 2.0, 0.6);
+  tw(best, { o: 1 }, 1.14, 0.6);
   
   const avg = T(p, '平均情况：O(n log n)', 
     { x: 800, y: 300, size: 36, fill: RIGHT_COLOR, weight: 600, anchor: 'middle', o: 0 });
-  tw(avg, { o: 1 }, 5.0, 0.6);
+  tw(avg, { o: 1 }, 2.86, 0.6);
   
   const worst = T(p, '最坏情况：O(n log n)', 
     { x: 800, y: 370, size: 36, fill: MERGED_COLOR, weight: 600, anchor: 'middle', o: 0 });
-  tw(worst, { o: 1 }, 8.0, 0.6);
+  tw(worst, { o: 1 }, 4.58, 0.6);
   
   const guarantee = T(p, '✓ 性能稳定，不受数据分布影响', 
     { x: 800, y: 460, size: 32, fill: HIGHLIGHT, weight: 600, anchor: 'middle', o: 0 });
-  tw(guarantee, { o: 1 }, 11.0, 0.7);
+  tw(guarantee, { o: 1 }, 6.29, 0.7);
   
   const space = T(p, '空间复杂度：O(n)', 
     { x: 800, y: 560, size: 36, fill: PRIMARY, weight: 600, anchor: 'middle', o: 0 });
-  tw(space, { o: 1 }, 14.0, 0.6);
+  tw(space, { o: 1 }, 8.01, 0.6);
   
   const spaceExp = T(p, '需要额外数组存储合并结果', 
     { x: 800, y: 620, size: 26, fill: DIM, anchor: 'middle', o: 0 });
-  tw(spaceExp, { o: 1 }, 17.0, 0.5);
+  tw(spaceExp, { o: 1 }, 9.72, 0.5);
   
   const stable = T(p, '✓ 稳定排序', 
     { x: 800, y: 700, size: 36, fill: SORTED, weight: 600, anchor: 'middle', o: 0 });
-  tw(stable, { o: 1 }, 20.0, 0.7);
+  tw(stable, { o: 1 }, 11.44, 0.7);
   
   const stableExp = T(p, '相等元素的相对顺序不变', 
     { x: 800, y: 760, size: 26, fill: DIM, anchor: 'middle', o: 0 });
-  tw(stableExp, { o: 1 }, 22.0, 0.5);
+  tw(stableExp, { o: 1 }, 12.58, 0.5);
   
   clockRun(t => {
-    if (t > 11 && t < 14) {
+    if (t > 6.29 && t < 8.01) {
       const pulse = 1 + Math.sin(t * 3) * 0.08;
       put(guarantee, { s: pulse });
     }
-    if (t > 20) {
+    if (t > 11.44) {
       const pulse = 1 + Math.sin(t * 3) * 0.08;
       put(stable, { s: pulse });
     }
@@ -554,57 +549,57 @@ let BEATS = [
   const p = panel(0);
   
   const title = T(p, '归并排序 vs 快速排序', { x: 800, y: 80, size: 42, weight: 600, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.5);
+  tw(title, { o: 1 }, 0.06, 0.5);
   
   const mergeTitle = T(p, '归并排序', { x: 450, y: 160, size: 32, fill: MERGED_COLOR, weight: 600, anchor: 'middle', o: 0 });
-  tw(mergeTitle, { o: 1 }, 1.0, 0.5);
+  tw(mergeTitle, { o: 1 }, 0.62, 0.5);
   
   const quickTitle = T(p, '快速排序', { x: 1150, y: 160, size: 32, fill: PRIMARY, weight: 600, anchor: 'middle', o: 0 });
-  tw(quickTitle, { o: 1 }, 1.0, 0.5);
+  tw(quickTitle, { o: 1 }, 0.62, 0.5);
   
   const m1 = T(p, '合并时做功', { x: 450, y: 240, size: 26, fill: DIM, anchor: 'middle', o: 0 });
-  tw(m1, { o: 1 }, 3.0, 0.5);
+  tw(m1, { o: 1 }, 1.86, 0.5);
   const q1 = T(p, '分区时做功', { x: 1150, y: 240, size: 26, fill: DIM, anchor: 'middle', o: 0 });
-  tw(q1, { o: 1 }, 3.0, 0.5);
+  tw(q1, { o: 1 }, 1.86, 0.5);
   
   const m2 = T(p, 'O(n log n) 保证', { x: 450, y: 300, size: 26, fill: LEFT_COLOR, weight: 600, anchor: 'middle', o: 0 });
-  tw(m2, { o: 1 }, 6.0, 0.5);
+  tw(m2, { o: 1 }, 3.73, 0.5);
   const q2 = T(p, '平均 O(n log n)', { x: 1150, y: 300, size: 26, fill: DIM, anchor: 'middle', o: 0 });
-  tw(q2, { o: 1 }, 6.0, 0.5);
+  tw(q2, { o: 1 }, 3.73, 0.5);
   
   const m3 = T(p, '稳定排序', { x: 450, y: 360, size: 26, fill: LEFT_COLOR, weight: 600, anchor: 'middle', o: 0 });
-  tw(m3, { o: 1 }, 9.0, 0.5);
+  tw(m3, { o: 1 }, 5.59, 0.5);
   const q3 = T(p, '不稳定', { x: 1150, y: 360, size: 26, fill: '#ff6b6b', anchor: 'middle', o: 0 });
-  tw(q3, { o: 1 }, 9.0, 0.5);
+  tw(q3, { o: 1 }, 5.59, 0.5);
   
   const m4 = T(p, '需要 O(n) 空间', { x: 450, y: 420, size: 26, fill: '#ff6b6b', anchor: 'middle', o: 0 });
-  tw(m4, { o: 1 }, 12.0, 0.5);
+  tw(m4, { o: 1 }, 7.46, 0.5);
   const q4 = T(p, '原地排序 O(log n)', { x: 1150, y: 420, size: 26, fill: RIGHT_COLOR, weight: 600, anchor: 'middle', o: 0 });
-  tw(q4, { o: 1 }, 12.0, 0.5);
+  tw(q4, { o: 1 }, 7.46, 0.5);
   
   const m5 = T(p, '适合链表排序', { x: 450, y: 480, size: 26, fill: LEFT_COLOR, weight: 600, anchor: 'middle', o: 0 });
-  tw(m5, { o: 1 }, 15.0, 0.5);
+  tw(m5, { o: 1 }, 9.32, 0.5);
   const q5 = T(p, '实践中更快', { x: 1150, y: 480, size: 26, fill: RIGHT_COLOR, weight: 600, anchor: 'middle', o: 0 });
-  tw(q5, { o: 1 }, 15.0, 0.5);
+  tw(q5, { o: 1 }, 9.32, 0.5);
   
   const m6 = T(p, '适合外部排序', { x: 450, y: 540, size: 26, fill: LEFT_COLOR, weight: 600, anchor: 'middle', o: 0 });
-  tw(m6, { o: 1 }, 18.0, 0.5);
+  tw(m6, { o: 1 }, 11.19, 0.5);
   const q6 = T(p, '缓存友好', { x: 1150, y: 540, size: 26, fill: RIGHT_COLOR, weight: 600, anchor: 'middle', o: 0 });
-  tw(q6, { o: 1 }, 18.0, 0.5);
+  tw(q6, { o: 1 }, 11.19, 0.5);
   
   const line = mk('line', { x1: 800, y1: 140, x2: 800, y2: 580, stroke: DIM, 'stroke-width': 2, opacity: 0 }, p);
-  tw(line, { opacity: 0.3 }, 2.0, 0.5);
+  tw(line, { opacity: 0.3 }, 1.24, 0.5);
   
   const summary = T(p, '选择依据：稳定性需求 vs 空间限制', 
     { x: 800, y: 640, size: 30, fill: HIGHLIGHT, weight: 600, anchor: 'middle', o: 0 });
-  tw(summary, { o: 1 }, 21.0, 0.7);
+  tw(summary, { o: 1 }, 13.05, 0.7);
   
   const tip = T(p, '实际中：快排更常用，归并用于特殊场景', 
     { x: 800, y: 700, size: 26, fill: DIM, anchor: 'middle', o: 0 });
-  tw(tip, { o: 1 }, 24.0, 0.6);
+  tw(tip, { o: 1 }, 14.92, 0.6);
   
   clockRun(t => {
-    if (t > 21) {
+    if (t > 13.05) {
       const pulse = 1 + Math.sin(t * 2) * 0.08;
       put(summary, { s: pulse });
     }
@@ -616,64 +611,64 @@ let BEATS = [
   const p = panel(0);
   
   const title = T(p, '归并排序的应用', { x: 800, y: 100, size: 44, weight: 600, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.5);
+  tw(title, { o: 1 }, 0.07, 0.5);
   
   const app1 = G(p, { x: 350, y: 250, o: 0 });
   mk('circle', { cx: 0, cy: 0, r: 70, fill: LEFT_COLOR, opacity: 0.2 }, app1);
   T(app1, '🔗', { x: 0, y: -15, size: 40, anchor: 'middle' });
   T(app1, '链表排序', { x: 0, y: 25, size: 26, weight: 600, anchor: 'middle', fill: LEFT_COLOR });
-  tw(app1, { o: 1 }, 2.0, 0.5);
+  tw(app1, { o: 1 }, 1.41, 0.5);
   
   const exp1 = T(p, '不需要随机访问，适合链表', 
     { x: 350, y: 350, size: 22, fill: DIM, anchor: 'middle', o: 0 });
-  tw(exp1, { o: 1 }, 4.0, 0.5);
+  tw(exp1, { o: 1 }, 2.82, 0.5);
   
   const app2 = G(p, { x: 800, y: 250, o: 0 });
   mk('circle', { cx: 0, cy: 0, r: 70, fill: RIGHT_COLOR, opacity: 0.2 }, app2);
   T(app2, '💾', { x: 0, y: -15, size: 40, anchor: 'middle' });
   T(app2, '外部排序', { x: 0, y: 25, size: 26, weight: 600, anchor: 'middle', fill: RIGHT_COLOR });
-  tw(app2, { o: 1 }, 2.5, 0.5);
+  tw(app2, { o: 1 }, 1.76, 0.5);
   
   const exp2 = T(p, '数据太大无法全部加载到内存', 
     { x: 800, y: 350, size: 22, fill: DIM, anchor: 'middle', o: 0 });
-  tw(exp2, { o: 1 }, 7.0, 0.5);
+  tw(exp2, { o: 1 }, 4.93, 0.5);
   
   const app3 = G(p, { x: 1250, y: 250, o: 0 });
   mk('circle', { cx: 0, cy: 0, r: 70, fill: MERGED_COLOR, opacity: 0.2 }, app3);
   T(app3, '📊', { x: 0, y: -15, size: 40, anchor: 'middle' });
   T(app3, '稳定性需求', { x: 0, y: 25, size: 26, weight: 600, anchor: 'middle', fill: MERGED_COLOR });
-  tw(app3, { o: 1 }, 3.0, 0.5);
+  tw(app3, { o: 1 }, 2.11, 0.5);
   
   const exp3 = T(p, '保持相等元素的相对顺序', 
     { x: 1250, y: 350, size: 22, fill: DIM, anchor: 'middle', o: 0 });
-  tw(exp3, { o: 1 }, 10.0, 0.5);
+  tw(exp3, { o: 1 }, 7.05, 0.5);
   
   const app4 = G(p, { x: 500, y: 470, o: 0 });
   mk('circle', { cx: 0, cy: 0, r: 70, fill: SORTED, opacity: 0.2 }, app4);
   T(app4, '🔢', { x: 0, y: -15, size: 40, anchor: 'middle' });
   T(app4, '逆序对计数', { x: 0, y: 25, size: 26, weight: 600, anchor: 'middle', fill: SORTED });
-  tw(app4, { o: 1 }, 3.5, 0.5);
+  tw(app4, { o: 1 }, 2.47, 0.5);
   
   const exp4 = T(p, '统计数组中的逆序对数量', 
     { x: 500, y: 570, size: 22, fill: DIM, anchor: 'middle', o: 0 });
-  tw(exp4, { o: 1 }, 13.0, 0.5);
+  tw(exp4, { o: 1 }, 9.16, 0.5);
   
   const app5 = G(p, { x: 1100, y: 470, o: 0 });
   mk('circle', { cx: 0, cy: 0, r: 70, fill: HIGHLIGHT, opacity: 0.2 }, app5);
   T(app5, '⚡', { x: 0, y: -15, size: 40, anchor: 'middle' });
   T(app5, '分布式排序', { x: 0, y: 25, size: 26, weight: 600, anchor: 'middle', fill: HIGHLIGHT });
-  tw(app5, { o: 1 }, 4.0, 0.5);
+  tw(app5, { o: 1 }, 2.82, 0.5);
   
   const exp5 = T(p, 'MapReduce 等并行计算框架', 
     { x: 1100, y: 570, size: 22, fill: DIM, anchor: 'middle', o: 0 });
-  tw(exp5, { o: 1 }, 16.0, 0.5);
+  tw(exp5, { o: 1 }, 11.28, 0.5);
   
   const summary = T(p, '关键特点：稳定 + 可预测 + 易并行化', 
     { x: 800, y: 680, size: 30, fill: PRIMARY, weight: 600, anchor: 'middle', o: 0 });
-  tw(summary, { o: 1 }, 19.0, 0.7);
+  tw(summary, { o: 1 }, 13.39, 0.7);
   
   clockRun(t => {
-    if (t > 5 && t < 19) {
+    if (t > 3.52 && t < 13.39) {
       const pulse = 1 + Math.sin(t * 1.5) * 0.08;
       put(app1, { s: pulse });
       put(app2, { s: pulse });
@@ -689,47 +684,47 @@ let BEATS = [
   const p = panel(0);
   
   const title = T(p, '优化技巧', { x: 800, y: 100, size: 44, weight: 600, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.5);
+  tw(title, { o: 1 }, 0.05, 0.5);
   
   const opt1 = T(p, '① 小数组用插入排序', 
     { x: 300, y: 220, size: 32, fill: PRIMARY, weight: 600, o: 0 });
-  tw(opt1, { o: 1 }, 2.0, 0.5);
+  tw(opt1, { o: 1 }, 1.07, 0.5);
   
   const opt1Exp = T(p, '当子数组小于阈值（如 10-15）时，切换到插入排序', 
     { x: 300, y: 270, size: 24, fill: DIM, o: 0, w: 800 });
-  tw(opt1Exp, { o: 1 }, 3.0, 0.5);
+  tw(opt1Exp, { o: 1 }, 1.6, 0.5);
   
   const opt2 = T(p, '② 检查是否已有序', 
     { x: 300, y: 350, size: 32, fill: PRIMARY, weight: 600, o: 0 });
-  tw(opt2, { o: 1 }, 7.0, 0.5);
+  tw(opt2, { o: 1 }, 3.74, 0.5);
   
   const opt2Exp = T(p, '如果 left[last] ≤ right[0]，直接拼接，无需合并', 
     { x: 300, y: 400, size: 24, fill: DIM, o: 0, w: 800 });
-  tw(opt2Exp, { o: 1 }, 8.0, 0.5);
+  tw(opt2Exp, { o: 1 }, 4.27, 0.5);
   
   const opt3 = T(p, '③ 原地归并', 
     { x: 300, y: 480, size: 32, fill: PRIMARY, weight: 600, o: 0 });
-  tw(opt3, { o: 1 }, 12.0, 0.5);
+  tw(opt3, { o: 1 }, 6.41, 0.5);
   
   const opt3Exp = T(p, '复杂度较高，但可以减少空间开销到 O(1)', 
     { x: 300, y: 530, size: 24, fill: DIM, o: 0, w: 800 });
-  tw(opt3Exp, { o: 1 }, 13.0, 0.5);
+  tw(opt3Exp, { o: 1 }, 6.94, 0.5);
   
   const opt4 = T(p, '④ 自底向上归并', 
     { x: 300, y: 610, size: 32, fill: PRIMARY, weight: 600, o: 0 });
-  tw(opt4, { o: 1 }, 16.0, 0.5);
+  tw(opt4, { o: 1 }, 8.54, 0.5);
   
   const opt4Exp = T(p, '避免递归，从小到大迭代合并，节省栈空间', 
     { x: 300, y: 660, size: 24, fill: DIM, o: 0, w: 800 });
-  tw(opt4Exp, { o: 1 }, 17.0, 0.5);
+  tw(opt4Exp, { o: 1 }, 9.08, 0.5);
   
   const code = T(p, 'if (arr[mid] <= arr[mid+1]) skip_merge();', 
     { x: 800, y: 750, size: 22, fill: HIGHLIGHT, anchor: 'middle', o: 0, 
     family: 'Monaco, Consolas, monospace' });
-  tw(code, { o: 1 }, 20.0, 0.6);
+  tw(code, { o: 1 }, 10.68, 0.6);
   
   clockRun(t => {
-    if (t > 20) {
+    if (t > 10.68) {
       const glow = 0.7 + Math.sin(t * 2) * 0.3;
       put(code, { o: glow });
     }
@@ -741,49 +736,49 @@ let BEATS = [
   const p = panel(0);
   
   const title = T(p, '本章回顾', { x: 800, y: 90, size: 48, weight: 700, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6);
+  tw(title, { o: 1 }, 0.05, 0.6);
   
   const point1 = T(p, '① 分治思想：分、治、合三步走', 
     { x: 300, y: 200, size: 30, fill: PRIMARY, weight: 600, o: 0 });
-  tw(point1, { o: 1 }, 2.0, 0.5);
+  tw(point1, { o: 1 }, 1.04, 0.5);
   
   const point2 = T(p, '② 递归深度 log n，每层 O(n)', 
     { x: 300, y: 260, size: 30, fill: PRIMARY, weight: 600, o: 0 });
-  tw(point2, { o: 1 }, 5.0, 0.5);
+  tw(point2, { o: 1 }, 2.6, 0.5);
   
   const point3 = T(p, '③ 时间复杂度 O(n log n) 保证', 
     { x: 300, y: 320, size: 30, fill: LEFT_COLOR, weight: 600, o: 0 });
-  tw(point3, { o: 1 }, 8.0, 0.5);
+  tw(point3, { o: 1 }, 4.16, 0.5);
   
   const point4 = T(p, '④ 空间复杂度 O(n)', 
     { x: 300, y: 380, size: 30, fill: PRIMARY, weight: 600, o: 0 });
-  tw(point4, { o: 1 }, 11.0, 0.5);
+  tw(point4, { o: 1 }, 5.72, 0.5);
   
   const point5 = T(p, '⑤ 稳定排序算法', 
     { x: 300, y: 440, size: 30, fill: RIGHT_COLOR, weight: 600, o: 0 });
-  tw(point5, { o: 1 }, 14.0, 0.5);
+  tw(point5, { o: 1 }, 7.28, 0.5);
   
   const point6 = T(p, '⑥ 适合链表和外部排序', 
     { x: 300, y: 500, size: 30, fill: PRIMARY, weight: 600, o: 0 });
-  tw(point6, { o: 1 }, 17.0, 0.5);
+  tw(point6, { o: 1 }, 8.83, 0.5);
   
   const vs = T(p, '对比快速排序', { x: 800, y: 600, size: 36, fill: HIGHLIGHT, weight: 600, anchor: 'middle', o: 0 });
-  tw(vs, { o: 1 }, 20.0, 0.6);
+  tw(vs, { o: 1 }, 10.39, 0.6);
   
   const vsDetail = T(p, '归并：合并时做功，性能稳定，需要额外空间', 
     { x: 800, y: 660, size: 26, fill: MERGED_COLOR, anchor: 'middle', o: 0 });
-  tw(vsDetail, { o: 1 }, 22.0, 0.6);
+  tw(vsDetail, { o: 1 }, 11.43, 0.6);
   
   const vsDetail2 = T(p, '快排：分区时做功，实践更快，原地排序', 
     { x: 800, y: 710, size: 26, fill: PRIMARY, anchor: 'middle', o: 0 });
-  tw(vsDetail2, { o: 1 }, 25.0, 0.6);
+  tw(vsDetail2, { o: 1 }, 12.99, 0.6);
   
   const final = T(p, '分治思想：算法设计的重要范式', 
     { x: 800, y: 780, size: 32, fill: HIGHLIGHT, weight: 700, anchor: 'middle', o: 0 });
-  tw(final, { o: 1 }, 28.0, 0.8);
+  tw(final, { o: 1 }, 14.55, 0.8);
   
   clockRun(t => {
-    if (t > 28) {
+    if (t > 14.55) {
       const pulse = 1 + Math.sin(t * 2.2) * 0.1;
       put(final, { s: pulse });
     }

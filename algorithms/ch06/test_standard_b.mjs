@@ -47,7 +47,9 @@ const coverages = await page.evaluate(() => {
     
     for (let t = 0; t <= dur; t += sampleInterval) {
       // 取当前时刻所有可见元素的签名
-      const elements = P.svg.querySelectorAll('text, rect, circle, line, path');
+      const svg = document.getElementById('panel0');
+      if (!svg) continue;
+      const elements = svg.querySelectorAll('text, rect, circle, line, path');
       const signatures = [];
       elements.forEach(el => {
         const opacity = parseFloat(el.getAttribute('opacity') || 1);

@@ -202,12 +202,12 @@ const BEATS = [
   tw(magic, { o: 1 }, m('compare_merge'), dur - m('compare_merge'));
 }],
 
-['partition', 'Partition：分区操作', () => {
+['partition', 'Partition：分区操作', (m, dur) => {
   const p = panel(0);
   setupArrowMarker(p);
   
   const head = T(p, '核心：Partition（分区）', { x: 800, y: 130, size: 46, weight: 600, anchor: 'middle', o: 0 });
-  tw(head, { o: 1 }, 0.1, 0.6, out);
+  tw(head, { o: 1 }, 0, 0.6, out);
   
   // 展示分区概念
   const arr = [4, 2, 7, 1, 9, 3, 8, 5, 6];
@@ -215,17 +215,17 @@ const BEATS = [
   
   const colors = arr.map((v, i) => i === pivotIdx ? PIVOT : UNSORTED);
   const bars = drawBars(p, arr, { y: 380, colors, pivotIndex: pivotIdx });
-  tw(bars, { o: 1 }, 0.8, 0.6);
+  tw(bars, { o: 1 }, m('partition'), 0.6);
   
   // 说明
   const step1 = T(p, '① 选一个基准值（pivot）', { x: 300, y: 480, size: 26, fill: COL.chalk, o: 0 });
-  tw(step1, { o: 1 }, 2, 0.5);
+  tw(step1, { o: 1 }, m('core'), 0.5);
   
   const step2 = T(p, '② 重新排列：比pivot小的放左边，大的放右边', { x: 300, y: 530, size: 26, fill: COL.chalk, o: 0 });
-  tw(step2, { o: 1 }, 5, 0.5);
+  tw(step2, { o: 1 }, m('pivot'), 0.5);
   
   const step3 = T(p, '③ pivot就在最终位置了', { x: 300, y: 580, size: 26, fill: COL.chalk, o: 0 });
-  tw(step3, { o: 1 }, 10, 0.5);
+  tw(step3, { o: 1 }, m('equal'), 0.5);
   
   // 分区后的效果
   const afterArr = [4, 2, 7, 1, 3, 5, 6, 8, 9];
@@ -236,22 +236,25 @@ const BEATS = [
   });
   const afterBars = drawBars(p, afterArr, { y: 720, colors: afterColors, labels: afterArr.map(() => true) });
   put(afterBars, { o: 0 });
-  tw(afterBars, { o: 1 }, 13, 0.8, out);
+  tw(afterBars, { o: 1 }, m('final_pos'), 0.8, out);
   
   // 标注
   const leftLabel = T(p, '≤ pivot', { x: 450, y: 760, size: 22, fill: LESS, anchor: 'middle', o: 0 });
-  tw(leftLabel, { o: 1 }, 14, 0.5);
+  tw(leftLabel, { o: 1 }, m('why'), 0.5);
   
   const rightLabel = T(p, '> pivot', { x: 1100, y: 760, size: 22, fill: GREATER, anchor: 'middle', o: 0 });
-  tw(rightLabel, { o: 1 }, 14, 0.5);
+  tw(rightLabel, { o: 1 }, m('why'), 0.5);
+  
+  const recurse = T(p, '然后对左右两区递归排序', { x: 800, y: 650, size: 24, fill: '#43e97b', anchor: 'middle', o: 0 });
+  tw(recurse, { o: 1 }, m('recurse'), dur - m('recurse'));
 }],
 
-['partition_demo', 'Partition 演示', () => {
+['partition_demo', 'Partition 演示', (m, dur) => {
   const p = panel(0);
   setupArrowMarker(p);
   
   const head = T(p, '双指针扫描法', { x: 800, y: 40, size: 42, weight: 600, anchor: 'middle', o: 0 });
-  tw(head, { o: 1 }, 0.1, 0.6, out);
+  tw(head, { o: 1 }, 0, 0.6, out);
   
   // 初始数组
   const arr = [4, 2, 9, 1, 7, 3, 8, 5, 6];
@@ -291,11 +294,11 @@ const BEATS = [
     labels.push(label);
   });
   
-  tw(bars[n - 1], { o: 1 }, 0.5, 0.5);
-  tw(labels[n - 1], { o: 1 }, 0.5, 0.5);
+  tw(bars[n - 1], { o: 1 }, m('demo'), 0.5);
+  tw(labels[n - 1], { o: 1 }, m('demo'), 0.5);
   bars.slice(0, -1).forEach((b, i) => {
-    tw(b, { o: 1 }, 0.7 + i * 0.08, 0.4);
-    tw(labels[i], { o: 1 }, 0.7 + i * 0.08, 0.4);
+    tw(b, { o: 1 }, m('choose') + i * 0.08, 0.4);
+    tw(labels[i], { o: 1 }, m('choose') + i * 0.08, 0.4);
   });
   
   // 指针 i 和 j
@@ -313,8 +316,6 @@ const BEATS = [
     tw(label, { x: px, o: 1 }, t0, 0.3);
   }
   
-  // 模拟分区过程
-  let t = 3;
   const code = T(p, '扫描：j < pivot 时，交换 arr[i] 和 arr[j]，i++', {
     x: 800,
     y: 540,
@@ -323,29 +324,38 @@ const BEATS = [
     anchor: 'middle',
     o: 0
   });
-  tw(code, { o: 1 }, 2.5, 0.5);
+  tw(code, { o: 1 }, m('pointers'), 0.5);
   
-  // j 从0开始扫描
+  // 模拟分区过程 - 根据 marks 分配时间
+  const swapStart = m('swap');
+  const exampleStart = m('example');
+  const continueStart = m('continue');
+  const scanStart = m('scan');
+  const finalStart = m('final_swap');
+  
+  // 第一次交换：4 < 6
+  let t = m('init');
   for (let j = 0; j < n - 1; j++) {
     movePointer(jArrow, jLabel, j, t);
     
     if (arr[j] < pivotVal) {
       iPos++;
-      movePointer(iArrow, iLabel, iPos, t + 0.3);
+      movePointer(iArrow, iLabel, iPos, t + 0.5);
       
       // 交换动画
       if (iPos !== j) {
+        const swapDur = (j === 0) ? (swapStart - t - 1.0) : 2.0;
         // 变色
-        tw(bars[iPos], { c_fill: SWAP }, t + 1.6, 0.2);
-        tw(bars[j], { c_fill: SWAP }, t + 1.6, 0.2);
+        tw(bars[iPos], { c_fill: SWAP }, t + 1.0, 0.2);
+        tw(bars[j], { c_fill: SWAP }, t + 1.0, 0.2);
         
-        // 交换位置（使用索引计算目标位置，不读状态）
+        // 交换位置
         const xI = x0 + iPos * barW + 5;
         const xJ = x0 + j * barW + 5;
-        tw(bars[iPos], { x: xJ }, t + 1.6, 0.4, io);
-        tw(bars[j], { x: xI }, t + 1.6, 0.4, io);
-        tw(labels[iPos], { x: xJ + (barW - 10) / 2 }, t + 1.6, 0.4, io);
-        tw(labels[j], { x: xI + (barW - 10) / 2 }, t + 1.6, 0.4, io);
+        tw(bars[iPos], { x: xJ }, t + 1.2, 0.4, io);
+        tw(bars[j], { x: xI }, t + 1.2, 0.4, io);
+        tw(labels[iPos], { x: xJ + (barW - 10) / 2 }, t + 1.2, 0.4, io);
+        tw(labels[j], { x: xI + (barW - 10) / 2 }, t + 1.2, 0.4, io);
         
         // 交换数组中的引用
         [bars[iPos], bars[j]] = [bars[j], bars[iPos]];
@@ -353,15 +363,16 @@ const BEATS = [
         [arr[iPos], arr[j]] = [arr[j], arr[iPos]];
         
         // 变回小于颜色
-        tw(bars[iPos], { c_fill: LESS }, t + 2.9, 0.2);
-        tw(bars[j], { c_fill: LESS }, t + 2.9, 0.2);
+        tw(bars[iPos], { c_fill: LESS }, t + 1.8, 0.2);
+        tw(bars[j], { c_fill: LESS }, t + 1.8, 0.2);
+        
+        t += swapDur + 0.5;
       } else {
-        tw(bars[j], { c_fill: LESS }, t + 1.6, 0.3);
+        tw(bars[j], { c_fill: LESS }, t + 1.0, 0.3);
+        t += 2.0;
       }
-      
-      t += 6.7;  // 1.2 × 5.58 ≈ 6.7，匹配 65.6s 旁白
     } else {
-      t += 4.5;  // 0.8 × 5.58 ≈ 4.5
+      t += 1.5;
     }
   }
   
@@ -374,25 +385,24 @@ const BEATS = [
     anchor: 'middle',
     o: 0
   });
-  tw(finalSwap, { o: 1 }, t, 0.4);
+  tw(finalSwap, { o: 1 }, finalStart, 0.4);
   
   const pivotFinalPos = iPos + 1;
-  tw(bars[pivotFinalPos], { c_fill: SWAP }, t + 1.6, 0.2);
-  tw(bars[n - 1], { c_fill: SWAP }, t + 1.6, 0.2);
+  tw(bars[pivotFinalPos], { c_fill: SWAP }, finalStart + 0.5, 0.2);
+  tw(bars[n - 1], { c_fill: SWAP }, finalStart + 0.5, 0.2);
   
-  // 交换位置（使用索引计算目标位置，不读状态）
   const xPivotFinal = x0 + pivotFinalPos * barW + 5;
   const xPivotCurrent = x0 + (n - 1) * barW + 5;
-  tw(bars[pivotFinalPos], { x: xPivotCurrent }, t + 1.6, 0.5, io);
-  tw(bars[n - 1], { x: xPivotFinal }, t + 1.6, 0.5, io);
-  tw(labels[pivotFinalPos], { x: xPivotCurrent + (barW - 10) / 2 }, t + 1.6, 0.5, io);
-  tw(labels[n - 1], { x: xPivotFinal + (barW - 10) / 2 }, t + 1.6, 0.5, io);
+  tw(bars[pivotFinalPos], { x: xPivotCurrent }, finalStart + 0.7, 0.5, io);
+  tw(bars[n - 1], { x: xPivotFinal }, finalStart + 0.7, 0.5, io);
+  tw(labels[pivotFinalPos], { x: xPivotCurrent + (barW - 10) / 2 }, finalStart + 0.7, 0.5, io);
+  tw(labels[n - 1], { x: xPivotFinal + (barW - 10) / 2 }, finalStart + 0.7, 0.5, io);
   
   [bars[pivotFinalPos], bars[n - 1]] = [bars[n - 1], bars[pivotFinalPos]];
   [labels[pivotFinalPos], labels[n - 1]] = [labels[n - 1], labels[pivotFinalPos]];
   
-  tw(bars[pivotFinalPos], { c_fill: SORTED }, t + 3.2, 0.3);
-  tw(bars[n - 1], { c_fill: SORTED }, t + 3.2, 0.3);
+  tw(bars[pivotFinalPos], { c_fill: SORTED }, finalStart + 1.5, 0.3);
+  tw(bars[n - 1], { c_fill: SORTED }, finalStart + 1.5, 0.3);
   
   const done = T(p, '分区完成！', {
     x: 800,
@@ -403,14 +413,14 @@ const BEATS = [
     anchor: 'middle',
     o: 0
   });
-  tw(done, { o: 1, s: 1.1 }, t + 6.4, 0.6, out);
+  tw(done, { o: 1, s: 1.1 }, m('done'), dur - m('done'), out);
 }],
 
-['pivot_choice', 'Pivot 选择策略', () => {
+['pivot_choice', 'Pivot 选择策略', (m, dur) => {
   const p = panel(0);
   
   const head = T(p, 'Pivot 怎么选？', { x: 800, y: 130, size: 46, weight: 600, anchor: 'middle', o: 0 });
-  tw(head, { o: 1 }, 0.1, 0.6, out);
+  tw(head, { o: 1 }, 0, 0.6, out);
   
   const strategies = [
     ['首元素', 'arr[0]', '简单，但有序数组会退化', '#f5576c'],
@@ -419,8 +429,10 @@ const BEATS = [
     ['三数取中', 'median(arr[0], arr[n/2], arr[n-1])', '首、中、尾取中位数，效果好', '#4facfe']
   ];
   
+  const strategyMarks = ['simple', 'easy', 'random', 'median3'];
   strategies.forEach(([name, code, desc, color], i) => {
     const yBase = 240 + i * 120;
+    const t0 = m(strategyMarks[i]);
     
     const box = mk('rect', {
       x: 200,
@@ -433,7 +445,7 @@ const BEATS = [
       'stroke-width': 2,
       opacity: 0
     }, p);
-    tw(box, { opacity: 0.7 }, 0.8 + i * 0.5, 0.4);
+    tw(box, { opacity: 0.7 }, t0, 0.4);
     
     const nameT = T(p, name, {
       x: 280,
@@ -443,7 +455,7 @@ const BEATS = [
       weight: 600,
       o: 0
     });
-    tw(nameT, { o: 1 }, 0.9 + i * 0.5, 0.4);
+    tw(nameT, { o: 1 }, t0, 0.4);
     
     const codeT = T(p, code, {
       x: 480,
@@ -453,7 +465,7 @@ const BEATS = [
       font: 'ui-monospace, Menlo, monospace',
       o: 0
     });
-    tw(codeT, { o: 1 }, 1.0 + i * 0.5, 0.4);
+    tw(codeT, { o: 1 }, t0 + 0.1, 0.4);
     
     const descT = T(p, desc, {
       x: 280,
@@ -462,26 +474,36 @@ const BEATS = [
       fill: COL.dim,
       o: 0
     });
-    tw(descT, { o: 1 }, 1.1 + i * 0.5, 0.4);
+    tw(descT, { o: 1 }, t0 + 0.2, 0.4);
   });
+  
+  const worst = T(p, '最坏情况：已排序数组 + 首/尾 pivot', {
+    x: 800,
+    y: 700,
+    size: 24,
+    fill: '#f5576c',
+    anchor: 'middle',
+    o: 0
+  });
+  tw(worst, { o: 1 }, m('worst'), 1.0);
   
   const best = T(p, '工程实践：随机或三数取中', {
     x: 800,
-    y: 730,
+    y: 750,
     size: 28,
     fill: '#43e97b',
     anchor: 'middle',
     weight: 600,
     o: 0
   });
-  tw(best, { o: 1 }, 20, 0.6);
+  tw(best, { o: 1 }, m('cpp'), dur - m('cpp'));
 }],
 
-['recursion', '递归调用', () => {
+['recursion', '递归调用', (m, dur) => {
   const p = panel(0);
   
   const head = T(p, '递归处理左右子数组', { x: 800, y: 130, size: 46, weight: 600, anchor: 'middle', o: 0 });
-  tw(head, { o: 1 }, 0.1, 0.6, out);
+  tw(head, { o: 1 }, 0, 0.6, out);
   
   // 递归树
   const levels = [
@@ -495,6 +517,7 @@ const BEATS = [
   ];
   
   levels.forEach((node, i) => {
+    const t0 = i === 0 ? m('recursion') : m('visualize') + i * 0.3;
     const box = mk('rect', {
       x: node.x - 90,
       y: node.y - 25,
@@ -506,7 +529,7 @@ const BEATS = [
       'stroke-width': 2,
       opacity: 0
     }, p);
-    tw(box, { opacity: 1 }, 0.5 + i * 0.3, 0.4, out);
+    tw(box, { opacity: 1 }, t0, 0.4, out);
     
     const text = T(p, node.arr, {
       x: node.x,
@@ -517,7 +540,7 @@ const BEATS = [
       font: 'ui-monospace, Menlo, monospace',
       o: 0
     });
-    tw(text, { o: 1 }, 0.6 + i * 0.3, 0.4);
+    tw(text, { o: 1 }, t0 + 0.1, 0.4);
   });
   
   // 连线
@@ -536,7 +559,7 @@ const BEATS = [
       'stroke-width': 2,
       opacity: 0
     });
-    tw(line, { opacity: 0.5 }, 1 + i * 0.2, 0.3);
+    tw(line, { opacity: 0.5 }, m('stack') + i * 0.2, 0.3);
   });
   
   const base = T(p, '递归边界：0 或 1 个元素时已有序', {
@@ -547,7 +570,7 @@ const BEATS = [
     anchor: 'middle',
     o: 0
   });
-  tw(base, { o: 1 }, 12, 0.6);
+  tw(base, { o: 1 }, m('base'), 1.0);
   
   const power = T(p, '分治的威力：每次规模减半', {
     x: 800,
@@ -558,14 +581,14 @@ const BEATS = [
     weight: 600,
     o: 0
   });
-  tw(power, { o: 1 }, 15, 0.6);
+  tw(power, { o: 1 }, m('tree'), dur - m('tree'));
 }],
 
-['best_case', '最好情况', () => {
+['best_case', '最好情况', (m, dur) => {
   const p = panel(0);
   
   const head = T(p, '最好情况：O(n log n)', { x: 800, y: 130, size: 46, weight: 600, anchor: 'middle', o: 0 });
-  tw(head, { o: 1 }, 0.1, 0.6, out);
+  tw(head, { o: 1 }, 0, 0.6, out);
   
   // 完美平衡的递归树
   const treeY = 220;
@@ -573,7 +596,7 @@ const BEATS = [
   
   // 第一层
   const root = mk('circle', { cx: 800, cy: treeY, r: 35, fill: '#4facfe', opacity: 0 }, p);
-  tw(root, { opacity: 1 }, 0.8, 0.4, out);
+  tw(root, { opacity: 1 }, m('best'), 0.4, out);
   T(p, 'n', { x: 800, y: treeY + 6, size: 24, fill: COL.board, anchor: 'middle', weight: 600 });
   
   // 第二层
@@ -583,10 +606,10 @@ const BEATS = [
       'stroke-width': 2,
       opacity: 0
     });
-    tw(line, { opacity: 0.6 }, 1.2, 0.3);
+    tw(line, { opacity: 0.6 }, m('first'), 0.3);
     
     const node = mk('circle', { cx: x, cy: treeY + levelGap, r: 32, fill: '#43e97b', opacity: 0 }, p);
-    tw(node, { opacity: 1 }, 1.5 + i * 0.2, 0.4, out);
+    tw(node, { opacity: 1 }, m('second') + i * 0.2, 0.4, out);
     T(p, 'n/2', { x, y: treeY + levelGap + 6, size: 20, fill: COL.board, anchor: 'middle', weight: 600 });
   });
   
@@ -598,10 +621,10 @@ const BEATS = [
       'stroke-width': 2,
       opacity: 0
     });
-    tw(line, { opacity: 0.6 }, 2.0 + i * 0.15, 0.3);
+    tw(line, { opacity: 0.6 }, m('right') + i * 0.15, 0.3);
     
     const node = mk('circle', { cx: x, cy: treeY + levelGap * 2, r: 28, fill: '#f093fb', opacity: 0 }, p);
-    tw(node, { opacity: 1 }, 2.3 + i * 0.15, 0.4, out);
+    tw(node, { opacity: 1 }, m('perfect') + i * 0.15, 0.4, out);
     T(p, 'n/4', { x, y: treeY + levelGap * 2 + 5, size: 18, fill: COL.board, anchor: 'middle', weight: 600 });
   });
   
@@ -614,7 +637,7 @@ const BEATS = [
     anchor: 'middle',
     o: 0
   });
-  tw(balanced, { o: 1 }, 4, 0.5);
+  tw(balanced, { o: 1 }, m('balanced'), 1.0);
   
   const total = T(p, '每层 n 个元素，总共 O(n log n)', {
     x: 800,
@@ -625,14 +648,14 @@ const BEATS = [
     weight: 600,
     o: 0
   });
-  tw(total, { o: 1 }, 11, 0.6);
+  tw(total, { o: 1 }, m('time'), dur - m('time'));
 }],
 
-['worst_case', '最坏情况', () => {
+['worst_case', '最坏情况', (m, dur) => {
   const p = panel(0);
   
   const head = T(p, '最坏情况：O(n²)', { x: 800, y: 130, size: 46, weight: 600, anchor: 'middle', o: 0 });
-  tw(head, { o: 1 }, 0.1, 0.6, out);
+  tw(head, { o: 1 }, 0, 0.6, out);
   
   // 退化成链表的树
   const chainX = 700, chainY = 240;
@@ -646,7 +669,7 @@ const BEATS = [
         'stroke-width': 2,
         opacity: 0
       });
-      tw(line, { opacity: 0.6 }, 0.8 + i * 0.3, 0.3);
+      tw(line, { opacity: 0.6 }, m('sorted') + i * 0.3, 0.3);
     }
     
     const r = i === 4 ? 8 : 28;
@@ -657,7 +680,7 @@ const BEATS = [
       fill: i === 4 ? COL.dim : '#f5576c',
       opacity: 0
     }, p);
-    tw(node, { opacity: 1 }, 1.0 + i * 0.3, 0.4, out);
+    tw(node, { opacity: 1 }, m('example') + i * 0.3, 0.4, out);
     
     if (i !== 4) {
       T(p, label, {
@@ -678,7 +701,7 @@ const BEATS = [
     fill: COL.chalk,
     o: 0
   });
-  tw(reason, { o: 1 }, 3, 0.5);
+  tw(reason, { o: 1 }, m('first'), 0.5);
   
   const example = T(p, '例：已排序数组 + 首元素做 pivot', {
     x: 950,
@@ -687,7 +710,7 @@ const BEATS = [
     fill: COL.dim,
     o: 0
   });
-  tw(example, { o: 1 }, 3.5, 0.5);
+  tw(example, { o: 1 }, m('second'), 0.5);
   
   const formula = T(p, '树高 = n，总时间 O(n²)', {
     x: 800,
@@ -698,14 +721,14 @@ const BEATS = [
     weight: 600,
     o: 0
   });
-  tw(formula, { o: 1, s: 1.05 }, 15, 0.6, out);
+  tw(formula, { o: 1, s: 1.05 }, m('sum'), dur - m('sum'), out);
 }],
 
-['average_case', '平均情况', () => {
+['average_case', '平均情况', (m, dur) => {
   const p = panel(0);
   
   const head = T(p, '平均情况：O(n log n)', { x: 800, y: 130, size: 46, weight: 600, anchor: 'middle', o: 0 });
-  tw(head, { o: 1 }, 0.1, 0.6, out);
+  tw(head, { o: 1 }, 0, 0.6, out);
   
   const key = T(p, '关键：只要不总是极端值，性能就好', {
     x: 800,
@@ -715,7 +738,7 @@ const BEATS = [
     anchor: 'middle',
     o: 0
   });
-  tw(key, { o: 1 }, 1, 0.6);
+  tw(key, { o: 1 }, m('average'), 0.6);
   
   // 画一个不完美但还行的树
   const y0 = 340;
@@ -737,7 +760,7 @@ const BEATS = [
       fill: node.color,
       opacity: 0
     }, p);
-    tw(circle, { opacity: 1 }, 1.5 + i * 0.25, 0.4, out);
+    tw(circle, { opacity: 1 }, m('good_enough') + i * 0.25, 0.4, out);
     
     T(p, node.label, {
       x: node.x,
@@ -759,7 +782,7 @@ const BEATS = [
       'stroke-width': 2,
       opacity: 0
     });
-    tw(line, { opacity: 0.5 }, 2 + i * 0.15, 0.3);
+    tw(line, { opacity: 0.5 }, m('ratio') + i * 0.15, 0.3);
   });
   
   const math = T(p, '数学期望：E[T(n)] = O(n log n)', {
@@ -771,7 +794,7 @@ const BEATS = [
     weight: 600,
     o: 0
   });
-  tw(math, { o: 1 }, 14, 0.6);
+  tw(math, { o: 1 }, m('total'), 1.0);
   
   const fast = T(p, '实际中：常数因子小，比归并排序快', {
     x: 800,
@@ -781,14 +804,14 @@ const BEATS = [
     anchor: 'middle',
     o: 0
   });
-  tw(fast, { o: 1 }, 16, 0.6);
+  tw(fast, { o: 1 }, m('empirical'), dur - m('empirical'));
 }],
 
-['in_place', '原地排序', () => {
+['in_place', '原地排序', (m, dur) => {
   const p = panel(0);
   
   const head = T(p, '空间复杂度：O(log n)', { x: 800, y: 130, size: 46, weight: 600, anchor: 'middle', o: 0 });
-  tw(head, { o: 1 }, 0.1, 0.6, out);
+  tw(head, { o: 1 }, 0, 0.6, out);
   
   const inPlace = T(p, '快速排序是原地排序（In-place）', {
     x: 800,
@@ -799,7 +822,7 @@ const BEATS = [
     weight: 600,
     o: 0
   });
-  tw(inPlace, { o: 1 }, 1, 0.6);
+  tw(inPlace, { o: 1 }, m('in_place'), 0.6);
   
   const why = T(p, '不需要额外的 O(n) 数组', {
     x: 800,
@@ -809,7 +832,7 @@ const BEATS = [
     anchor: 'middle',
     o: 0
   });
-  tw(why, { o: 1 }, 2, 0.5);
+  tw(why, { o: 1 }, m('what'), 0.5);
   
   const how = T(p, '直接在原数组上交换元素', {
     x: 800,
@@ -819,7 +842,7 @@ const BEATS = [
     anchor: 'middle',
     o: 0
   });
-  tw(how, { o: 1 }, 3, 0.5);
+  tw(how, { o: 1 }, m('space'), 0.5);
   
   const stack = T(p, '只用递归栈的 O(log n) 空间', {
     x: 800,
@@ -829,7 +852,7 @@ const BEATS = [
     anchor: 'middle',
     o: 0
   });
-  tw(stack, { o: 1 }, 4, 0.5);
+  tw(stack, { o: 1 }, m('best'), 0.5);
   
   // 对比表格
   const compY = 540;
@@ -852,7 +875,7 @@ const BEATS = [
         weight: isHeader ? 600 : 400,
         o: 0
       });
-      tw(t, { o: 1 }, 6 + ri * 0.3 + ci * 0.1, 0.4);
+      tw(t, { o: 1 }, m('how') + ri * 0.3 + ci * 0.1, 0.4);
     });
   });
   
@@ -863,14 +886,14 @@ const BEATS = [
     fill: COL.dim,
     o: 0
   });
-  tw(note, { o: 1 }, 9, 0.4);
+  tw(note, { o: 1 }, m('important'), dur - m('important'));
 }],
 
-['stability', '稳定性', () => {
+['stability', '稳定性', (m, dur) => {
   const p = panel(0);
   
   const head = T(p, '快速排序不稳定', { x: 800, y: 130, size: 46, weight: 600, anchor: 'middle', o: 0 });
-  tw(head, { o: 1 }, 0.1, 0.6, out);
+  tw(head, { o: 1 }, 0, 0.6, out);
   
   const what = T(p, '相等元素的相对顺序可能改变', {
     x: 800,
@@ -880,7 +903,7 @@ const BEATS = [
     anchor: 'middle',
     o: 0
   });
-  tw(what, { o: 1 }, 1.5, 0.6);
+  tw(what, { o: 1 }, m('unstable'), 0.6);
   
   // 例子
   const ex1 = T(p, '排序前：3ᵃ  5  2  3ᵇ  1', {
@@ -892,7 +915,7 @@ const BEATS = [
     font: 'ui-monospace, Menlo, monospace',
     o: 0
   });
-  tw(ex1, { o: 1 }, 3, 0.5);
+  tw(ex1, { o: 1 }, m('what'), 0.5);
   
   const ex2 = T(p, '排序后：1  2  3ᵇ  3ᵃ  5  （可能）', {
     x: 800,
@@ -903,7 +926,7 @@ const BEATS = [
     font: 'ui-monospace, Menlo, monospace',
     o: 0
   });
-  tw(ex2, { o: 1 }, 5, 0.5);
+  tw(ex2, { o: 1 }, m('example'), 0.5);
   
   const arrow = path(p, 'M800 360 L800 390', {
     stroke: COL.dim,
@@ -922,7 +945,7 @@ const BEATS = [
     orient: 'auto'
   }, defs);
   mk('polygon', { points: '0 0, 10 3, 0 6', fill: COL.dim }, marker2);
-  tw(arrow, { opacity: 0.6 }, 4, 0.5);
+  tw(arrow, { opacity: 0.6 }, m('why'), 0.5);
   
   const when = T(p, '何时需要稳定性？', {
     x: 800,
@@ -933,7 +956,7 @@ const BEATS = [
     weight: 600,
     o: 0
   });
-  tw(when, { o: 1 }, 7.5, 0.5);
+  tw(when, { o: 1 }, m('swap'), 0.5);
   
   const cases = T(p, '多关键字排序、UI 列表排序等', {
     x: 800,
@@ -943,7 +966,7 @@ const BEATS = [
     anchor: 'middle',
     o: 0
   });
-  tw(cases, { o: 1 }, 8.5, 0.5);
+  tw(cases, { o: 1 }, m('when'), 0.5);
   
   const alt = T(p, '需要稳定性时 → 归并排序', {
     x: 800,
@@ -954,14 +977,14 @@ const BEATS = [
     weight: 600,
     o: 0
   });
-  tw(alt, { o: 1 }, 11, 0.6);
+  tw(alt, { o: 1 }, m('alternative'), dur - m('alternative'));
 }],
 
-['summary', '总结', () => {
+['summary', '总结', (m, dur) => {
   const p = panel(0);
   
   const head = T(p, '快速排序：分治法的杰作', { x: 800, y: 110, size: 48, weight: 700, anchor: 'middle', o: 0 });
-  tw(head, { o: 1 }, 0.1, 0.8, out);
+  tw(head, { o: 1 }, 0, 0.8, out);
   
   const points = [
     ['核心', 'Partition + 递归'],
@@ -972,8 +995,10 @@ const BEATS = [
     ['实战', '通常最快']
   ];
   
+  const pointMarks = ['summary', 'strategy', 'core', 'complexity', 'space', 'properties'];
   points.forEach(([label, value], i) => {
     const yBase = 230 + i * 75;
+    const t0 = m(pointMarks[i]);
     
     const labelT = T(p, label, {
       x: 400,
@@ -983,7 +1008,7 @@ const BEATS = [
       weight: 600,
       o: 0
     });
-    tw(labelT, { o: 1 }, 1 + i * 0.5, 0.4);
+    tw(labelT, { o: 1 }, t0, 0.4);
     
     const valueT = T(p, value, {
       x: 600,
@@ -992,7 +1017,7 @@ const BEATS = [
       fill: COL.chalk,
       o: 0
     });
-    tw(valueT, { o: 1 }, 1.2 + i * 0.5, 0.4);
+    tw(valueT, { o: 1 }, t0 + 0.1, 0.4);
   });
   
   const real = T(p, 'C qsort, Java Arrays.sort, Python sorted', {
@@ -1004,7 +1029,7 @@ const BEATS = [
     font: 'ui-monospace, Menlo, monospace',
     o: 0
   });
-  tw(real, { o: 1 }, 20, 0.6);
+  tw(real, { o: 1 }, m('qsort'), 1.0);
   
   const praise = T(p, '掌握快速排序，就掌握了排序的精髓', {
     x: 800,
@@ -1015,7 +1040,7 @@ const BEATS = [
     weight: 600,
     o: 0
   });
-  tw(praise, { o: 1, s: 1.05 }, 23, 0.8, out);
+  tw(praise, { o: 1, s: 1.05 }, m('master'), dur - m('master'), out);
 }],
 
 ].map(([id, title, run]) => ({ id, title, run }));

@@ -37,7 +37,7 @@ const root = '/Users/ivywu/course/algorithms';
             const tr = el.getAttribute('transform') || '';
             const sm = tr.match(/scale\(([\d.]+)\)/);
             const sc = sm ? Math.round(parseFloat(sm[1])*20)/20 : 1;
-            parts.push((el.textContent||'').substring(0,5)+Math.round(op*3)+(el.getAttribute('fill')||'')+'s'+sc);
+            parts.push((el.textContent||'')+Math.round(op*3)+(el.getAttribute('fill')||'')+'s'+sc);
           }
         });
         return parts.join('|');

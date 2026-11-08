@@ -97,15 +97,22 @@ window.BEATS = [
   
   scenarios.forEach(({ icon, text, y, mark }) => {
     const g = G(p, { x: 150, y, o: 0 });
-    T(g, icon, { x: 0, y: 0, size: 40, anchor: 'middle' });
-    T(g, text, { x: 80, y: 0, size: 28, fill: TEXT_COLOR, anchor: 'start' });
+    const iconEl = T(g, icon, { x: 0, y: 0, size: 40, anchor: 'middle' });
+    const textEl = T(g, text, { x: 80, y: 0, size: 28, fill: TEXT_COLOR, anchor: 'start' });
     tw(g, { o: 1 }, 0.5, m(mark));
+    // 添加脉动效果保持活跃到最后
+    tw(iconEl, { size: 45 }, 0.5, m(mark) + 1);
+    tw(iconEl, { size: 40 }, 0.5, m(mark) + 1.5);
   });
   
   const question = T(p, '核心问题：如何智能地找到最短路径？', { 
     x: 400, y: 510, size: 30, weight: 600, fill: HIGHLIGHT, anchor: 'middle', o: 0 
   });
   tw(question, { o: 1 }, 0.5, m('smart'));
+  
+  // 添加闪烁效果延伸到 today 标记
+  tw(question, { o: 0.7 }, 0.8, m('today') - 2);
+  tw(question, { o: 1 }, 0.8, m('today') - 1);
 }],
 
 ['bfs-limitation', 'BFS 的局限', (m, dur) => {
@@ -158,6 +165,17 @@ window.BEATS = [
     x: 500, y: 200, size: 24, fill: TEXT_COLOR, o: 0 
   });
   tw(note, { o: 1 }, 0.5, m('guide'));
+  
+  // 添加波纹效果延伸到 heuristic
+  for (let i = 0; i < 6; i++) {
+    for (let j = 0; j < 6; j++) {
+      const cell = grid.find(c => c.i === i && c.j === j);
+      if (cell && cell.cell.rect.getAttribute('fill') === BFS_COLOR) {
+        tw(cell.cell.rect, { 'stroke-width': 3 }, 0.5, m('guide') + 1);
+        tw(cell.cell.rect, { 'stroke-width': 1 }, 0.5, m('heuristic') - 1);
+      }
+    }
+  }
 }],
 
 ['heuristic', '启发式搜索', (m, dur) => {
@@ -203,6 +221,14 @@ window.BEATS = [
     x: 400, y: 490, size: 26, weight: 600, fill: HIGHLIGHT, anchor: 'middle', o: 0 
   });
   tw(guide, { o: 1 }, 0.5, m('priority'));
+  
+  // 添加脉动效果延伸到 smaller
+  tw(gBox, { y: 245 }, 1.0, m('queue'));
+  tw(gBox, { y: 250 }, 1.0, m('queue') + 1);
+  tw(hBox, { y: 245 }, 1.0, m('evaluation'));
+  tw(hBox, { y: 250 }, 1.0, m('evaluation') + 1);
+  tw(fBox, { y: 245 }, 1.0, m('priority'));
+  tw(fBox, { y: 250 }, 1.0, m('smaller') - 1);
 }],
 
 ['astar-demo', 'A* 搜索动画', (m, dur) => {
@@ -371,7 +397,7 @@ window.BEATS = [
   const endCell = drawCell(p, startX + 5 * cellSize, startY + 4 * cellSize, cellSize, END_COLOR, 'B');
   tw(endCell.g, { o: 1 }, 0.3, m('formula'));
   
-  // 绘制路径
+  // 绘制路径 - 逐步显示
   const pathCells = [
     [1, 2], [1, 3], [1, 4], [1, 5],  // 横向
     [2, 5], [3, 5], [4, 5]           // 纵向
@@ -397,15 +423,27 @@ window.BEATS = [
   const calc = G(p, { x: 520, y: 200, o: 0 });
   T(calc, '曼哈顿距离计算', { x: 0, y: 0, size: 24, weight: 700, fill: TEXT_COLOR });
   T(calc, '从 A(1,1) 到 B(4,5)', { x: 0, y: 70, size: 20, fill: TEXT_COLOR });
-  T(calc, '横向距离：|5-1| = 4', { x: 0, y: 110, size: 20, fill: VISITED_COLOR, weight: 600 });
-  T(calc, '纵向距离：|4-1| = 3', { x: 0, y: 150, size: 20, fill: OPEN_COLOR, weight: 600 });
-  T(calc, '曼哈顿距离：4 + 3 = 7', { x: 0, y: 190, size: 22, fill: HIGHLIGHT, weight: 700 });
+  const hDist = T(calc, '横向距离：|5-1| = 4', { x: 0, y: 110, size: 20, fill: VISITED_COLOR, weight: 600, o: 0 });
+  tw(hDist, { o: 1 }, 0.5, m('example'));
+  const vDist = T(calc, '纵向距离：|4-1| = 3', { x: 0, y: 150, size: 20, fill: OPEN_COLOR, weight: 600, o: 0 });
+  tw(vDist, { o: 1 }, 0.5, m('example') + 1);
+  const result = T(calc, '曼哈顿距离：4 + 3 = 7', { x: 0, y: 190, size: 22, fill: HIGHLIGHT, weight: 700, o: 0 });
+  tw(result, { o: 1 }, 0.5, m('seven'));
   tw(calc, { o: 1 }, 0.5, m('formula'));
   
   const note = T(p, '网格移动的最短距离下界', { 
     x: 400, y: 520, size: 24, fill: TEXT_COLOR, anchor: 'middle', o: 0 
   });
   tw(note, { o: 1 }, 0.5, m('lower_bound'));
+  
+  // 添加更多解释延伸到 choose
+  const euclidNote = T(p, '如果能斜走，用欧几里得距离', { 
+    x: 400, y: 480, size: 20, fill: TEXT_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(euclidNote, { o: 1 }, 0.5, m('euclidean'));
+  tw(euclidNote, { o: 0.7 }, 1.0, m('pythagoras'));
+  tw(euclidNote, { o: 1 }, 1.0, m('diagonal'));
+  tw(euclidNote, { o: 0.8 }, 1.0, m('choose') - 0.5);
 }],
 
 ['admissible', '可接纳性', (m, dur) => {

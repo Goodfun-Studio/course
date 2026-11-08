@@ -296,6 +296,10 @@ let BEATS = [
   });
   edgeObjs.forEach(e => tw(e.g, { o: 1 }, m('eight'), 0.3));
   
+  // Step 1 label
+  const step1Label = T(p, '步骤 1: 原图 DFS', { x: 400, y: 90, size: 24, weight: 700, fill: NODE_SCC1, anchor: 'middle', o: 0 });
+  tw(step1Label, { o: 1 }, m('step1'), 0.5);
+  
   // Finish times
   const finishTimes = [6, 5, 1, 4, 3, 2, 7, 8];
   const timeTexts = [];
@@ -326,26 +330,76 @@ let BEATS = [
   tw(nodeObjs[7].circle, { fill: NODE_VISITED }, m('finish7'), 0.5);
   tw(timeTexts[7], { o: 1 }, m('finish7'), 0.3);
   
-  // Reverse graph label
-  const reverseLabel = T(p, '→ 反向图', { x: 400, y: 420, size: 28, weight: 700, fill: NODE_SCC2, anchor: 'middle', o: 0 });
-  tw(reverseLabel, { o: 1 }, m('step2'), 0.5);
+  // Done with first DFS
+  const done1Label = T(p, '第一次 DFS 完成', { x: 400, y: 450, size: 20, weight: 600, fill: NODE_VISITED, anchor: 'middle', o: 0 });
+  tw(done1Label, { o: 1 }, m('done1'), 0.5);
+  tw(done1Label, { o: 0 }, m('step2'), 0.3);
+  tw(step1Label, { o: 0 }, m('step2'), 0.3);
   
-  // Second DFS - color SCCs
-  const sccColors = [NODE_SCC1, NODE_SCC1, NODE_SCC1, NODE_SCC2, NODE_SCC2, NODE_SCC2, NODE_SCC3, NODE_SCC4];
+  // Step 2: Reverse graph
+  const step2Label = T(p, '步骤 2: 构建反向图', { x: 400, y: 90, size: 24, weight: 700, fill: NODE_SCC2, anchor: 'middle', o: 0 });
+  tw(step2Label, { o: 1 }, m('step2'), 0.5);
   
-  tw(nodeObjs[7].circle, { fill: NODE_SCC4 }, m('start7'), 0.5);
+  const reverseLabel = T(p, '所有边反向', { x: 400, y: 450, size: 20, weight: 600, fill: NODE_SCC2, anchor: 'middle', o: 0 });
+  tw(reverseLabel, { o: 1 }, m('reverse-edges'), 0.5);
+  tw(reverseLabel, { o: 0 }, m('step3'), 0.3);
+  tw(step2Label, { o: 0 }, m('step3'), 0.3);
+  
+  // Step 3: Second DFS
+  const step3Label = T(p, '步骤 3: 反向图 DFS', { x: 400, y: 90, size: 24, weight: 700, fill: NODE_SCC3, anchor: 'middle', o: 0 });
+  tw(step3Label, { o: 1 }, m('step3'), 0.5);
+  
+  // Reset node colors for second DFS
+  nodeObjs.forEach(n => tw(n.circle, { fill: NODE_DEFAULT }, m('step3'), 0.3));
+  
+  // Start from node 7 (highest finish time)
+  const start7Label = T(p, '从f=8开始: 节点7', { x: 650, y: 390, size: 18, weight: 600, fill: NODE_CURRENT, anchor: 'middle', o: 0 });
+  tw(start7Label, { o: 1 }, m('start7'), 0.5);
+  tw(nodeObjs[7].circle, { fill: NODE_SCC4 }, m('scc7'), 0.5);
+  const scc7Label = T(p, 'SCC: {7}', { x: 650, y: 420, size: 18, weight: 700, fill: NODE_SCC4, anchor: 'middle', o: 0 });
+  tw(scc7Label, { o: 1 }, m('scc7'), 0.5);
+  tw(start7Label, { o: 0 }, m('scc6'), 0.3);
+  
+  // Node 6
+  const start6Label = T(p, '次高f=7: 节点6', { x: 650, y: 180, size: 18, weight: 600, fill: NODE_CURRENT, anchor: 'middle', o: 0 });
+  tw(start6Label, { o: 1 }, m('scc6'), 0.5);
   tw(nodeObjs[6].circle, { fill: NODE_SCC3 }, m('scc6'), 0.5);
+  const scc6Label = T(p, 'SCC: {6}', { x: 650, y: 270, size: 18, weight: 700, fill: NODE_SCC3, anchor: 'middle', o: 0 });
+  tw(scc6Label, { o: 1 }, m('scc6') + 0.5, 0.5);
+  tw(start6Label, { o: 0 }, m('visit012-rev'), 0.3);
   
+  // Nodes 0,1,2
+  const start012Label = T(p, '访问 0,1,2', { x: 215, y: 330, size: 18, weight: 600, fill: NODE_CURRENT, anchor: 'middle', o: 0 });
+  tw(start012Label, { o: 1 }, m('visit012-rev'), 0.5);
   [0, 1, 2].forEach((idx) => {
     tw(nodeObjs[idx].circle, { fill: NODE_SCC1 }, m('visit012-rev'), 0.5);
   });
+  const scc012Label = T(p, 'SCC: {0,1,2}', { x: 215, y: 330, size: 18, weight: 700, fill: NODE_SCC1, anchor: 'middle', o: 0 });
+  tw(scc012Label, { o: 1 }, m('scc012'), 0.5);
+  tw(start012Label, { o: 0 }, m('scc012'), 0.3);
   
+  // Nodes 3,4,5
+  const start345Label = T(p, '访问 3,4,5', { x: 485, y: 330, size: 18, weight: 600, fill: NODE_CURRENT, anchor: 'middle', o: 0 });
+  tw(start345Label, { o: 1 }, m('visit345-rev'), 0.5);
   [3, 4, 5].forEach((idx) => {
     tw(nodeObjs[idx].circle, { fill: NODE_SCC2 }, m('visit345-rev'), 0.5);
   });
+  const scc345Label = T(p, 'SCC: {3,4,5}', { x: 485, y: 330, size: 18, weight: 700, fill: NODE_SCC2, anchor: 'middle', o: 0 });
+  tw(scc345Label, { o: 1 }, m('scc345'), 0.5);
+  tw(start345Label, { o: 0 }, m('scc345'), 0.3);
+  tw(step3Label, { o: 0 }, m('done'), 0.3);
   
-  const resultLabel = T(p, '找到4个强连通分量！', { x: 400, y: 480, size: 26, weight: 600, fill: NODE_CURRENT, anchor: 'middle', o: 0 });
+  // Algorithm complete
+  const doneLabel = T(p, 'Kosaraju 算法完成！', { x: 400, y: 450, size: 24, weight: 700, fill: NODE_CURRENT, anchor: 'middle', o: 0 });
+  tw(doneLabel, { o: 1 }, m('done'), 0.5);
+  
+  // Final result
+  const resultLabel = T(p, '找到 4 个强连通分量', { x: 400, y: 490, size: 22, weight: 600, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
   tw(resultLabel, { o: 1 }, m('result'), 0.5);
+  
+  // Add final summary that extends to near the end
+  const summaryLabel = T(p, '两次 DFS 完成识别', { x: 400, y: 520, size: 20, fill: NODE_SCC2, anchor: 'middle', o: 0 });
+  tw(summaryLabel, { o: 1 }, m('result') + 1.0, dur * 0.95 - m('result') - 1.0);
 }, { audio: 'kosaraju-demo' }],
 
 ['kosaraju-impl', 'Kosaraju实现', (m, dur) => {
@@ -515,6 +569,12 @@ let BEATS = [
   
   // Back edge 2->0, update low[2]
   tw(infoTexts[2].low, { fill: NODE_CURRENT }, m('back2'), 0.3);
+  
+  // not-root2: show it's not a root
+  const note1 = T(p, 'low[2]=0 ≠ dfn[2]=2', { x: 210, y: 300, size: 14, weight: 600, fill: NODE_CURRENT, anchor: 'middle', o: 0 });
+  tw(note1, { o: 1 }, m('not-root2'), 0.5);
+  tw(note1, { o: 0 }, m('update1'), 0.3);
+  
   tw(infoTexts[1].low, { fill: NODE_CURRENT }, m('update1'), 0.3);
   
   // Visit 3
@@ -538,11 +598,21 @@ let BEATS = [
   tw(stackBoxes[5].g, { o: 1 }, m('push5'), 0.3);
   tw(stackBoxes[5].text, { text: '5' }, m('push5'), 0);
   
-  // Back edge 5->3, update low[5], low[4]
+  // Back edge 5->3, update low[5]
   tw(infoTexts[5].low, { fill: NODE_CURRENT }, m('back5'), 0.3);
+  
+  // not-root5: show it's not a root
+  const note2 = T(p, 'low[5]=3 ≠ dfn[5]=5', { x: 460, y: 300, size: 14, weight: 600, fill: NODE_CURRENT, anchor: 'middle', o: 0 });
+  tw(note2, { o: 1 }, m('not-root5'), 0.5);
+  tw(note2, { o: 0 }, m('update4'), 0.3);
+  
   tw(infoTexts[4].low, { fill: NODE_CURRENT }, m('update4'), 0.3);
   
-  // Root 3: pop SCC {3,4,5}
+  // Root 3: highlight condition
+  const root3note = T(p, 'low[3]=3 = dfn[3]=3 → 根！', { x: 400, y: 100, size: 18, weight: 700, fill: NODE_SCC2, anchor: 'middle', o: 0 });
+  tw(root3note, { o: 1 }, m('root3'), 0.5);
+  
+  // Pop SCC {3,4,5}
   tw(nodeObjs[3].circle, { fill: NODE_SCC2 }, m('root3'), 0.5);
   tw(nodeObjs[4].circle, { fill: NODE_SCC2 }, m('root3'), 0.5);
   tw(nodeObjs[5].circle, { fill: NODE_SCC2 }, m('root3'), 0.5);
@@ -550,8 +620,16 @@ let BEATS = [
   tw(stackBoxes[4].g, { o: 0 }, m('pop345'), 0.3);
   tw(stackBoxes[5].g, { o: 0 }, m('pop345'), 0.3);
   
-  // Update low[1], root 0: pop SCC {0,1,2}
+  const scc2label = T(p, 'SCC: {3,4,5}', { x: 460, y: 180, size: 20, weight: 700, fill: NODE_SCC2, anchor: 'middle', o: 0 });
+  tw(scc2label, { o: 1 }, m('pop345'), 0.5);
+  tw(root3note, { o: 0 }, m('update1-2'), 0.3);
+  
+  // Update low[1], root 0
   tw(infoTexts[1].low, { fill: NODE_SCC3 }, m('update1-2'), 0.3);
+  
+  const root0note = T(p, 'low[0]=0 = dfn[0]=0 → 根！', { x: 210, y: 100, size: 18, weight: 700, fill: NODE_SCC1, anchor: 'middle', o: 0 });
+  tw(root0note, { o: 1 }, m('root0'), 0.5);
+  
   tw(nodeObjs[0].circle, { fill: NODE_SCC1 }, m('root0'), 0.5);
   tw(nodeObjs[1].circle, { fill: NODE_SCC1 }, m('root0'), 0.5);
   tw(nodeObjs[2].circle, { fill: NODE_SCC1 }, m('root0'), 0.5);
@@ -559,17 +637,47 @@ let BEATS = [
   tw(stackBoxes[1].g, { o: 0 }, m('pop012'), 0.3);
   tw(stackBoxes[2].g, { o: 0 }, m('pop012'), 0.3);
   
-  // Visit 6 and 7
-  tw(nodeObjs[6].circle, { fill: NODE_SCC3 }, m('scc6'), 0.5);
+  const scc1label = T(p, 'SCC: {0,1,2}', { x: 210, y: 180, size: 20, weight: 700, fill: NODE_SCC1, anchor: 'middle', o: 0 });
+  tw(scc1label, { o: 1 }, m('pop012'), 0.5);
+  tw(root0note, { o: 0 }, m('scc6'), 0.3);
+  
+  // Visit 6 - add more detail
+  tw(nodeObjs[6].circle, { fill: NODE_VISITED }, m('scc6'), 0.5);
   tw(infoTexts[6].dfn, { o: 1 }, m('scc6'), 0.3);
   tw(infoTexts[6].low, { o: 1 }, m('scc6'), 0.3);
   
-  tw(nodeObjs[7].circle, { fill: NODE_SCC4 }, m('scc7'), 0.5);
+  const root6note = T(p, 'low[6]=6 = dfn[6]=6', { x: 640, y: 150, size: 16, weight: 600, fill: NODE_SCC3, anchor: 'middle', o: 0 });
+  tw(root6note, { o: 1 }, m('scc6'), 0.5);
+  
+  tw(nodeObjs[6].circle, { fill: NODE_SCC3 }, m('scc6') + 0.8, 0.5);
+  const scc3label = T(p, 'SCC: {6}', { x: 640, y: 250, size: 20, weight: 700, fill: NODE_SCC3, anchor: 'middle', o: 0 });
+  tw(scc3label, { o: 1 }, m('scc6') + 1.0, 0.5);
+  tw(root6note, { o: 0 }, m('scc7'), 0.3);
+  
+  // Visit 7 - add more detail
+  tw(nodeObjs[7].circle, { fill: NODE_VISITED }, m('scc7'), 0.5);
   tw(infoTexts[7].dfn, { o: 1 }, m('scc7'), 0.3);
   tw(infoTexts[7].low, { o: 1 }, m('scc7'), 0.3);
   
-  const resultLabel = T(p, 'Tarjan完成！找到4个SCC', { x: 400, y: 570, size: 24, weight: 600, fill: NODE_CURRENT, anchor: 'middle', o: 0 });
+  const root7note = T(p, 'low[7]=7 = dfn[7]=7', { x: 640, y: 380, size: 16, weight: 600, fill: NODE_SCC4, anchor: 'middle', o: 0 });
+  tw(root7note, { o: 1 }, m('scc7'), 0.5);
+  
+  tw(nodeObjs[7].circle, { fill: NODE_SCC4 }, m('scc7') + 0.8, 0.5);
+  const scc4label = T(p, 'SCC: {7}', { x: 640, y: 420, size: 20, weight: 700, fill: NODE_SCC4, anchor: 'middle', o: 0 });
+  tw(scc4label, { o: 1 }, m('scc7') + 1.0, 0.5);
+  tw(root7note, { o: 0 }, m('done'), 0.3);
+  
+  // Done - add summary
+  const doneLabel = T(p, 'Tarjan 算法完成！', { x: 400, y: 470, size: 26, weight: 700, fill: NODE_CURRENT, anchor: 'middle', o: 0 });
+  tw(doneLabel, { o: 1 }, m('done'), 0.5);
+  
+  // Result - show final summary with animation
+  const resultLabel = T(p, '找到 4 个强连通分量', { x: 400, y: 510, size: 24, weight: 600, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
   tw(resultLabel, { o: 1 }, m('result'), 0.5);
+  
+  // Add final highlight animation that extends to near the end
+  const finalSummary = T(p, 'DFS 一次遍历完成', { x: 400, y: 545, size: 20, fill: NODE_SCC2, anchor: 'middle', o: 0 });
+  tw(finalSummary, { o: 1 }, m('result') + 1.0, dur * 0.95 - m('result') - 1.0);
 }, { audio: 'tarjan-demo' }],
 
 ['tarjan-impl', 'Tarjan实现', (m, dur) => {
@@ -808,6 +916,76 @@ window.testBeatRatios = function() {
       pass: ratio >= 0.8 && ratio <= 1.2
     });
   });
+  return results;
+};
+</script>
+
+<script>
+// Test function for content coverage
+window.testContentCoverage = function() {
+  const results = [];
+  
+  BEATS.forEach((beat, i) => {
+    const beatId = beat.id;
+    const timing = TIMINGS[beatId];
+    if (!timing) return;
+    
+    try {
+      P.i = i;
+      runBeat(i);
+      
+      // Metric 1: Animation end ratio
+      const animEnd = Math.max(0, ...TW.map(w => w.t0 + w.dur));
+      const ratio = animEnd / timing.dur;
+      
+      // Metric 2: Content coverage - sample every 0.5s
+      let lastChangeTime = 0;
+      const sampleInterval = 0.5;
+      let prevSignature = '';
+      
+      for (let t = 0; t <= timing.dur; t += sampleInterval) {
+        const visibleElements = [];
+        
+        TW.forEach(w => {
+          if (w.t0 <= t && t < w.t0 + w.dur) {
+            const elem = w.e;
+            if (elem && elem.textContent) {
+              visibleElements.push({
+                text: elem.textContent,
+                opacity: w.to.o !== undefined ? w.to.o : 1,
+                fill: w.to.fill || ''
+              });
+            }
+          }
+        });
+        
+        const signature = JSON.stringify(visibleElements.sort((a,b) => 
+          a.text.localeCompare(b.text)
+        ));
+        
+        if (signature !== prevSignature && signature !== '[]') {
+          lastChangeTime = t;
+          prevSignature = signature;
+        }
+      }
+      
+      const coverage = lastChangeTime / timing.dur;
+      
+      results.push({
+        id: beatId,
+        animEnd: animEnd.toFixed(2),
+        dur: timing.dur.toFixed(2),
+        ratio: ratio.toFixed(2),
+        lastChange: lastChangeTime.toFixed(2),
+        coverage: coverage.toFixed(2),
+        ratioPass: ratio >= 0.8 && ratio <= 1.2,
+        coveragePass: coverage >= 0.7
+      });
+    } catch(e) {
+      results.push({ id: beatId, error: true, msg: e.message });
+    }
+  });
+  
   return results;
 };
 </script>

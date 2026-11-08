@@ -104,33 +104,39 @@ function setupArrowMarker(parent) {
 /* ---------- Beats ---------- */
 const BEATS = [
 
-['intro', '问题呈现', () => {
+['intro', '问题呈现', (m, dur) => {
   const p = panel(0);
   setupArrowMarker(p);
   
   const title = T(p, '快速排序 QuickSort', { x: 800, y: 120, size: 56, weight: 700, anchor: 'middle', o: 0 });
-  tw(title, { o: 1, y: 110 }, 0.1, 0.8, out);
+  tw(title, { o: 1, y: 110 }, 0, 0.8, out);
   
   const sub = T(p, '分治法的经典代表', { x: 800, y: 180, size: 32, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(sub, { o: 1 }, 0.6, 0.6);
+  tw(sub, { o: 1 }, m('sort'), 0.6);
   
   // 展示一个无序数组
   const arr = [7, 2, 9, 4, 1, 6, 8, 3, 5];
   const bars = drawBars(p, arr, { y: 550 });
-  tw(bars, { o: 1 }, 1.2, 0.8, out);
+  tw(bars, { o: 1 }, m('everywhere'), 0.8, out);
   
   const note = T(p, '把这些数字从小到大排序', { x: 800, y: 650, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(note, { o: 1 }, 2.5, 0.6);
+  tw(note, { o: 1 }, m('inventor'), 0.6);
   
   const inventor = T(p, 'Tony Hoare, 1960', { x: 800, y: 730, size: 24, fill: '#f5a623', anchor: 'middle', o: 0 });
-  tw(inventor, { o: 1 }, 14, 0.6);
+  tw(inventor, { o: 1 }, m('inventor'), 0.6);
+  
+  const fast = T(p, '平均 O(n log n)，实际最快的排序算法', { x: 800, y: 680, size: 24, fill: '#43e97b', anchor: 'middle', o: 0 });
+  tw(fast, { o: 1 }, m('fast'), 1.0);
+  
+  const realUse = T(p, 'C、Java、Python 标准库都在用', { x: 800, y: 640, size: 22, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(realUse, { o: 1 }, m('real_use'), dur - m('real_use'));
 }],
 
-['divide_conquer', '分治策略', () => {
+['divide_conquer', '分治策略', (m, dur) => {
   const p = panel(0);
   
   const head = T(p, '分治法三步走', { x: 800, y: 130, size: 46, weight: 600, anchor: 'middle', o: 0 });
-  tw(head, { o: 1 }, 0.1, 0.6, out);
+  tw(head, { o: 1 }, 0, 0.6, out);
   
   const steps = [
     ['1. 分解', 'Divide', '把大问题分成小问题'],
@@ -138,8 +144,10 @@ const BEATS = [
     ['3. 合并', 'Combine', '合并子问题的解']
   ];
   
+  const stepMarks = ['divide', 'philosophy', 'three_steps'];
   steps.forEach(([num, eng, desc], i) => {
     const yBase = 260 + i * 150;
+    const t0 = i === 0 ? m('divide') : m(stepMarks[i]);
     
     const box = mk('rect', {
       x: 350,
@@ -152,7 +160,7 @@ const BEATS = [
       'stroke-width': 2,
       opacity: 0
     }, p);
-    tw(box, { opacity: 0.8 }, 1 + i * 0.6, 0.5);
+    tw(box, { opacity: 0.8 }, t0, 0.5);
     
     const numT = T(p, num, {
       x: 420,
@@ -162,7 +170,7 @@ const BEATS = [
       weight: 600,
       o: 0
     });
-    tw(numT, { o: 1 }, 1 + i * 0.6, 0.5);
+    tw(numT, { o: 1 }, t0, 0.5);
     
     const engT = T(p, eng, {
       x: 600,
@@ -171,7 +179,7 @@ const BEATS = [
       fill: COL.chalk,
       o: 0
     });
-    tw(engT, { o: 1 }, 1.2 + i * 0.6, 0.5);
+    tw(engT, { o: 1 }, t0 + 0.1, 0.5);
     
     const descT = T(p, desc, {
       x: 850,
@@ -180,7 +188,7 @@ const BEATS = [
       fill: COL.dim,
       o: 0
     });
-    tw(descT, { o: 1 }, 1.4 + i * 0.6, 0.5);
+    tw(descT, { o: 1 }, t0 + 0.2, 0.5);
   });
   
   const magic = T(p, '快速排序的聪明之处：工作在分解阶段，不需要合并！', {
@@ -191,7 +199,7 @@ const BEATS = [
     anchor: 'middle',
     o: 0
   });
-  tw(magic, { o: 1 }, 11, 0.6);
+  tw(magic, { o: 1 }, m('compare_merge'), dur - m('compare_merge'));
 }],
 
 ['partition', 'Partition：分区操作', () => {

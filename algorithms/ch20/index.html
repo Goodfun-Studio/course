@@ -338,13 +338,25 @@ let BEATS = [
   const opBox = G(p, { x: 80, y: 360, o: 0 });
   mk('rect', { x: 0, y: 0, width: 640, height: 120, fill: SUCCESS, opacity: 0.1, rx: 10 }, opBox);
   T(opBox, '对每个元素：', { x: 20, y: 30, size: 24, weight: 600, fill: SUCCESS, anchor: 'start' });
-  T(opBox, '• 如果比所有元素都大 → 追加到末尾，长度+1', { 
+  const line1 = T(opBox, '• 如果比所有元素都大 → 追加到末尾，长度+1', { 
     x: 40, y: 60, size: 20, fill: TEXT_COLOR, anchor: 'start' 
   });
-  T(opBox, '• 否则 → 二分查找位置并替换，保持最小性', { 
+  const line2 = T(opBox, '• 否则 → 二分查找位置并替换，保持最小性', { 
     x: 40, y: 90, size: 20, fill: TEXT_COLOR, anchor: 'start' 
   });
   tw(opBox, { o: 1 }, m('search'));
+  
+  // 添加一个总结说明，使用 append 和 replace 标记
+  const summary = T(p, '这样保证了 tails 数组始终是最优的', { 
+    x: 400, y: 510, size: 20, weight: 600, fill: TAILS, anchor: 'middle', o: 0 
+  });
+  tw(summary, { o: 1 }, m('append'));
+  
+  // 最终强调，使用 answer 标记
+  const emphasis = T(p, '最终 tails.length 就是 LIS 的长度', { 
+    x: 400, y: 540, size: 22, weight: 700, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+  });
+  tw(emphasis, { o: 1 }, m('answer'));
 }],
 
 ['binary-demo', '二分优化演示', (m, dur) => {
@@ -537,6 +549,12 @@ let BEATS = [
     x: 400, y: 500, size: 22, weight: 600, fill: HIGHLIGHT, anchor: 'middle', o: 0 
   });
   tw(note, { o: 1 }, m('auxiliary'));
+  
+  // 添加最后一个说明，使用 position 标记
+  const detail = T(p, '需要具体序列时，沿前驱链回溯即可', { 
+    x: 400, y: 530, size: 20, weight: 600, fill: TEXT_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(detail, { o: 1 }, m('position'));
 }],
 
 ['applications', '应用场景', (m, dur) => {

@@ -27,117 +27,121 @@ const DIM_COLOR = '#7f8c8d';       // 灰色（辅助）
 let BEATS = [
 
 ['intro', '问题引入', () => {
+  // factor = 1.7868
   const p = panel(0);
   
   const title = T(p, '快速幂与欧几里得算法', { x: 800, y: 100, size: 56, weight: 700, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.18, 0.6, out);
   
   const subtitle = T(p, '数论中的两个基础算法', { x: 800, y: 170, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(subtitle, { o: 1 }, 0.8, 0.5);
+  tw(subtitle, { o: 1 }, 1.43, 0.5);
   
   const problem1 = T(p, '问题一：计算 3^1000 mod 10^9+7', { x: 400, y: 260, size: 32, fill: POWER_COLOR, o: 0 });
-  tw(problem1, { o: 1 }, 3, 0.6);
+  tw(problem1, { o: 1 }, 5.36, 0.6);
   
   const question1 = T(p, '→ 如何快速计算大幂次？', { x: 450, y: 330, size: 28, fill: COL.chalk, o: 0 });
-  tw(question1, { o: 1 }, 4.5, 0.5);
+  tw(question1, { o: 1 }, 8.04, 0.5);
   
   const problem2 = T(p, '问题二：计算 gcd(48, 18)', { x: 400, y: 410, size: 32, fill: GCD_COLOR, o: 0 });
-  tw(problem2, { o: 1 }, 7, 0.6);
+  tw(problem2, { o: 1 }, 12.51, 0.6);
   
   const question2 = T(p, '→ 如何快速找最大公约数？', { x: 450, y: 480, size: 28, fill: COL.chalk, o: 0 });
-  tw(question2, { o: 1 }, 8.5, 0.5);
+  tw(question2, { o: 1 }, 15.19, 0.5);
   
   const core = T(p, '核心思想：化繁为简，递归分治', { x: 800, y: 590, size: 36, fill: RESULT_COLOR, anchor: 'middle', weight: 600, o: 0 });
-  tw(core, { o: 1 }, 11, 0.7);
+  tw(core, { o: 1 }, 19.65, 0.7);
   
   const efficiency = T(p, '两者都能达到 O(log n) 的高效复杂度', { x: 800, y: 670, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(efficiency, { o: 1 }, 13, 0.6);
+  tw(efficiency, { o: 1 }, 23.23, 0.6);
 }],
 
 ['naive-power', '朴素幂运算', () => {
+  // factor = 1.2048
   const p = panel(0);
   
   const title = T(p, '朴素方法', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.12, 0.6, out);
   
   const problem = T(p, '计算 a^n mod m', { x: 800, y: 190, size: 36, fill: POWER_COLOR, anchor: 'middle', o: 0 });
-  tw(problem, { o: 1 }, 2, 0.5);
+  tw(problem, { o: 1 }, 2.41, 0.5);
   
   const naive = T(p, '朴素方法：连乘 n 次', { x: 400, y: 280, size: 34, fill: COL.chalk, o: 0 });
-  tw(naive, { o: 1 }, 4, 0.6);
+  tw(naive, { o: 1 }, 4.82, 0.6);
   
   const code = T(p, 'result = 1', { x: 450, y: 350, size: 28, fill: BASE_COLOR, family: 'monospace', o: 0 });
-  tw(code, { o: 1 }, 5.5, 0.5);
+  tw(code, { o: 1 }, 6.63, 0.5);
   
   const loop = T(p, 'for i in range(n):', { x: 450, y: 410, size: 28, fill: BASE_COLOR, family: 'monospace', o: 0 });
-  tw(loop, { o: 1 }, 6.5, 0.5);
+  tw(loop, { o: 1 }, 7.83, 0.5);
   
   const multiply = T(p, '    result *= a', { x: 470, y: 470, size: 28, fill: BASE_COLOR, family: 'monospace', o: 0 });
-  tw(multiply, { o: 1 }, 7.5, 0.5);
+  tw(multiply, { o: 1 }, 9.04, 0.5);
   
   const complexity = T(p, '时间复杂度：O(n)', { x: 400, y: 560, size: 32, fill: POWER_COLOR, weight: 600, o: 0 });
-  tw(complexity, { o: 1 }, 9.5, 0.6);
+  tw(complexity, { o: 1 }, 11.45, 0.6);
   
   const slow = T(p, '当 n = 10^9 时，需要 10 亿次乘法', { x: 450, y: 630, size: 28, fill: DIM_COLOR, o: 0 });
-  tw(slow, { o: 1 }, 11, 0.6);
+  tw(slow, { o: 1 }, 13.25, 0.6);
   
   const tooslow = T(p, '✗ 太慢了！', { x: 800, y: 700, size: 36, fill: '#e74c3c', anchor: 'middle', weight: 700, o: 0 });
-  tw(tooslow, { o: 1 }, 13, 0.7);
+  tw(tooslow, { o: 1 }, 15.66, 0.7);
 }],
 
 ['fast-power-concept', '快速幂思想', () => {
+  // factor = 1.9102
   const p = panel(0);
   
   const title = T(p, '快速幂算法', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.19, 0.6, out);
   
   const subtitle = T(p, 'Fast Exponentiation / Binary Exponentiation', { x: 800, y: 170, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(subtitle, { o: 1 }, 1, 0.5);
+  tw(subtitle, { o: 1 }, 1.91, 0.5);
   
   const key = T(p, '核心思想：二进制分解', { x: 400, y: 250, size: 36, fill: BINARY_COLOR, weight: 600, o: 0 });
-  tw(key, { o: 1 }, 3, 0.6);
+  tw(key, { o: 1 }, 5.73, 0.6);
   
   const example = T(p, '例如：3^13 = 3^(8+4+1)', { x: 450, y: 330, size: 32, fill: COL.chalk, o: 0 });
-  tw(example, { o: 1 }, 5, 0.6);
+  tw(example, { o: 1 }, 9.55, 0.6);
   
   const binary = T(p, '13 的二进制：1101', { x: 450, y: 400, size: 30, fill: BINARY_COLOR, o: 0 });
-  tw(binary, { o: 1 }, 6.5, 0.5);
+  tw(binary, { o: 1 }, 12.42, 0.5);
   
   const breakdown = T(p, '= 1×2³ + 1×2² + 0×2¹ + 1×2⁰', { x: 450, y: 470, size: 28, fill: BINARY_COLOR, o: 0 });
-  tw(breakdown, { o: 1 }, 8, 0.6);
+  tw(breakdown, { o: 1 }, 15.28, 0.6);
   
   const power = T(p, '所以：3^13 = 3^8 × 3^4 × 3^1', { x: 450, y: 540, size: 30, fill: POWER_COLOR, weight: 600, o: 0 });
-  tw(power, { o: 1 }, 10, 0.7);
+  tw(power, { o: 1 }, 19.10, 0.7);
   
   const trick = T(p, '技巧：每次平方可以快速得到 3^(2k)', { x: 400, y: 620, size: 28, fill: COL.chalk, o: 0 });
-  tw(trick, { o: 1 }, 12, 0.6);
+  tw(trick, { o: 1 }, 22.92, 0.6);
   
   const efficient = T(p, '只需要 O(log n) 次乘法！', { x: 800, y: 700, size: 34, fill: GCD_COLOR, anchor: 'middle', weight: 600, o: 0 });
-  tw(efficient, { o: 1 }, 14, 0.7);
+  tw(efficient, { o: 1 }, 26.74, 0.7);
 }],
 
 ['fast-power-animation', '快速幂动画', () => {
+  // factor = 1.5743
   const p = panel(0);
   
   const title = T(p, '快速幂演示：3^13 mod 1000', { x: 800, y: 80, size: 44, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.16, 0.6, out);
   
   // Binary representation
   const binaryLabel = T(p, '13 的二进制：', { x: 300, y: 150, size: 28, fill: BINARY_COLOR, o: 0 });
-  tw(binaryLabel, { o: 1 }, 1, 0.5);
+  tw(binaryLabel, { o: 1 }, 1.57, 0.5);
   
   const bits = ['1', '1', '0', '1'];
   const bitLabels = ['2³=8', '2²=4', '2¹=2', '2⁰=1'];
   bits.forEach((bit, i) => {
     const x = 550 + i * 80;
     const box = mk('rect', { x: x, y: 130, width: 60, height: 60, rx: 5, fill: bit === '1' ? BINARY_COLOR : DIM_COLOR, o: 0 }, p);
-    tw(box, { o: 0.8 }, 2 + i * 0.2, 0.4);
+    tw(box, { o: 0.8 }, 3.15 + i * 0.31, 0.4);
     
     const bitText = T(p, bit, { x: x + 30, y: 165, size: 32, fill: 'white', anchor: 'middle', weight: 700, o: 0 });
-    tw(bitText, { o: 1 }, 2 + i * 0.2, 0.4);
+    tw(bitText, { o: 1 }, 3.15 + i * 0.31, 0.4);
     
     const label = T(p, bitLabels[i], { x: x + 30, y: 210, size: 20, fill: COL.chalk, anchor: 'middle', o: 0 });
-    tw(label, { o: 1 }, 2.5 + i * 0.2, 0.4);
+    tw(label, { o: 1 }, 3.94 + i * 0.31, 0.4);
   });
   
   // Powers table
@@ -146,19 +150,19 @@ let BEATS = [
   headers.forEach((header, i) => {
     const x = 300 + i * 240;
     const text = T(p, header, { x: x, y: tableY, size: 24, fill: COL.dim, weight: 600, o: 0 });
-    tw(text, { o: 1 }, 4, 0.5);
+    tw(text, { o: 1 }, 6.30, 0.5);
   });
   
   // Step-by-step computation
   const steps = [
-    { step: '初始', power: '3^0', value: '1', result: '1', t: 5.5 },
-    { step: '平方', power: '3^1', value: '3', result: '1', t: 7 },
-    { step: '乘入', power: '3^1', value: '3', result: '1×3=3', t: 8.5, highlight: true },
-    { step: '平方', power: '3^2', value: '9', result: '3', t: 10.5 },
-    { step: '平方', power: '3^4', value: '81', result: '3', t: 12 },
-    { step: '乘入', power: '3^4', value: '81', result: '3×81=243', t: 14, highlight: true },
-    { step: '平方', power: '3^8', value: '561', result: '243', t: 16 },
-    { step: '乘入', power: '3^8', value: '561', result: '243×561=367', t: 18.5, highlight: true }
+    { step: '初始', power: '3^0', value: '1', result: '1', t: 8.66 },
+    { step: '平方', power: '3^1', value: '3', result: '1', t: 11.02 },
+    { step: '乘入', power: '3^1', value: '3', result: '1×3=3', t: 13.38, highlight: true },
+    { step: '平方', power: '3^2', value: '9', result: '3', t: 16.53 },
+    { step: '平方', power: '3^4', value: '81', result: '3', t: 18.89 },
+    { step: '乘入', power: '3^4', value: '81', result: '3×81=243', t: 22.04, highlight: true },
+    { step: '平方', power: '3^8', value: '561', result: '243', t: 25.19 },
+    { step: '乘入', power: '3^8', value: '561', result: '243×561=367', t: 29.12, highlight: true }
   ];
   
   let rowY = tableY + 60;
@@ -167,18 +171,18 @@ let BEATS = [
     tw(stepText, { o: 1 }, t, 0.5);
     
     const powerText = T(p, power, { x: 540, y: rowY, size: 26, fill: BASE_COLOR, family: 'monospace', o: 0 });
-    tw(powerText, { o: 1 }, t + 0.1, 0.5);
+    tw(powerText, { o: 1 }, t + 0.16, 0.5);
     
     const valueText = T(p, value, { x: 780, y: rowY, size: 26, fill: BINARY_COLOR, family: 'monospace', o: 0 });
-    tw(valueText, { o: 1 }, t + 0.2, 0.5);
+    tw(valueText, { o: 1 }, t + 0.31, 0.5);
     
     const resultText = T(p, result, { x: 1020, y: rowY, size: 26, fill: highlight ? RESULT_COLOR : COL.chalk, family: 'monospace', weight: highlight ? 600 : 400, o: 0 });
-    tw(resultText, { o: 1 }, t + 0.3, 0.5);
+    tw(resultText, { o: 1 }, t + 0.47, 0.5);
     
     if (highlight) {
       const arrow = T(p, '←', { x: 1280, y: rowY, size: 32, fill: POWER_COLOR, weight: 700, o: 0 });
-      tw(arrow, { o: 1 }, t + 0.4, 0.4);
-      tw(arrow, { o: 0 }, t + 1.2, 0.3);
+      tw(arrow, { o: 1 }, t + 0.63, 0.4);
+      tw(arrow, { o: 0 }, t + 1.89, 0.3);
     }
     
     rowY += 45;
@@ -186,28 +190,29 @@ let BEATS = [
   
   // Final result with emphasis
   const finalBox = mk('rect', { x: 280, y: 665, width: 1040, height: 70, rx: 10, fill: RESULT_COLOR, o: 0 }, p);
-  tw(finalBox, { o: 0.2 }, 21, 0.6);
+  tw(finalBox, { o: 0.2 }, 33.06, 0.6);
   
   const finalLabel = T(p, '最终结果：3^13 mod 1000 = ', { x: 400, y: 705, size: 32, fill: COL.chalk, weight: 600, o: 0 });
-  tw(finalLabel, { o: 1 }, 21.5, 0.6);
+  tw(finalLabel, { o: 1 }, 33.84, 0.6);
   
   const finalValue = T(p, '367', { x: 900, y: 705, size: 40, fill: RESULT_COLOR, weight: 700, anchor: 'middle', o: 0 });
-  tw(finalValue, { o: 1 }, 22.5, 0.7);
-  tw(finalValue, { s: 1.2 }, 23, 0.3);
-  tw(finalValue, { s: 1.0 }, 23.3, 0.3);
+  tw(finalValue, { o: 1 }, 35.42, 0.7);
+  tw(finalValue, { s: 1.2 }, 36.21, 0.3);
+  tw(finalValue, { s: 1.0 }, 36.68, 0.3);
   
   const operations = T(p, '仅需 7 次运算！', { x: 1100, y: 705, size: 26, fill: GCD_COLOR, weight: 600, o: 0 });
-  tw(operations, { o: 1 }, 24, 0.6);
+  tw(operations, { o: 1 }, 37.78, 0.6);
 }],
 
 ['fast-power-code', '快速幂实现', () => {
+  // factor = 1.2738
   const p = panel(0);
   
   const title = T(p, '快速幂代码', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.13, 0.6, out);
   
   const recursive = T(p, '递归版本', { x: 350, y: 180, size: 32, fill: BASE_COLOR, weight: 600, o: 0 });
-  tw(recursive, { o: 1 }, 2, 0.5);
+  tw(recursive, { o: 1 }, 2.55, 0.5);
   
   const recCode = [
     'def power(a, n, m):',
@@ -223,12 +228,12 @@ let BEATS = [
   let codeY = 240;
   recCode.forEach((line, i) => {
     const text = T(p, line, { x: 350, y: codeY, size: 24, fill: COL.chalk, family: 'monospace', o: 0 });
-    tw(text, { o: 1 }, 3 + i * 0.8, 0.5);
+    tw(text, { o: 1 }, 3.82 + i * 1.02, 0.5);
     codeY += 40;
   });
   
   const iterative = T(p, '迭代版本', { x: 850, y: 180, size: 32, fill: POWER_COLOR, weight: 600, o: 0 });
-  tw(iterative, { o: 1 }, 2, 0.5);
+  tw(iterative, { o: 1 }, 2.55, 0.5);
   
   const iterCode = [
     'def power(a, n, m):',
@@ -245,60 +250,62 @@ let BEATS = [
   codeY = 240;
   iterCode.forEach((line, i) => {
     const text = T(p, line, { x: 850, y: codeY, size: 24, fill: COL.chalk, family: 'monospace', o: 0 });
-    tw(text, { o: 1 }, 10 + i * 0.7, 0.5);
+    tw(text, { o: 1 }, 12.74 + i * 0.89, 0.5);
     codeY += 40;
   });
   
   const note = T(p, '两者时间复杂度相同，迭代版更省栈空间', { x: 800, y: 650, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(note, { o: 1 }, 17, 0.6);
+  tw(note, { o: 1 }, 21.65, 0.6);
 }],
 
 ['euclidean-intro', '欧几里得算法', () => {
+  // factor = 1.6327
   const p = panel(0);
   
   const title = T(p, '欧几里得算法', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.16, 0.6, out);
   
   const subtitle = T(p, 'Euclidean Algorithm - 辗转相除法', { x: 800, y: 170, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(subtitle, { o: 1 }, 1, 0.5);
+  tw(subtitle, { o: 1 }, 1.63, 0.5);
   
   const purpose = T(p, '目标：求两个数的最大公约数（GCD）', { x: 400, y: 260, size: 32, fill: GCD_COLOR, weight: 600, o: 0 });
-  tw(purpose, { o: 1 }, 3, 0.6);
+  tw(purpose, { o: 1 }, 4.90, 0.6);
   
   const theorem = T(p, '核心定理', { x: 400, y: 340, size: 34, fill: RESULT_COLOR, weight: 600, o: 0 });
-  tw(theorem, { o: 1 }, 5, 0.5);
+  tw(theorem, { o: 1 }, 8.16, 0.5);
   
   const formula = T(p, 'gcd(a, b) = gcd(b, a mod b)', { x: 450, y: 410, size: 36, fill: BASE_COLOR, family: 'monospace', weight: 600, o: 0 });
-  tw(formula, { o: 1 }, 6.5, 0.7);
+  tw(formula, { o: 1 }, 10.61, 0.7);
   
   const explain = T(p, '为什么成立？', { x: 400, y: 500, size: 30, fill: COL.chalk, o: 0 });
-  tw(explain, { o: 1 }, 9, 0.5);
+  tw(explain, { o: 1 }, 14.69, 0.5);
   
   const reason1 = T(p, '设 d 是 a 和 b 的公约数', { x: 450, y: 570, size: 28, fill: COL.chalk, o: 0 });
-  tw(reason1, { o: 1 }, 10.5, 0.5);
+  tw(reason1, { o: 1 }, 17.14, 0.5);
   
   const reason2 = T(p, '则 d | a 且 d | b', { x: 450, y: 630, size: 28, fill: COL.chalk, o: 0 });
-  tw(reason2, { o: 1 }, 12, 0.5);
+  tw(reason2, { o: 1 }, 19.59, 0.5);
   
   const reason3 = T(p, '因为 a = bq + r，所以 d | r', { x: 450, y: 690, size: 28, fill: COL.chalk, o: 0 });
-  tw(reason3, { o: 1 }, 13.5, 0.6);
+  tw(reason3, { o: 1 }, 22.04, 0.6);
   
   const conclusion = T(p, '→ d 也是 b 和 r 的公约数', { x: 450, y: 750, size: 28, fill: GCD_COLOR, weight: 600, o: 0 });
-  tw(conclusion, { o: 1 }, 15, 0.6);
+  tw(conclusion, { o: 1 }, 24.49, 0.6);
 }],
 
 ['gcd-animation', 'GCD 动画演示', () => {
+  // factor = 1.5048
   const p = panel(0);
   
   const title = T(p, 'GCD 演示：gcd(48, 18)', { x: 800, y: 80, size: 44, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.15, 0.6, out);
   
   // Visualization area
   const steps = [
-    { a: 48, b: 18, operation: '48 mod 18', result: 12, t: 2 },
-    { a: 18, b: 12, operation: '18 mod 12', result: 6, t: 6 },
-    { a: 12, b: 6, operation: '12 mod 6', result: 0, t: 10 },
-    { a: 6, b: 0, operation: 'b = 0, 停止', result: 6, t: 14 }
+    { a: 48, b: 18, operation: '48 mod 18', result: 12, t: 3.01 },
+    { a: 18, b: 12, operation: '18 mod 12', result: 6, t: 9.03 },
+    { a: 12, b: 6, operation: '12 mod 6', result: 0, t: 15.05 },
+    { a: 6, b: 0, operation: 'b = 0, 停止', result: 6, t: 21.07 }
   ];
   
   let stepY = 180;
@@ -315,30 +322,30 @@ let BEATS = [
     // Bar for a
     const aWidth = (a / 48) * maxWidth;
     const aBar = mk('rect', { x: barX, y: barY, width: 0, height: 35, rx: 4, fill: BASE_COLOR, o: 0 }, p);
-    tw(aBar, { o: 0.8 }, t + 0.2, 0.4);
-    tw(aBar, { width: aWidth }, t + 0.3, 0.6);
+    tw(aBar, { o: 0.8 }, t + 0.30, 0.4);
+    tw(aBar, { width: aWidth }, t + 0.45, 0.6);
     
     const aText = T(p, `a = ${a}`, { x: barX + aWidth + 20, y: barY + 25, size: 26, fill: BASE_COLOR, weight: 600, o: 0 });
-    tw(aText, { o: 1 }, t + 0.5, 0.5);
+    tw(aText, { o: 1 }, t + 0.75, 0.5);
     
     // Bar for b
     const bWidth = b > 0 ? (b / 48) * maxWidth : 0;
     const bBar = mk('rect', { x: barX, y: barY + 50, width: 0, height: 35, rx: 4, fill: GCD_COLOR, o: 0 }, p);
-    tw(bBar, { o: 0.8 }, t + 0.6, 0.4);
+    tw(bBar, { o: 0.8 }, t + 0.90, 0.4);
     if (bWidth > 0) {
-      tw(bBar, { width: bWidth }, t + 0.7, 0.6);
+      tw(bBar, { width: bWidth }, t + 1.05, 0.6);
     }
     
     const bText = T(p, `b = ${b}`, { x: barX + Math.max(bWidth, 30) + 20, y: barY + 75, size: 26, fill: GCD_COLOR, weight: 600, o: 0 });
-    tw(bText, { o: 1 }, t + 0.9, 0.5);
+    tw(bText, { o: 1 }, t + 1.35, 0.5);
     
     // Operation
     const opText = T(p, operation, { x: 1000, y: stepY, size: 28, fill: POWER_COLOR, family: 'monospace', o: 0 });
-    tw(opText, { o: 1 }, t + 1.2, 0.5);
+    tw(opText, { o: 1 }, t + 1.81, 0.5);
     
     // Arrow pointing to result
     const arrow = T(p, '→', { x: 1250, y: stepY, size: 36, fill: RESULT_COLOR, weight: 700, o: 0 });
-    tw(arrow, { o: 1 }, t + 1.5, 0.4);
+    tw(arrow, { o: 1 }, t + 2.26, 0.4);
     
     // Result
     const isLast = index === steps.length - 1;
@@ -347,11 +354,11 @@ let BEATS = [
       fill: isLast ? RESULT_COLOR : BINARY_COLOR, 
       weight: isLast ? 700 : 600, o: 0 
     });
-    tw(resultText, { o: 1 }, t + 1.8, 0.6);
+    tw(resultText, { o: 1 }, t + 2.71, 0.6);
     
     if (isLast) {
-      tw(resultText, { s: 1.3 }, t + 2.2, 0.4);
-      tw(resultText, { s: 1.0 }, t + 2.6, 0.3);
+      tw(resultText, { s: 1.3 }, t + 3.31, 0.4);
+      tw(resultText, { s: 1.0 }, t + 3.91, 0.3);
     }
     
     // Connecting line to next step
@@ -360,7 +367,7 @@ let BEATS = [
         x1: 280, y1: stepY + 40, x2: 280, y2: stepY + 100, 
         stroke: DIM_COLOR, 'stroke-width': 2, 'stroke-dasharray': '5,5', o: 0 
       }, p);
-      tw(line, { o: 0.5 }, t + 2, 0.5);
+      tw(line, { o: 0.5 }, t + 3.01, 0.5);
     }
     
     stepY += 135;
@@ -368,25 +375,26 @@ let BEATS = [
   
   // Summary box
   const summaryBox = mk('rect', { x: 250, y: 700, width: 1100, height: 80, rx: 10, fill: GCD_COLOR, o: 0 }, p);
-  tw(summaryBox, { o: 0.15 }, 18, 0.6);
+  tw(summaryBox, { o: 0.15 }, 27.09, 0.6);
   
   const summaryText = T(p, '递归过程：gcd(48,18) → gcd(18,12) → gcd(12,6) → gcd(6,0) = 6', { 
     x: 800, y: 735, size: 28, fill: COL.chalk, anchor: 'middle', weight: 600, o: 0 
   });
-  tw(summaryText, { o: 1 }, 19, 0.7);
+  tw(summaryText, { o: 1 }, 28.59, 0.7);
   
   const efficient = T(p, '只需 3 步！复杂度 O(log min(a,b))', { x: 800, y: 770, size: 24, fill: BINARY_COLOR, anchor: 'middle', o: 0 });
-  tw(efficient, { o: 1 }, 20.5, 0.6);
+  tw(efficient, { o: 1 }, 30.85, 0.6);
 }],
 
 ['gcd-code', 'GCD 代码实现', () => {
+  // factor = 1.3417
   const p = panel(0);
   
   const title = T(p, 'GCD 代码', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.13, 0.6, out);
   
   const recursive = T(p, '递归版本（最简洁）', { x: 400, y: 200, size: 32, fill: GCD_COLOR, weight: 600, o: 0 });
-  tw(recursive, { o: 1 }, 2, 0.5);
+  tw(recursive, { o: 1 }, 2.68, 0.5);
   
   const recCode = [
     'def gcd(a, b):',
@@ -398,15 +406,15 @@ let BEATS = [
   let codeY = 270;
   recCode.forEach((line, i) => {
     const text = T(p, line, { x: 420, y: codeY, size: 28, fill: COL.chalk, family: 'monospace', o: 0 });
-    tw(text, { o: 1 }, 3 + i * 0.8, 0.5);
+    tw(text, { o: 1 }, 4.03 + i * 1.07, 0.5);
     codeY += 50;
   });
   
   const oneline = T(p, '→ 只需 4 行代码！', { x: 450, y: codeY + 20, size: 26, fill: RESULT_COLOR, weight: 600, o: 0 });
-  tw(oneline, { o: 1 }, 6.5, 0.6);
+  tw(oneline, { o: 1 }, 8.72, 0.6);
   
   const iterative = T(p, '迭代版本', { x: 400, y: 530, size: 32, fill: BASE_COLOR, weight: 600, o: 0 });
-  tw(iterative, { o: 1 }, 9, 0.5);
+  tw(iterative, { o: 1 }, 12.08, 0.5);
   
   const iterCode = [
     'def gcd(a, b):',
@@ -418,61 +426,63 @@ let BEATS = [
   codeY = 600;
   iterCode.forEach((line, i) => {
     const text = T(p, line, { x: 420, y: codeY, size: 28, fill: COL.chalk, family: 'monospace', o: 0 });
-    tw(text, { o: 1 }, 10 + i * 0.8, 0.5);
+    tw(text, { o: 1 }, 13.42 + i * 1.07, 0.5);
     codeY += 50;
   });
   
   const pythonic = T(p, '→ Python 的同时赋值很优雅', { x: 450, y: codeY + 20, size: 26, fill: BINARY_COLOR, o: 0 });
-  tw(pythonic, { o: 1 }, 13.5, 0.6);
+  tw(pythonic, { o: 1 }, 18.11, 0.6);
 }],
 
 ['extended-euclidean', '扩展欧几里得算法', () => {
+  // factor = 2.0402
   const p = panel(0);
   
   const title = T(p, '扩展欧几里得算法', { x: 800, y: 100, size: 48, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.20, 0.6, out);
   
   const subtitle = T(p, 'Extended Euclidean Algorithm', { x: 800, y: 165, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(subtitle, { o: 1 }, 1, 0.5);
+  tw(subtitle, { o: 1 }, 2.04, 0.5);
   
   const purpose = T(p, '目标：求解 ax + by = gcd(a, b)', { x: 400, y: 250, size: 32, fill: RESULT_COLOR, weight: 600, o: 0 });
-  tw(purpose, { o: 1 }, 3, 0.6);
+  tw(purpose, { o: 1 }, 6.12, 0.6);
   
   const application = T(p, '应用：求乘法逆元', { x: 450, y: 320, size: 28, fill: COL.chalk, o: 0 });
-  tw(application, { o: 1 }, 5, 0.5);
+  tw(application, { o: 1 }, 10.20, 0.5);
   
   const idea = T(p, '核心思想', { x: 400, y: 400, size: 34, fill: BASE_COLOR, weight: 600, o: 0 });
-  tw(idea, { o: 1 }, 7, 0.5);
+  tw(idea, { o: 1 }, 14.28, 0.5);
   
   const step1 = T(p, '1. 递归求 gcd，同时回溯求 x, y', { x: 450, y: 470, size: 28, fill: COL.chalk, o: 0 });
-  tw(step1, { o: 1 }, 8.5, 0.5);
+  tw(step1, { o: 1 }, 17.34, 0.5);
   
   const step2 = T(p, '2. 基础情况：b=0 时，x=1, y=0', { x: 450, y: 530, size: 28, fill: COL.chalk, o: 0 });
-  tw(step2, { o: 1 }, 10, 0.5);
+  tw(step2, { o: 1 }, 20.40, 0.5);
   
   const step3 = T(p, '3. 递归返回时更新 x, y', { x: 450, y: 590, size: 28, fill: COL.chalk, o: 0 });
-  tw(step3, { o: 1 }, 11.5, 0.5);
+  tw(step3, { o: 1 }, 23.46, 0.5);
   
   const example = T(p, '例：48x + 18y = gcd(48,18) = 6', { x: 400, y: 670, size: 30, fill: GCD_COLOR, weight: 600, o: 0 });
-  tw(example, { o: 1 }, 14, 0.6);
+  tw(example, { o: 1 }, 28.56, 0.6);
   
   const solution = T(p, '解：x = 1, y = -2  (验证：48×1 + 18×(-2) = 6 ✓)', { x: 450, y: 730, size: 26, fill: RESULT_COLOR, o: 0 });
-  tw(solution, { o: 1 }, 16, 0.6);
+  tw(solution, { o: 1 }, 32.64, 0.6);
 }],
 
 ['applications', '应用场景', () => {
+  // factor = 1.4802
   const p = panel(0);
   
   const title = T(p, '应用场景', { x: 800, y: 100, size: 56, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.15, 0.6, out);
   
   const apps = [
-    { name: 'RSA 加密', desc: '快速幂用于模幂运算', icon: '🔐', color: POWER_COLOR, t: 2 },
-    { name: '密钥生成', desc: '扩展欧几里得求逆元', icon: '🔑', color: RESULT_COLOR, t: 4.5 },
-    { name: '最小公倍数', desc: 'lcm(a,b) = a×b / gcd(a,b)', icon: '📐', color: GCD_COLOR, t: 7 },
-    { name: '分数化简', desc: '分子分母同除以 gcd', icon: '➗', color: BASE_COLOR, t: 9.5 },
-    { name: '模运算优化', desc: '大数取模防溢出', icon: '🔢', color: BINARY_COLOR, t: 12 },
-    { name: '竞赛编程', desc: '组合数学必备技能', icon: '🏆', color: RESULT_COLOR, t: 14.5 }
+    { name: 'RSA 加密', desc: '快速幂用于模幂运算', icon: '🔐', color: POWER_COLOR, t: 2.96 },
+    { name: '密钥生成', desc: '扩展欧几里得求逆元', icon: '🔑', color: RESULT_COLOR, t: 6.66 },
+    { name: '最小公倍数', desc: 'lcm(a,b) = a×b / gcd(a,b)', icon: '📐', color: GCD_COLOR, t: 10.36 },
+    { name: '分数化简', desc: '分子分母同除以 gcd', icon: '➗', color: BASE_COLOR, t: 14.06 },
+    { name: '模运算优化', desc: '大数取模防溢出', icon: '🔢', color: BINARY_COLOR, t: 17.76 },
+    { name: '竞赛编程', desc: '组合数学必备技能', icon: '🏆', color: RESULT_COLOR, t: 21.46 }
   ];
   
   let appY = 220;
@@ -481,68 +491,70 @@ let BEATS = [
     tw(iconText, { o: 1 }, t, 0.4);
     
     const nameText = T(p, name, { x: 450, y: appY, size: 32, fill: color, weight: 600, o: 0 });
-    tw(nameText, { o: 1 }, t + 0.2, 0.5);
+    tw(nameText, { o: 1 }, t + 0.30, 0.5);
     
     const descText = T(p, desc, { x: 750, y: appY, size: 26, fill: COL.chalk, o: 0 });
-    tw(descText, { o: 1 }, t + 0.4, 0.5);
+    tw(descText, { o: 1 }, t + 0.59, 0.5);
     
     appY += 80;
   });
   
   const crypto = T(p, '在现代密码学中不可或缺', { x: 800, y: 750, size: 30, fill: POWER_COLOR, anchor: 'middle', weight: 600, o: 0 });
-  tw(crypto, { o: 1 }, 17, 0.7);
+  tw(crypto, { o: 1 }, 25.16, 0.7);
 }],
 
 ['complexity-analysis', '复杂度分析', () => {
+  // factor = 1.6981
   const p = panel(0);
   
   const title = T(p, '复杂度分析', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.17, 0.6, out);
   
   // Fast Power
   const powerTitle = T(p, '快速幂算法', { x: 400, y: 200, size: 36, fill: POWER_COLOR, weight: 600, o: 0 });
-  tw(powerTitle, { o: 1 }, 2, 0.5);
+  tw(powerTitle, { o: 1 }, 3.40, 0.5);
   
   const powerTime = T(p, '时间：O(log n)', { x: 450, y: 270, size: 30, fill: BASE_COLOR, o: 0 });
-  tw(powerTime, { o: 1 }, 3.5, 0.5);
+  tw(powerTime, { o: 1 }, 5.94, 0.5);
   
   const powerSpace = T(p, '空间：O(log n) 递归 / O(1) 迭代', { x: 450, y: 330, size: 28, fill: COL.chalk, o: 0 });
-  tw(powerSpace, { o: 1 }, 5, 0.5);
+  tw(powerSpace, { o: 1 }, 8.49, 0.5);
   
   const powerExample = T(p, '例：n=10^9 时，仅需约 30 次运算', { x: 450, y: 390, size: 26, fill: DIM_COLOR, o: 0 });
-  tw(powerExample, { o: 1 }, 6.5, 0.5);
+  tw(powerExample, { o: 1 }, 11.04, 0.5);
   
   // GCD
   const gcdTitle = T(p, '欧几里得算法', { x: 400, y: 480, size: 36, fill: GCD_COLOR, weight: 600, o: 0 });
-  tw(gcdTitle, { o: 1 }, 9, 0.5);
+  tw(gcdTitle, { o: 1 }, 15.28, 0.5);
   
   const gcdTime = T(p, '时间：O(log min(a, b))', { x: 450, y: 550, size: 30, fill: BASE_COLOR, o: 0 });
-  tw(gcdTime, { o: 1 }, 10.5, 0.5);
+  tw(gcdTime, { o: 1 }, 17.83, 0.5);
   
   const gcdSpace = T(p, '空间：O(log min(a, b)) 递归 / O(1) 迭代', { x: 450, y: 610, size: 28, fill: COL.chalk, o: 0 });
-  tw(gcdSpace, { o: 1 }, 12, 0.5);
+  tw(gcdSpace, { o: 1 }, 20.37, 0.5);
   
   const gcdProof = T(p, '证明：每次 b 至少减半（斐波那契数列最坏）', { x: 450, y: 670, size: 26, fill: DIM_COLOR, o: 0 });
-  tw(gcdProof, { o: 1 }, 13.5, 0.5);
+  tw(gcdProof, { o: 1 }, 22.92, 0.5);
   
   // Summary
   const summary = T(p, '两者都是对数级复杂度，极其高效！', { x: 800, y: 760, size: 32, fill: RESULT_COLOR, anchor: 'middle', weight: 600, o: 0 });
-  tw(summary, { o: 1 }, 16, 0.7);
+  tw(summary, { o: 1 }, 27.17, 0.7);
 }],
 
 ['summary', '总结', () => {
+  // factor = 1.3331
   const p = panel(0);
   
   const title = T(p, '总结', { x: 800, y: 90, size: 56, weight: 700, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.13, 0.6, out);
   
   const points = [
-    { text: '快速幂：二进制分解，O(log n)', color: POWER_COLOR, t: 2 },
-    { text: '欧几里得：辗转相除，O(log n)', color: GCD_COLOR, t: 4.5 },
-    { text: '扩展欧几里得：求解线性方程', color: RESULT_COLOR, t: 7 },
-    { text: '应用：密码学、模运算、数论', color: BASE_COLOR, t: 9.5 },
-    { text: '都是递归思想的经典应用', color: BINARY_COLOR, t: 12 },
-    { text: '简洁优雅，却威力强大', color: COL.chalk, t: 14.5 }
+    { text: '快速幂：二进制分解，O(log n)', color: POWER_COLOR, t: 2.67 },
+    { text: '欧几里得：辗转相除，O(log n)', color: GCD_COLOR, t: 5.99 },
+    { text: '扩展欧几里得：求解线性方程', color: RESULT_COLOR, t: 9.33 },
+    { text: '应用：密码学、模运算、数论', color: BASE_COLOR, t: 12.66 },
+    { text: '都是递归思想的经典应用', color: BINARY_COLOR, t: 15.99 },
+    { text: '简洁优雅，却威力强大', color: COL.chalk, t: 19.32 }
   ];
   
   let pointY = 210;
@@ -551,16 +563,16 @@ let BEATS = [
     tw(bullet, { o: 1 }, t, 0.4);
     
     const textEl = T(p, text, { x: 420, y: pointY, size: 32, fill: COL.chalk, o: 0 });
-    tw(textEl, { o: 1 }, t + 0.2, 0.5);
+    tw(textEl, { o: 1 }, t + 0.27, 0.5);
     
     pointY += 80;
   });
   
   const comparison = T(p, '朴素方法 O(n) → 优化后 O(log n)', { x: 800, y: 690, size: 30, fill: POWER_COLOR, anchor: 'middle', weight: 600, o: 0 });
-  tw(comparison, { o: 1 }, 17, 0.6);
+  tw(comparison, { o: 1 }, 22.66, 0.6);
   
   const mastery = T(p, '数论算法的基础，必须掌握！', { x: 800, y: 750, size: 32, fill: RESULT_COLOR, anchor: 'middle', weight: 600, o: 0 });
-  tw(mastery, { o: 1 }, 19, 0.7);
+  tw(mastery, { o: 1 }, 25.33, 0.7);
 }]
 
 ];

@@ -39,8 +39,12 @@ const root = '/Users/ivywu/course/algorithms';
         document.querySelectorAll('text, rect, circle, line').forEach(el => {
           let op = 1, e = el;
           while (e) { if (e.style?.display==='none'){op=0;break;} const o=e.getAttribute&&e.getAttribute('opacity'); if(o!=null) op*=parseFloat(o); e=e.parentElement; }
-          // 空文本元素渲染不出任何东西 —— 不算可见内容（防止用隐藏占位元素刷覆盖）
-          if (el.tagName.toLowerCase() === 'text' && !(el.textContent || '').trim()) return;
+          // 与实际渲染无关的占位元素不算可见内容（防止用空元素刷覆盖指标）：
+          //  - <text> 内容为空 → 什么都不显示
+          //  - <g> 没有任何子元素 → 空组，什么都不显示
+          const tag = el.tagName.toLowerCase();
+          if (tag === 'text' && !(el.textContent || '').trim()) return;
+          if (tag === 'g' && el.querySelector('text,rect,circle,line,path,polygon,ellipse') === null) return;
           if (op > 0.4) {
             const tr = el.getAttribute('transform') || '';
             const sm = tr.match(/scale\(([\d.]+)\)/);

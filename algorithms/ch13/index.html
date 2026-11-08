@@ -103,11 +103,11 @@ function drawDegreeLabel(parent, degree, x, y) {
 /* ---------- Beats ---------- */
 let BEATS = [
 
-['intro', '拓扑排序简介', () => {
+['intro', '拓扑排序简介', (m, dur) => {
   const p = panel(0);
   
   const title = T(p, '拓扑排序', { x: 800, y: 120, size: 60, weight: 700, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0, 0.6, out);
   
   const subtitle = T(p, 'Topological Sort', { x: 800, y: 200, size: 36, fill: DIM, anchor: 'middle', o: 0 });
   tw(subtitle, { o: 1 }, 0.5, 0.5);
@@ -127,49 +127,49 @@ let BEATS = [
   const e1 = drawDirectedEdge(demo, -150, 0, 0, 0);
   const e2 = drawDirectedEdge(demo, 0, 0, 150, 0);
   
-  tw(demo, { o: 1 }, 5.0, 0.8);
+  tw(demo, { o: 1 }, m('topo'), 0.8);
   
   const result = T(p, '→  排序结果: A → B → C', 
     { x: 800, y: 580, size: 28, weight: 600, anchor: 'middle', fill: DONE, o: 0 });
-  tw(result, { o: 1 }, 10.0, 0.7);
+  tw(result, { o: 1 }, m('topo') + 3, dur - (m('topo') + 3));
 },
 
 { audio: 'intro' }],
 
-['motivation', '实际应用场景', () => {
+['motivation', '实际应用场景', (m, dur) => {
   const p = panel(0);
   
   const title = T(p, '为什么需要拓扑排序？', { x: 800, y: 100, size: 42, weight: 700, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6);
+  tw(title, { o: 1 }, 0, 0.6);
   
   // 四个场景
   const scenarios = [
-    { icon: '📚', title: '大学选课', desc: '先修数学才能学算法', y: 220, delay: 2.0 },
-    { icon: '⚙️', title: '编译代码', desc: '先编译基础模块', y: 330, delay: 8.0 },
-    { icon: '📋', title: '项目管理', desc: '任务之间有先后顺序', y: 440, delay: 14.0 },
-    { icon: '🏗️', title: '装修房子', desc: '先走水电再刷墙', y: 550, delay: 20.0 }
+    { icon: '📚', title: '大学选课', desc: '先修数学才能学算法', y: 220, mark: 'course' },
+    { icon: '⚙️', title: '编译代码', desc: '先编译基础模块', y: 330, mark: 'compile' },
+    { icon: '📋', title: '项目管理', desc: '任务之间有先后顺序', y: 440, mark: 'task' },
+    { icon: '🏗️', title: '装修房子', desc: '先走水电再刷墙', y: 550, mark: 'schedule' }
   ];
   
-  scenarios.forEach(({ icon, title, desc, y, delay }) => {
+  scenarios.forEach(({ icon, title, desc, y, mark }) => {
     const g = G(p, { x: 800, y, o: 0 });
     T(g, icon, { x: -250, y: 0, size: 32, anchor: 'middle' });
     T(g, title, { x: -150, y: 0, size: 26, weight: 600, anchor: 'start' });
     T(g, desc, { x: -150, y: 35, size: 20, fill: DIM, anchor: 'start' });
-    tw(g, { o: 1 }, delay, 0.7);
+    tw(g, { o: 1 }, m(mark), 0.7);
   });
   
   const question = T(p, '如何找到合法的执行顺序？', 
     { x: 800, y: 680, size: 30, weight: 600, anchor: 'middle', fill: HIGHLIGHT, o: 0 });
-  tw(question, { o: 1 }, 26.0, 0.8, back);
+  tw(question, { o: 1 }, m('question'), dur - m('question'), back);
 },
 
 { audio: 'motivation' }],
 
-['dag-concept', 'DAG 有向无环图', () => {
+['dag-concept', 'DAG 有向无环图', (m, dur) => {
   const p = panel(0);
   
   const title = T(p, '有向无环图 (DAG)', { x: 800, y: 100, size: 42, weight: 700, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6);
+  tw(title, { o: 1 }, 0, 0.6);
   
   const subtitle = T(p, 'Directed Acyclic Graph', 
     { x: 800, y: 160, size: 24, fill: DIM, anchor: 'middle', o: 0 });
@@ -188,7 +188,7 @@ let BEATS = [
   drawDirectedEdge(directed, -80, -30, 0, 60);
   
   T(directed, '边有方向性', { x: 0, y: 130, size: 20, fill: DIM, anchor: 'middle' });
-  tw(directed, { o: 1 }, 2.0, 0.7);
+  tw(directed, { o: 1 }, m('dag'), 0.7);
   
   // 右边：有环图（错误）
   const cyclic = G(p, { x: 1250, y: 350, o: 0 });
@@ -203,12 +203,12 @@ let BEATS = [
   drawDirectedEdge(cyclic, 0, 60, -80, -30, HIGHLIGHT);
   
   T(cyclic, '循环依赖，无解', { x: 0, y: 130, size: 20, fill: HIGHLIGHT, anchor: 'middle' });
-  tw(cyclic, { o: 1 }, 12.0, 0.7);
+  tw(cyclic, { o: 1 }, m('cycle'), 0.7);
   
   // 底部说明
   const note = T(p, '只有无环图才能进行拓扑排序', 
     { x: 800, y: 580, size: 28, weight: 600, anchor: 'middle', fill: DONE, o: 0 });
-  tw(note, { o: 1 }, 28.0, 0.8);
+  tw(note, { o: 1 }, m('valid'), dur - m('valid'));
 },
 
 { audio: 'dag-concept' }],
@@ -797,15 +797,15 @@ let BEATS = [
 
 { audio: 'applications' }],
 
-['uniqueness', '唯一性问题', () => {
+['uniqueness', '唯一性问题', (m, dur) => {
   const p = panel(0);
   
   const title = T(p, '拓扑排序的唯一性', { x: 800, y: 100, size: 42, weight: 700, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6);
+  tw(title, { o: 1 }, 0, 0.6);
   
   const general = T(p, '一般情况：不唯一', 
     { x: 800, y: 200, size: 28, anchor: 'middle', fill: PROCESSING, o: 0 });
-  tw(general, { o: 1 }, 2.0, 0.6);
+  tw(general, { o: 1 }, m('general'), 0.6);
   
   // 示例：多个可选节点
   const multiG = G(p, { x: 800, y: 320, o: 0 });
@@ -819,14 +819,18 @@ let BEATS = [
   
   T(multiG, 'B 和 C 可以任意顺序', { x: 0, y: 110, size: 20, fill: DIM, anchor: 'middle' });
   
-  tw(multiG, { o: 1 }, 8.0, 0.7);
+  tw(multiG, { o: 1 }, m('parallel'), 0.7);
+  
+  const example = T(p, '可能有多个合法排序', 
+    { x: 800, y: 440, size: 22, anchor: 'middle', fill: DIM, o: 0 });
+  tw(example, { o: 1 }, m('example'), 0.5);
   
   const chain = T(p, '唯一情况：图是一条链', 
-    { x: 800, y: 480, size: 26, anchor: 'middle', fill: DONE, o: 0 });
-  tw(chain, { o: 1 }, 18.0, 0.6);
+    { x: 800, y: 510, size: 26, anchor: 'middle', fill: DONE, o: 0 });
+  tw(chain, { o: 1 }, m('chain'), 0.6);
   
   // 链示例
-  const chainG = G(p, { x: 800, y: 580, o: 0 });
+  const chainG = G(p, { x: 800, y: 610, o: 0 });
   
   const cn1 = drawGraphNode(chainG, 'A', -200, 0, 26, DONE);
   const cn2 = drawGraphNode(chainG, 'B', -60, 0, 26, DONE);
@@ -839,11 +843,11 @@ let BEATS = [
   
   T(chainG, '只有一条路径 → 唯一排序', { x: 0, y: 60, size: 20, fill: DIM, anchor: 'middle' });
   
-  tw(chainG, { o: 1 }, 24.0, 0.7);
+  tw(chainG, { o: 1 }, m('count'), 0.7);
   
-  const count = T(p, '统计排序数量是 NP-hard 问题', 
-    { x: 800, y: 690, size: 22, fill: HIGHLIGHT, anchor: 'middle', o: 0 });
-  tw(count, { o: 1 }, 36.0, 0.6);
+  const note = T(p, '统计排序数量是 NP-hard 问题', 
+    { x: 800, y: 720, size: 22, fill: HIGHLIGHT, anchor: 'middle', o: 0 });
+  tw(note, { o: 1 }, m('use'), dur - m('use'));
 },
 
 { audio: 'uniqueness' }],

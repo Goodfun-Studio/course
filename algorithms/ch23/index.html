@@ -393,13 +393,18 @@ let BEATS = [
   const doneLabel = T(p, 'Kosaraju 算法完成！', { x: 400, y: 450, size: 24, weight: 700, fill: NODE_CURRENT, anchor: 'middle', o: 0 });
   tw(doneLabel, { o: 1 }, m('done'), 0.5);
   
-  // Final result
+  // Final result with extended visibility
   const resultLabel = T(p, '找到 4 个强连通分量', { x: 400, y: 490, size: 22, weight: 600, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
-  tw(resultLabel, { o: 1 }, m('result'), 0.5);
+  tw(resultLabel, { o: 1 }, m('result'), dur * 0.7 - m('result'));
   
-  // Add final summary that extends to near the end
-  const summaryLabel = T(p, '两次 DFS 完成识别', { x: 400, y: 520, size: 20, fill: NODE_SCC2, anchor: 'middle', o: 0 });
-  tw(summaryLabel, { o: 1 }, m('result') + 1.0, dur * 0.95 - m('result') - 1.0);
+  // Add highlight animation on final SCCs that extends throughout
+  const highlight1 = T(p, '✓', { x: 215, y: 360, size: 24, weight: 700, fill: NODE_SCC1, anchor: 'middle', o: 0 });
+  tw(highlight1, { o: 1 }, m('result') + 0.5, 0.5);
+  tw(highlight1, { o: 0.5 }, m('result') + 1.0, dur * 0.95 - m('result') - 1.0);
+  
+  const highlight2 = T(p, '✓', { x: 485, y: 360, size: 24, weight: 700, fill: NODE_SCC2, anchor: 'middle', o: 0 });
+  tw(highlight2, { o: 1 }, m('result') + 0.7, 0.5);
+  tw(highlight2, { o: 0.5 }, m('result') + 1.2, dur * 0.95 - m('result') - 1.2);
 }, { audio: 'kosaraju-demo' }],
 
 ['kosaraju-impl', 'Kosaraju实现', (m, dur) => {

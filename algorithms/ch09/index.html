@@ -365,7 +365,9 @@ let BEATS = [
     const desc = T(p, app.desc, {
       x: 220, y: y + 50, size: 20, fill: COL.dim, o: 0
     });
-    tw(desc, { o: 1 }, t0 + 0.6, 0.6);
+    // desc fade duration stretches to cover narration gap; last desc covers to ~dur
+    const descDur = idx === apps.length - 1 ? Math.max(0.8, dur - t0 - 0.6) : 0.6;
+    tw(desc, { o: 1 }, t0 + 0.6, descDur);
   });
 }],
 
@@ -583,7 +585,7 @@ let BEATS = [
   const hint2 = T(p, '接下来逐个中转点 k 迭代，更新矩阵...', {
     x: 800, y: 670, size: 22, fill: PRIMARY, weight: 600, anchor: 'middle', o: 0
   });
-  tw(hint2, { o: 1 }, m('inf'), 0.8);
+  tw(hint2, { o: 1 }, m('inf'), Math.max(0.8, dur - m('inf')));
 }],
 
 ['demo_k0', 'Floyd-Warshall 演示：k = 0 (A)', (m, dur) => {
@@ -984,7 +986,7 @@ let BEATS = [
   const adv3 = T(p, '• 密集图时，比跑 V 次 Bellman-Ford 更快', {
     x: 240, y: 665, size: 20, fill: COL.dim, o: 0
   });
-  tw(adv3, { o: 1 }, m('negative_support', 1.0), 0.6);
+  tw(adv3, { o: 1 }, m('negative_support', 1.0), Math.max(0.6, dur - m('negative_support', 1.0)));
 }],
 
 ['comparison', '算法对比', (m, dur) => {

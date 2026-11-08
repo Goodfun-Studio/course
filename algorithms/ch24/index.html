@@ -288,9 +288,12 @@ let BEATS = [
 
 ['ford-fulkerson-demo', 'Ford-Fulkerson演示', () => {
   const p = panel(0);
-  const factor = 2.877;
+  const factor = 1.895;
+  let t = 0;
   
-  T(p, 'Ford-Fulkerson 算法演示', { x: 400, y: 40, size: 36, weight: 700, fill: TEXT_COLOR, o: 0 });
+  // 标题
+  const title = T(p, 'Ford-Fulkerson 算法演示', { x: 400, y: 40, size: 36, weight: 700, fill: TEXT_COLOR, o: 0 });
+  tw(title, { o: 1 }, (t += 0.5) * factor);
   
   // 网络定义
   const edges = [
@@ -311,132 +314,178 @@ let BEATS = [
   };
   
   const network = drawNetwork(p, edges, flows);
-  tw(network.g, { x: 50, y: 100, o: 1 }, 0.5 * factor);
+  tw(network.g, { x: 50, y: 100, o: 1 }, (t += 1.0) * factor);
   
   // 流量显示
   const flowText = T(p, '当前流量: 0', { x: 400, y: 550, size: 28, weight: 700, fill: FLOW, o: 0, anchor: 'middle' });
-  tw(flowText, { o: 1 }, 1.0 * factor);
+  tw(flowText, { o: 1 }, t * factor);
   
-  // 哨兵：标记动画结束时间（不可见）
-  const sentinel = G(p, { o: 0 });
-  tw(sentinel, { o: 0 }, 38.838);
+  // === 第一次增广 S→A→D→T (瓶颈3) ===
+  const aug1Title = T(p, '第一次增广', { x: 100, y: 480, size: 22, weight: 700, fill: PATH, o: 0 });
+  tw(aug1Title, { o: 1 }, (t += 1.0) * factor);
   
-  let totalFlow = 0;
-  let delay = 1 * factor;
+  const path1Text = T(p, '路径: S→A→D→T', { x: 100, y: 510, size: 18, weight: 600, fill: TEXT_COLOR, o: 0 });
+  tw(path1Text, { o: 1 }, (t += 1.0) * factor);
   
-  // 增广路径1: S->A->D->T (瓶颈3)
-  setTimeout(() => {
-    const path1 = ['SA', 'AD', 'DT'];
-    const pathText = T(p, '路径1: S→A→D→T, 瓶颈=3', { x: 400, y: 500, size: 20, weight: 600, fill: PATH, anchor: 'middle' });
-    highlightPath(network, path1, 0.5);
-    
-    setTimeout(() => {
-      flows['SA'] += 3;
-      flows['AD'] += 3;
-      flows['DT'] += 3;
-      totalFlow += 3;
-      
-      updateEdgeLabel(network.edges['SA'], flows['SA'], 7);
-      updateEdgeLabel(network.edges['AD'], flows['AD'], 3);
-      updateEdgeLabel(network.edges['DT'], flows['DT'], 5);
-      
-      tw(flowText, { o: 0 }, 0.3, () => {
-        flowText.textContent = `当前流量: ${totalFlow}`;
-        tw(flowText, { o: 1 }, 0.3);
-      });
-      
-      resetPath(network, path1, 0.5);
-      tw(pathText, { o: 0 }, 0.5, () => pathText.remove());
-    }, 2000);
-  }, delay * 1000);
-  delay += 3 * factor;
+  // 高亮路径1
+  const path1Edges = ['SA', 'AD', 'DT'];
+  path1Edges.forEach(edgeId => {
+    tw(network.edges[edgeId].line, { stroke: PATH, 'stroke-width': 5 }, t * factor);
+  });
   
-  // 增广路径2: S->B->D->T (瓶颈2)
-  setTimeout(() => {
-    const path2 = ['SB', 'BD', 'DT'];
-    const pathText = T(p, '路径2: S→B→D→T, 瓶颈=2', { x: 400, y: 500, size: 20, weight: 600, fill: PATH, anchor: 'middle' });
-    highlightPath(network, path2, 0.5);
-    
-    setTimeout(() => {
-      flows['SB'] += 2;
-      flows['BD'] += 2;
-      flows['DT'] += 2;
-      totalFlow += 2;
-      
-      updateEdgeLabel(network.edges['SB'], flows['SB'], 5);
-      updateEdgeLabel(network.edges['BD'], flows['BD'], 4);
-      updateEdgeLabel(network.edges['DT'], flows['DT'], 5);
-      
-      tw(flowText, { o: 0 }, 0.3, () => {
-        flowText.textContent = `当前流量: ${totalFlow}`;
-        tw(flowText, { o: 1 }, 0.3);
-      });
-      
-      resetPath(network, path2, 0.5);
-      tw(pathText, { o: 0 }, 0.5, () => pathText.remove());
-    }, 2000);
-  }, delay * 1000);
-  delay += 3 * factor;
+  const bottleneck1 = T(p, '瓶颈容量: 3', { x: 100, y: 540, size: 18, weight: 600, fill: HIGHLIGHT, o: 0 });
+  tw(bottleneck1, { o: 1 }, (t += 1.0) * factor);
   
-  // 增广路径3: S->A->C->T (瓶颈4)
-  setTimeout(() => {
-    const path3 = ['SA', 'AC', 'CT'];
-    const pathText = T(p, '路径3: S→A→C→T, 瓶颈=4', { x: 400, y: 500, size: 20, weight: 600, fill: PATH, anchor: 'middle' });
-    highlightPath(network, path3, 0.5);
-    
-    setTimeout(() => {
-      flows['SA'] += 4;
-      flows['AC'] += 4;
-      flows['CT'] += 4;
-      totalFlow += 4;
-      
-      updateEdgeLabel(network.edges['SA'], flows['SA'], 7);
-      updateEdgeLabel(network.edges['AC'], flows['AC'], 4);
-      updateEdgeLabel(network.edges['CT'], flows['CT'], 7);
-      
-      tw(flowText, { o: 0 }, 0.3, () => {
-        flowText.textContent = `当前流量: ${totalFlow}`;
-        tw(flowText, { o: 1 }, 0.3);
-      });
-      
-      resetPath(network, path3, 0.5);
-      tw(pathText, { o: 0 }, 0.5, () => pathText.remove());
-    }, 2000);
-  }, delay * 1000);
-  delay += 3 * factor;
+  // 更新流量标签
+  flows['SA'] = 3; flows['AD'] = 3; flows['DT'] = 3;
+  const label1_1 = T(p, '3/7', { x: 175, y: 215, size: 18, weight: 600, fill: FLOW, o: 0 });
+  const label1_2 = T(p, '3/3', { x: 350, y: 240, size: 18, weight: 600, fill: FLOW, o: 0 });
+  const label1_3 = T(p, '3/5', { x: 525, y: 290, size: 18, weight: 600, fill: FLOW, o: 0 });
+  tw(label1_1, { o: 1 }, (t += 1.0) * factor);
+  tw(label1_2, { o: 1 }, t * factor);
+  tw(label1_3, { o: 1 }, t * factor);
   
-  // 增广路径4: S->B->C->T (瓶颈1)
-  setTimeout(() => {
-    const path4 = ['SB', 'BC', 'CT'];
-    const pathText = T(p, '路径4: S→B→C→T, 瓶颈=1', { x: 400, y: 500, size: 20, weight: 600, fill: PATH, anchor: 'middle' });
-    highlightPath(network, path4, 0.5);
-    
-    setTimeout(() => {
-      flows['SB'] += 1;
-      flows['BC'] += 1;
-      flows['CT'] += 1;
-      totalFlow += 1;
-      
-      updateEdgeLabel(network.edges['SB'], flows['SB'], 5);
-      updateEdgeLabel(network.edges['BC'], flows['BC'], 2);
-      updateEdgeLabel(network.edges['CT'], flows['CT'], 7);
-      
-      tw(flowText, { o: 0 }, 0.3, () => {
-        flowText.textContent = `当前流量: ${totalFlow}`;
-        tw(flowText, { o: 1 }, 0.3);
-      });
-      
-      resetPath(network, path4, 0.5);
-      tw(pathText, { o: 0 }, 0.5, () => pathText.remove());
-    }, 2000);
-  }, delay * 1000);
-  delay += 3 * factor;
+  const residual1 = T(p, '更新残余网络', { x: 100, y: 570, size: 16, weight: 500, fill: RESIDUAL, o: 0 });
+  tw(residual1, { o: 1 }, (t += 1.0) * factor);
   
-  // 完成
-  setTimeout(() => {
-    const done = T(p, '✓ 无法找到更多增广路径，算法结束', { x: 400, y: 500, size: 22, weight: 700, fill: SUCCESS, o: 0, anchor: 'middle' });
-    tw(done, { o: 1 }, 0.5);
-  }, delay * 1000);
+  // 重置路径1高亮
+  path1Edges.forEach(edgeId => {
+    tw(network.edges[edgeId].line, { stroke: TEXT_COLOR, 'stroke-width': 3 }, t * factor);
+  });
+  tw(aug1Title, { o: 0 }, t * factor);
+  tw(path1Text, { o: 0 }, t * factor);
+  tw(bottleneck1, { o: 0 }, t * factor);
+  tw(residual1, { o: 0 }, t * factor);
+  
+  // 更新总流量
+  const flow1 = T(p, '当前流量: 3', { x: 400, y: 550, size: 28, weight: 700, fill: FLOW, o: 0, anchor: 'middle' });
+  tw(flowText, { o: 0 }, t * factor);
+  tw(flow1, { o: 1 }, t * factor);
+  
+  // === 第二次增广 S→B→D→T (瓶颈2) ===
+  const aug2Title = T(p, '第二次增广', { x: 100, y: 480, size: 22, weight: 700, fill: PATH, o: 0 });
+  tw(aug2Title, { o: 1 }, (t += 1.0) * factor);
+  
+  const path2Text = T(p, '路径: S→B→D→T', { x: 100, y: 510, size: 18, weight: 600, fill: TEXT_COLOR, o: 0 });
+  tw(path2Text, { o: 1 }, (t += 1.0) * factor);
+  
+  // 高亮路径2
+  const path2Edges = ['SB', 'BD', 'DT'];
+  path2Edges.forEach(edgeId => {
+    tw(network.edges[edgeId].line, { stroke: PATH, 'stroke-width': 5 }, t * factor);
+  });
+  
+  const bottleneck2 = T(p, '瓶颈容量: 2', { x: 100, y: 540, size: 18, weight: 600, fill: HIGHLIGHT, o: 0 });
+  tw(bottleneck2, { o: 1 }, (t += 1.0) * factor);
+  
+  // 更新流量标签
+  flows['SB'] = 2; flows['BD'] = 2; flows['DT'] = 5;
+  const label2_1 = T(p, '2/5', { x: 175, y: 385, size: 18, weight: 600, fill: FLOW, o: 0 });
+  const label2_2 = T(p, '2/4', { x: 350, y: 360, size: 18, weight: 600, fill: FLOW, o: 0 });
+  const label2_3 = T(p, '5/5', { x: 525, y: 290, size: 18, weight: 600, fill: FLOW, o: 0 });
+  tw(label2_1, { o: 1 }, (t += 1.0) * factor);
+  tw(label2_2, { o: 1 }, t * factor);
+  tw(label1_3, { o: 0 }, t * factor);
+  tw(label2_3, { o: 1 }, t * factor);
+  
+  // 重置路径2
+  path2Edges.forEach(edgeId => {
+    tw(network.edges[edgeId].line, { stroke: TEXT_COLOR, 'stroke-width': 3 }, t * factor);
+  });
+  tw(aug2Title, { o: 0 }, t * factor);
+  tw(path2Text, { o: 0 }, t * factor);
+  tw(bottleneck2, { o: 0 }, t * factor);
+  
+  const flow2 = T(p, '当前流量: 5', { x: 400, y: 550, size: 28, weight: 700, fill: FLOW, o: 0, anchor: 'middle' });
+  tw(flow1, { o: 0 }, t * factor);
+  tw(flow2, { o: 1 }, t * factor);
+  
+  // === 第三次增广 S→A→C→T (瓶颈4) ===
+  const aug3Title = T(p, '第三次增广', { x: 100, y: 480, size: 22, weight: 700, fill: PATH, o: 0 });
+  tw(aug3Title, { o: 1 }, (t += 1.0) * factor);
+  
+  const path3Text = T(p, '路径: S→A→C→T', { x: 100, y: 510, size: 18, weight: 600, fill: TEXT_COLOR, o: 0 });
+  tw(path3Text, { o: 1 }, (t += 1.0) * factor);
+  
+  // 高亮路径3
+  const path3Edges = ['SA', 'AC', 'CT'];
+  path3Edges.forEach(edgeId => {
+    tw(network.edges[edgeId].line, { stroke: PATH, 'stroke-width': 5 }, t * factor);
+  });
+  
+  const bottleneck3 = T(p, '瓶颈容量: 4', { x: 100, y: 540, size: 18, weight: 600, fill: HIGHLIGHT, o: 0 });
+  tw(bottleneck3, { o: 1 }, (t += 1.0) * factor);
+  
+  // 更新流量标签
+  flows['SA'] = 7; flows['AC'] = 4; flows['CT'] = 4;
+  const label3_1 = T(p, '7/7', { x: 175, y: 215, size: 18, weight: 600, fill: FLOW, o: 0 });
+  const label3_2 = T(p, '4/4', { x: 350, y: 185, size: 18, weight: 600, fill: FLOW, o: 0 });
+  const label3_3 = T(p, '4/7', { x: 525, y: 185, size: 18, weight: 600, fill: FLOW, o: 0 });
+  tw(label1_1, { o: 0 }, (t += 1.0) * factor);
+  tw(label3_1, { o: 1 }, t * factor);
+  tw(label3_2, { o: 1 }, t * factor);
+  tw(label3_3, { o: 1 }, t * factor);
+  
+  // 重置路径3
+  path3Edges.forEach(edgeId => {
+    tw(network.edges[edgeId].line, { stroke: TEXT_COLOR, 'stroke-width': 3 }, t * factor);
+  });
+  tw(aug3Title, { o: 0 }, t * factor);
+  tw(path3Text, { o: 0 }, t * factor);
+  tw(bottleneck3, { o: 0 }, t * factor);
+  
+  const flow3 = T(p, '当前流量: 9', { x: 400, y: 550, size: 28, weight: 700, fill: FLOW, o: 0, anchor: 'middle' });
+  tw(flow2, { o: 0 }, t * factor);
+  tw(flow3, { o: 1 }, t * factor);
+  
+  // === 第四次增广 S→B→C→T (瓶颈1) ===
+  const aug4Title = T(p, '第四次增广', { x: 100, y: 480, size: 22, weight: 700, fill: PATH, o: 0 });
+  tw(aug4Title, { o: 1 }, (t += 1.0) * factor);
+  
+  const path4Text = T(p, '路径: S→B→C→T', { x: 100, y: 510, size: 18, weight: 600, fill: TEXT_COLOR, o: 0 });
+  tw(path4Text, { o: 1 }, (t += 1.0) * factor);
+  
+  // 高亮路径4
+  const path4Edges = ['SB', 'BC', 'CT'];
+  path4Edges.forEach(edgeId => {
+    tw(network.edges[edgeId].line, { stroke: PATH, 'stroke-width': 5 }, t * factor);
+  });
+  
+  const bottleneck4 = T(p, '瓶颈容量: 1', { x: 100, y: 540, size: 18, weight: 600, fill: HIGHLIGHT, o: 0 });
+  tw(bottleneck4, { o: 1 }, (t += 1.0) * factor);
+  
+  // 更新流量标签
+  flows['SB'] = 3; flows['BC'] = 1; flows['CT'] = 5;
+  const label4_1 = T(p, '3/5', { x: 175, y: 385, size: 18, weight: 600, fill: FLOW, o: 0 });
+  const label4_2 = T(p, '1/2', { x: 350, y: 305, size: 18, weight: 600, fill: FLOW, o: 0 });
+  const label4_3 = T(p, '5/7', { x: 525, y: 185, size: 18, weight: 600, fill: FLOW, o: 0 });
+  tw(label2_1, { o: 0 }, (t += 1.0) * factor);
+  tw(label4_1, { o: 1 }, t * factor);
+  tw(label4_2, { o: 1 }, t * factor);
+  tw(label3_3, { o: 0 }, t * factor);
+  tw(label4_3, { o: 1 }, t * factor);
+  
+  // 重置路径4
+  path4Edges.forEach(edgeId => {
+    tw(network.edges[edgeId].line, { stroke: TEXT_COLOR, 'stroke-width': 3 }, t * factor);
+  });
+  tw(aug4Title, { o: 0 }, t * factor);
+  tw(path4Text, { o: 0 }, t * factor);
+  tw(bottleneck4, { o: 0 }, t * factor);
+  
+  const flow4 = T(p, '当前流量: 10', { x: 400, y: 550, size: 28, weight: 700, fill: FLOW, o: 0, anchor: 'middle' });
+  tw(flow3, { o: 0 }, t * factor);
+  tw(flow4, { o: 1 }, t * factor);
+  
+  // === 算法结束 ===
+  const noPath = T(p, '无法找到更多增广路径', { x: 400, y: 480, size: 22, weight: 700, fill: HIGHLIGHT, o: 0, anchor: 'middle' });
+  tw(noPath, { o: 1 }, (t += 1.0) * factor);
+  
+  const done = T(p, '✓ 算法结束', { x: 400, y: 510, size: 24, weight: 700, fill: SINK, o: 0, anchor: 'middle' });
+  tw(done, { o: 1 }, (t += 1.0) * factor);
+  
+  const finalFlow = T(p, '总流量: 10', { x: 400, y: 540, size: 20, weight: 600, fill: FLOW, o: 0, anchor: 'middle' });
+  tw(finalFlow, { o: 1 }, (t += 1.0) * factor);
 }],
 
 ['implementation', '算法实现', () => {

@@ -1,41 +1,67 @@
-const marks = {
+window.TIMINGS = {
   "intro": {
-    "audio": "intro"
+    "dur": 45.7,
+    "marks": {},
+    "cues": []
   },
   "suffix-definition": {
-    "audio": "suffix-definition"
+    "dur": 46.8,
+    "marks": {},
+    "cues": []
   },
   "suffix-array-definition": {
-    "audio": "suffix-array-definition"
+    "dur": 60.41,
+    "marks": {},
+    "cues": []
   },
   "banana-example": {
-    "audio": "banana-example"
+    "dur": 42.1,
+    "marks": {},
+    "cues": []
   },
   "suffix-array-construction": {
-    "audio": "suffix-array-construction"
+    "dur": 74.02,
+    "marks": {},
+    "cues": []
   },
   "naive-construction": {
-    "audio": "naive-construction"
+    "dur": 60.36,
+    "marks": {},
+    "cues": []
   },
   "doubling-algorithm": {
-    "audio": "doubling-algorithm"
+    "dur": 73.13,
+    "marks": {},
+    "cues": []
   },
   "lcp-definition": {
-    "audio": "lcp-definition"
+    "dur": 86.09,
+    "marks": {},
+    "cues": []
   },
   "lcp-computation": {
-    "audio": "lcp-computation"
+    "dur": 110.64,
+    "marks": {},
+    "cues": []
   },
   "lcp-algorithm": {
-    "audio": "lcp-algorithm"
+    "dur": 69.62,
+    "marks": {},
+    "cues": []
   },
   "applications": {
-    "audio": "applications"
+    "dur": 86.83,
+    "marks": {},
+    "cues": []
   },
   "suffix-tree-comparison": {
-    "audio": "suffix-tree-comparison"
+    "dur": 88.92,
+    "marks": {},
+    "cues": []
   },
   "summary": {
-    "audio": "summary"
+    "dur": 85.73,
+    "marks": {},
+    "cues": []
   }
 };

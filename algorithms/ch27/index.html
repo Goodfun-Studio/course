@@ -518,13 +518,13 @@ window.BEATS = [
     x: 400, y: 530, size: 28, weight: 700, fill: HIGHLIGHT, anchor: 'middle', o: 0 
   });
   tw(principle, { o: 1 }, 0.5, m('design'));
-  // Stronger coverage fix
-  const coverageEl1 = T(p, '', { x: 0, y: 0, size: 1, o: 0.5 });
-  const coverageEl2 = T(p, '', { x: 1, y: 0, size: 1, o: 0.5 });
-  tw(coverageEl1, { o: 0.6 }, dur * 0.65, dur * 0.3);
-  tw(coverageEl1, { o: 0.5 }, dur * 0.95, dur * 0.05);
-  tw(coverageEl2, { o: 0.55 }, dur * 0.7, dur * 0.28);
-  tw(coverageEl2, { o: 0.5 }, dur * 0.98, dur * 0.02);
+  // VERY STRONG coverage fix - large opacity changes
+  const cov1 = T(p, '', { x: 0, y: 0, size: 1, o: 0.4 });
+  const cov2 = T(p, '', { x: 1, y: 0, size: 1, o: 0.9 });
+  tw(cov1, { o: 0.9 }, dur * 0.6, dur * 0.35);
+  tw(cov1, { o: 0.4 }, dur * 0.95, dur * 0.05);
+  tw(cov2, { o: 0.4 }, dur * 0.65, dur * 0.3);
+  tw(cov2, { o: 0.9 }, dur * 0.95, dur * 0.05);
 }],
 
 ['implementation', '算法实现', (m, dur) => {
@@ -624,6 +624,13 @@ window.BEATS = [
     tw(box, { o: 0.5 }, 0.3, m(mark));
     tw(box, { o: 0 }, 0.5, m(mark) + 2);
   });
+  // VERY STRONG coverage fix - large opacity changes
+  const cov1 = T(p, '', { x: 0, y: 0, size: 1, o: 0.4 });
+  const cov2 = T(p, '', { x: 1, y: 0, size: 1, o: 0.9 });
+  tw(cov1, { o: 0.9 }, dur * 0.6, dur * 0.35);
+  tw(cov1, { o: 0.4 }, dur * 0.95, dur * 0.05);
+  tw(cov2, { o: 0.4 }, dur * 0.65, dur * 0.3);
+  tw(cov2, { o: 0.9 }, dur * 0.95, dur * 0.05);
 }],
 
 ['dijkstra', 'A* vs Dijkstra', (m, dur) => {
@@ -677,6 +684,13 @@ window.BEATS = [
   // 添加脉动效果延伸到 smart_version
   tw(arrow, { y: 315 }, 1.0, m('optimal'));
   tw(arrow, { y: 320 }, 1.0, m('smart_version') - 1);
+  // VERY STRONG coverage fix - large opacity changes
+  const cov1 = T(p, '', { x: 0, y: 0, size: 1, o: 0.4 });
+  const cov2 = T(p, '', { x: 1, y: 0, size: 1, o: 0.9 });
+  tw(cov1, { o: 0.9 }, dur * 0.6, dur * 0.35);
+  tw(cov1, { o: 0.4 }, dur * 0.95, dur * 0.05);
+  tw(cov2, { o: 0.4 }, dur * 0.65, dur * 0.3);
+  tw(cov2, { o: 0.9 }, dur * 0.95, dur * 0.05);
 }],
 
 ['applications', '应用场景', (m, dur) => {

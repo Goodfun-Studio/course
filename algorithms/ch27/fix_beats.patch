@@ -1,0 +1,20 @@
+# Fix bfs-limitation - extend to dur*0.75 (47.86 * 0.75 = 35.9s)
+# Need animations until at least 35.9s, last mark is guide at ~45s
+
+# Fix heuristic - extend to dur*0.75 (58.54 * 0.75 = 43.9s) 
+# Need animations until at least 43.9s, last mark is smaller at ~58s
+
+# Fix manhattan - extend to dur*0.75 (53.35 * 0.75 = 40s)
+# Need animations until at least 40s, last mark is choose at ~53s
+
+# Fix implementation - extend to dur*0.75 (83.9 * 0.75 = 62.9s)
+# Need animations until at least 62.9s, last mark is key at 83.9s
+
+# Fix optimization - extend to dur*0.75 (51.77 * 0.75 = 38.8s)
+# Need animations until at least 38.8s, last mark is efficient at ~51s
+
+# Fix comparison-table - extend to dur*0.75 (46.32 * 0.75 = 34.7s)
+# Need animations until at least 34.7s, last mark is traverse at ~46s
+
+# Fix finish - extend to dur*0.75 (52.51 * 0.75 = 39.4s)
+# Need animations until at least 39.4s, last mark is core at 52.5s

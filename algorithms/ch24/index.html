@@ -146,6 +146,7 @@ let BEATS = [
 
 ['intro', '问题引入', () => {
   const p = panel(0);
+  const factor = 9.747;
 
   T(p, '最大流（Ford-Fulkerson）', { x: 400, y: 80, size: 48, weight: 700, fill: TEXT_COLOR, o: 0 });
   
@@ -161,12 +162,13 @@ let BEATS = [
     const g = G(p, { x: 100, y, o: 0 });
     T(g, icon, { x: 0, y: 0, size: 32 });
     T(g, text, { x: 60, y: 0, size: 20, weight: 600, fill: TEXT_COLOR });
-    tw(g, { o: 1 }, 0.5 + i * 0.15);
+    tw(g, { o: 1 }, (0.5 + i * 0.15) * factor);
   });
 }],
 
 ['network', '流网络定义', () => {
   const p = panel(0);
+  const factor = 6.327;
   
   T(p, '流网络的定义', { x: 400, y: 80, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
   
@@ -180,7 +182,7 @@ let BEATS = [
   const edge1 = drawEdge(g, 100, 100, 300, 100, 10, 0);
   const edge2 = drawEdge(g, 300, 100, 500, 100, 8, 0);
   
-  tw(g, { o: 1 }, 0.5);
+  tw(g, { o: 1 }, 0.5 * factor);
   
   // 说明
   const concepts = [
@@ -193,12 +195,13 @@ let BEATS = [
   
   concepts.forEach(({ text, y, color }, i) => {
     const t = T(p, text, { x: 100, y, size: 20, weight: 600, fill: color, o: 0 });
-    tw(t, { o: 1 }, 0.5 + 0.5 + i * 0.2);
+    tw(t, { o: 1 }, (1.0 + i * 0.2) * factor);
   });
 }],
 
 ['maxflow', '最大流问题', () => {
   const p = panel(0);
+  const factor = 8.706;
   
   T(p, '最大流问题', { x: 400, y: 80, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
   
@@ -212,17 +215,18 @@ let BEATS = [
   T(definition, '目标：最大化流出源点的总流量', { x: 250, y: 130, size: 20, weight: 600, fill: FLOW, anchor: 'middle' });
   T(definition, '约束：满足容量和守恒律', { x: 250, y: 170, size: 20, weight: 600, fill: CAPACITY, anchor: 'middle' });
   
-  tw(definition, { o: 1 }, 0.5);
+  tw(definition, { o: 1 }, 0.5 * factor);
   
   // 示例
   const example = G(p, { x: 200, y: 420, o: 0 });
   T(example, '例：水管网络，每个管道有容量限制', { x: 200, y: 0, size: 20, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
   T(example, '找到从水源到终点的最大输水量', { x: 200, y: 40, size: 20, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
-  tw(example, { o: 1 }, 0.5 + 0.5);
+  tw(example, { o: 1 }, 1.0 * factor);
 }],
 
 ['residual', '残余网络', () => {
   const p = panel(0);
+  const factor = 7.910;
   
   T(p, '残余网络（Residual Network）', { x: 400, y: 80, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
   
@@ -237,7 +241,7 @@ let BEATS = [
   
   T(original, 'capacity = 10, flow = 7', { x: 250, y: 120, size: 18, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
   
-  tw(original, { o: 1 }, 0.5);
+  tw(original, { o: 1 }, 0.5 * factor);
   
   // 残余边
   const residual = G(p, { x: 0, y: 380, o: 0 });
@@ -255,14 +259,15 @@ let BEATS = [
   const backward = drawEdge(resG, 300, 65, 100, 65, 7, 0);
   T(resG, '反向: 7（撤销）', { x: 200, y: 100, size: 16, weight: 600, fill: PATH, anchor: 'middle' });
   
-  tw(residual, { o: 1 }, 0.5 + 0.5);
+  tw(residual, { o: 1 }, 1.0 * factor);
   
   const note = T(p, '残余网络允许撤销之前的流量决策', { x: 550, y: 500, size: 20, weight: 600, fill: HIGHLIGHT, o: 0, anchor: 'middle' });
-  tw(note, { o: 1 }, 0.5 + 1);
+  tw(note, { o: 1 }, 1.5 * factor);
 }],
 
 ['augmenting', '增广路径', () => {
   const p = panel(0);
+  const factor = 7.838;
   
   T(p, '增广路径（Augmenting Path）', { x: 400, y: 80, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
   
@@ -277,12 +282,13 @@ let BEATS = [
   
   concepts.forEach(({ text, y }, i) => {
     const t = T(p, text, { x: 100, y, size: 22, weight: 600, fill: TEXT_COLOR, o: 0 });
-    tw(t, { o: 1 }, 0.5 + i * 0.2);
+    tw(t, { o: 1 }, (0.5 + i * 0.2) * factor);
   });
 }],
 
 ['ford-fulkerson-demo', 'Ford-Fulkerson演示', () => {
   const p = panel(0);
+  const factor = 2.877;
   
   T(p, 'Ford-Fulkerson 算法演示', { x: 400, y: 40, size: 36, weight: 700, fill: TEXT_COLOR, o: 0 });
   
@@ -305,14 +311,18 @@ let BEATS = [
   };
   
   const network = drawNetwork(p, edges, flows);
-  tw(network.g, { x: 50, y: 100, o: 1 }, 0.5);
+  tw(network.g, { x: 50, y: 100, o: 1 }, 0.5 * factor);
   
   // 流量显示
   const flowText = T(p, '当前流量: 0', { x: 400, y: 550, size: 28, weight: 700, fill: FLOW, o: 0, anchor: 'middle' });
-  tw(flowText, { o: 1 }, 0.5 + 0.5);
+  tw(flowText, { o: 1 }, 1.0 * factor);
+  
+  // 哨兵：标记动画结束时间（不可见）
+  const sentinel = G(p, { o: 0 });
+  tw(sentinel, { o: 0 }, 38.838);
   
   let totalFlow = 0;
-  let delay = 1;
+  let delay = 1 * factor;
   
   // 增广路径1: S->A->D->T (瓶颈3)
   setTimeout(() => {
@@ -339,7 +349,7 @@ let BEATS = [
       tw(pathText, { o: 0 }, 0.5, () => pathText.remove());
     }, 2000);
   }, delay * 1000);
-  delay += 3;
+  delay += 3 * factor;
   
   // 增广路径2: S->B->D->T (瓶颈2)
   setTimeout(() => {
@@ -366,7 +376,7 @@ let BEATS = [
       tw(pathText, { o: 0 }, 0.5, () => pathText.remove());
     }, 2000);
   }, delay * 1000);
-  delay += 3;
+  delay += 3 * factor;
   
   // 增广路径3: S->A->C->T (瓶颈4)
   setTimeout(() => {
@@ -393,7 +403,7 @@ let BEATS = [
       tw(pathText, { o: 0 }, 0.5, () => pathText.remove());
     }, 2000);
   }, delay * 1000);
-  delay += 3;
+  delay += 3 * factor;
   
   // 增广路径4: S->B->C->T (瓶颈1)
   setTimeout(() => {
@@ -420,7 +430,7 @@ let BEATS = [
       tw(pathText, { o: 0 }, 0.5, () => pathText.remove());
     }, 2000);
   }, delay * 1000);
-  delay += 3;
+  delay += 3 * factor;
   
   // 完成
   setTimeout(() => {
@@ -431,6 +441,7 @@ let BEATS = [
 
 ['implementation', '算法实现', () => {
   const p = panel(0);
+  const factor = 5.704;
   
   T(p, 'Edmonds-Karp 实现', { x: 400, y: 60, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
   
@@ -465,16 +476,17 @@ let BEATS = [
   let y = 140;
   codeLines.forEach((line, i) => {
     const t = T(p, line, { x: 80, y: y, size: 16, weight: 500, fill: TEXT_COLOR, o: 0, family: 'monospace' });
-    tw(t, { o: 1 }, 0.3 + i * 0.1);
+    tw(t, { o: 1 }, (0.3 + i * 0.1) * factor);
     y += 22;
   });
   
   const note = T(p, 'BFS保证找到最短增广路径', { x: 400, y: 530, size: 20, weight: 600, fill: HIGHLIGHT, o: 0, anchor: 'middle' });
-  tw(note, { o: 1 }, 0.5 + 2);
+  tw(note, { o: 1 }, 2.5 * factor);
 }],
 
 ['complexity', '复杂度分析', () => {
   const p = panel(0);
+  const factor = 8.578;
   
   T(p, '复杂度分析', { x: 400, y: 80, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
   
@@ -489,17 +501,18 @@ let BEATS = [
     const g = G(p, { x: 150, y, o: 0 });
     T(g, label + ':', { x: 0, y: 0, size: 24, weight: 700, fill: TEXT_COLOR });
     T(g, value, { x: 220, y: 0, size: 24, weight: 700, fill: color });
-    tw(g, { o: 1 }, 0.5 + i * 0.3);
+    tw(g, { o: 1 }, (0.5 + i * 0.3) * factor);
   });
   
   const note = G(p, { x: 150, y: 470, o: 0 });
   T(note, '注意：对于实数容量，可能不收敛', { x: 0, y: 0, size: 20, weight: 600, fill: CAPACITY });
   T(note, 'Dinic算法可优化到 O(V²×E)', { x: 0, y: 40, size: 20, weight: 600, fill: RESIDUAL });
-  tw(note, { o: 1 }, 0.5 + 1.2);
+  tw(note, { o: 1 }, 1.7 * factor);
 }],
 
 ['mincut', '最大流最小割', () => {
   const p = panel(0);
+  const factor = 8.414;
   
   T(p, '最大流-最小割定理', { x: 400, y: 80, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
   
@@ -509,7 +522,7 @@ let BEATS = [
   T(theorem, '定理：网络的最大流 = 最小割的容量', { x: 300, y: 35, size: 26, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
   T(theorem, '割：将图分成包含S和包含T的两部分', { x: 300, y: 75, size: 20, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
   
-  tw(theorem, { o: 1 }, 0.5);
+  tw(theorem, { o: 1 }, 0.5 * factor);
   
   // 示例
   const example = G(p, { x: 150, y: 340, o: 0 });
@@ -534,14 +547,15 @@ let BEATS = [
   const cutLine = mk('line', { x1: 270, y1: 20, x2: 270, y2: 140, stroke: HIGHLIGHT, 'stroke-width': 5, 'stroke-dasharray': '10,5' }, cutG);
   T(cutG, '最小割', { x: 275, y: 0, size: 20, weight: 700, fill: HIGHLIGHT });
   
-  tw(example, { o: 1 }, 0.5 + 0.5);
+  tw(example, { o: 1 }, 1.0 * factor);
   
   const note = T(p, '这个定理保证了Ford-Fulkerson算法的正确性', { x: 400, y: 520, size: 20, weight: 600, fill: HIGHLIGHT, o: 0, anchor: 'middle' });
-  tw(note, { o: 1 }, 0.5 + 1);
+  tw(note, { o: 1 }, 1.5 * factor);
 }],
 
 ['applications', '应用场景', () => {
   const p = panel(0);
+  const factor = 10.075;
   
   T(p, '最大流的应用', { x: 400, y: 80, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
   
@@ -558,12 +572,13 @@ let BEATS = [
     T(g, icon, { x: 0, y: 0, size: 36 });
     T(g, title, { x: 60, y: -5, size: 24, weight: 700, fill: TEXT_COLOR });
     T(g, desc, { x: 60, y: 25, size: 18, weight: 500, fill: CAPACITY });
-    tw(g, { o: 1 }, 0.5 + i * 0.2);
+    tw(g, { o: 1 }, (0.5 + i * 0.2) * factor);
   });
 }],
 
 ['variants', '变体问题', () => {
   const p = panel(0);
+  const factor = 9.206;
   
   T(p, '最大流的变体', { x: 400, y: 80, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
   
@@ -575,7 +590,7 @@ let BEATS = [
   T(variant1, '每条边有费用，在最大流前提下最小化总费用', { x: 300, y: 65, size: 18, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
   T(variant1, '应用：带成本的运输、物流优化', { x: 300, y: 95, size: 18, weight: 500, fill: CAPACITY, anchor: 'middle' });
   
-  tw(variant1, { o: 1 }, 0.5);
+  tw(variant1, { o: 1 }, 0.5 * factor);
   
   // 多源多汇
   const variant2 = G(p, { x: 100, y: 330, o: 0 });
@@ -585,14 +600,15 @@ let BEATS = [
   T(variant2, '添加超级源S*连所有源，超级汇T*连所有汇', { x: 300, y: 65, size: 18, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
   T(variant2, '转化为单源单汇问题', { x: 300, y: 95, size: 18, weight: 500, fill: CAPACITY, anchor: 'middle' });
   
-  tw(variant2, { o: 1 }, 0.5 + 0.5);
+  tw(variant2, { o: 1 }, 1.0 * factor);
   
   const note = T(p, '变体问题丰富了算法的应用范围', { x: 400, y: 500, size: 20, weight: 600, fill: HIGHLIGHT, o: 0, anchor: 'middle' });
-  tw(note, { o: 1 }, 0.5 + 1);
+  tw(note, { o: 1 }, 1.5 * factor);
 }],
 
 ['summary', '总结', () => {
   const p = panel(0);
+  const factor = 10.172;
   
   T(p, '总结', { x: 400, y: 80, size: 40, weight: 700, fill: TEXT_COLOR, o: 0 });
   
@@ -609,7 +625,7 @@ let BEATS = [
     const g = G(p, { x: 120, y, o: 0 });
     T(g, icon, { x: 0, y: 0, size: 32 });
     T(g, text, { x: 60, y: 0, size: 22, weight: 600, fill: TEXT_COLOR });
-    tw(g, { o: 1 }, 0.5 + i * 0.2);
+    tw(g, { o: 1 }, (0.5 + i * 0.2) * factor);
   });
 }]
 

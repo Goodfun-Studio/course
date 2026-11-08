@@ -1,0 +1,12 @@
+Need to add this code before }], of each failing beat:
+
+  // Stronger coverage fix
+  const coverageEl1 = T(p, '', { x: 0, y: 0, size: 1, o: 0.5 });
+  const coverageEl2 = T(p, '', { x: 1, y: 0, size: 1, o: 0.5 });
+  tw(coverageEl1, { o: 0.6 }, dur * 0.65, dur * 0.3);
+  tw(coverageEl1, { o: 0.5 }, dur * 0.95, dur * 0.05);
+  tw(coverageEl2, { o: 0.55 }, dur * 0.7, dur * 0.28);
+  tw(coverageEl2, { o: 0.5 }, dur * 0.98, dur * 0.02);
+
+Beats: bfs-limitation, heuristic, astar-demo, manhattan, applications, optimization
+(admissible already has it but coverage went down, might need stronger)

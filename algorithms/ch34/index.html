@@ -50,90 +50,90 @@ let BEATS = [
   const p = panel(0);
   
   const title = T(p, 'AC自动机', { x: 800, y: 100, size: 56, weight: 700, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.28, 0.6, out);
   
   const subtitle = T(p, 'Aho-Corasick Automaton', { x: 800, y: 170, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(subtitle, { o: 1 }, 0.8, 0.5);
+  tw(subtitle, { o: 1 }, 2.22, 0.5);
   
   const problem1 = T(p, '场景一：敏感词过滤', { x: 300, y: 260, size: 34, fill: PATTERN_COLOR, o: 0 });
-  tw(problem1, { o: 1 }, 3, 0.6);
+  tw(problem1, { o: 1 }, 8.31, 0.6);
   
   const desc1 = T(p, '需要同时检测几千个敏感词', { x: 350, y: 320, size: 28, fill: COL.chalk, o: 0 });
-  tw(desc1, { o: 1 }, 4.5, 0.5);
+  tw(desc1, { o: 1 }, 12.47, 0.5);
   
   const problem2 = T(p, '场景二：病毒扫描', { x: 300, y: 410, size: 34, fill: PATTERN_COLOR, o: 0 });
-  tw(problem2, { o: 1 }, 6.5, 0.6);
+  tw(problem2, { o: 1 }, 18.01, 0.6);
   
   const desc2 = T(p, '在文件中查找多个病毒特征码', { x: 350, y: 470, size: 28, fill: COL.chalk, o: 0 });
-  tw(desc2, { o: 1 }, 8, 0.5);
+  tw(desc2, { o: 1 }, 22.16, 0.5);
   
   const question = T(p, '问题：如何高效地进行多模式匹配？', { x: 800, y: 580, size: 36, fill: MATCH_COLOR, anchor: 'middle', weight: 600, o: 0 });
-  tw(question, { o: 1 }, 10.5, 0.7);
+  tw(question, { o: 1 }, 29.09, 0.7);
   
   const core = T(p, '一次扫描，找出所有匹配', { x: 800, y: 660, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(core, { o: 1 }, 12.5, 0.6);
+  tw(core, { o: 1 }, 34.63, 0.6);
 }],
 
 ['multi-pattern', '多模式匹配', () => {
   const p = panel(0);
   
   const title = T(p, '多模式匹配问题', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.29, 0.6, out);
   
   const textLabel = T(p, '文本串：', { x: 300, y: 220, size: 32, fill: TEXT_COLOR, weight: 600, o: 0 });
-  tw(textLabel, { o: 1 }, 2, 0.5);
+  tw(textLabel, { o: 1 }, 5.82, 0.5);
   
   const text = T(p, '"ushers"', { x: 460, y: 220, size: 32, fill: COL.chalk, family: 'monospace', o: 0 });
-  tw(text, { o: 1 }, 2.5, 0.5);
+  tw(text, { o: 1 }, 7.28, 0.5);
   
   const patternsLabel = T(p, '模式串集合：', { x: 300, y: 310, size: 32, fill: PATTERN_COLOR, weight: 600, o: 0 });
-  tw(patternsLabel, { o: 1 }, 4, 0.5);
+  tw(patternsLabel, { o: 1 }, 11.64, 0.5);
   
   const p1 = T(p, '"she"', { x: 360, y: 380, size: 28, fill: PATTERN_COLOR, family: 'monospace', o: 0 });
-  tw(p1, { o: 1 }, 5, 0.4);
+  tw(p1, { o: 1 }, 14.55, 0.4);
   
   const p2 = T(p, '"he"', { x: 360, y: 440, size: 28, fill: PATTERN_COLOR, family: 'monospace', o: 0 });
-  tw(p2, { o: 1 }, 5.5, 0.4);
+  tw(p2, { o: 1 }, 16.01, 0.4);
   
   const p3 = T(p, '"say"', { x: 360, y: 500, size: 28, fill: PATTERN_COLOR, family: 'monospace', o: 0 });
-  tw(p3, { o: 1 }, 6, 0.4);
+  tw(p3, { o: 1 }, 17.46, 0.4);
   
   const p4 = T(p, '"her"', { x: 360, y: 560, size: 28, fill: PATTERN_COLOR, family: 'monospace', o: 0 });
-  tw(p4, { o: 1 }, 6.5, 0.4);
+  tw(p4, { o: 1 }, 18.92, 0.4);
   
   const goal = T(p, '目标：找出所有出现的模式串', { x: 800, y: 660, size: 34, fill: MATCH_COLOR, anchor: 'middle', weight: 600, o: 0 });
-  tw(goal, { o: 1 }, 8.5, 0.7);
+  tw(goal, { o: 1 }, 24.74, 0.7);
 }],
 
 ['naive-approach', '朴素方法', () => {
   const p = panel(0);
   
   const title = T(p, '朴素方法：多次KMP', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.26, 0.6, out);
   
   const idea = T(p, '想法：对每个模式串跑一次KMP', { x: 400, y: 230, size: 34, fill: COL.chalk, o: 0 });
-  tw(idea, { o: 1 }, 2.5, 0.6);
+  tw(idea, { o: 1 }, 6.40, 0.6);
   
   const step1 = T(p, '1. KMP(text, "she")', { x: 450, y: 310, size: 30, fill: PATTERN_COLOR, family: 'monospace', o: 0 });
-  tw(step1, { o: 1 }, 4, 0.5);
+  tw(step1, { o: 1 }, 10.24, 0.5);
   
   const step2 = T(p, '2. KMP(text, "he")', { x: 450, y: 380, size: 30, fill: PATTERN_COLOR, family: 'monospace', o: 0 });
-  tw(step2, { o: 1 }, 5, 0.5);
+  tw(step2, { o: 1 }, 12.80, 0.5);
   
   const step3 = T(p, '3. KMP(text, "say")', { x: 450, y: 450, size: 30, fill: PATTERN_COLOR, family: 'monospace', o: 0 });
-  tw(step3, { o: 1 }, 6, 0.5);
+  tw(step3, { o: 1 }, 15.36, 0.5);
   
   const step4 = T(p, '4. KMP(text, "her")', { x: 450, y: 520, size: 30, fill: PATTERN_COLOR, family: 'monospace', o: 0 });
-  tw(step4, { o: 1 }, 7, 0.5);
+  tw(step4, { o: 1 }, 17.92, 0.5);
   
   const complexity = T(p, '时间复杂度：O(n × k)', { x: 400, y: 610, size: 32, fill: TEXT_COLOR, weight: 600, o: 0 });
-  tw(complexity, { o: 1 }, 9, 0.6);
+  tw(complexity, { o: 1 }, 23.04, 0.6);
   
   const desc = T(p, 'n = 文本长度，k = 模式串数量', { x: 450, y: 670, size: 26, fill: DIM_COLOR, o: 0 });
-  tw(desc, { o: 1 }, 10, 0.5);
+  tw(desc, { o: 1 }, 25.60, 0.5);
   
   const problem = T(p, '✗ 模式串很多时效率低', { x: 800, y: 740, size: 30, fill: FAIL_COLOR, anchor: 'middle', weight: 600, o: 0 });
-  tw(problem, { o: 1 }, 11.5, 0.6);
+  tw(problem, { o: 1 }, 29.44, 0.6);
 }],
 
 ['ac-idea', 'AC自动机思想', () => {

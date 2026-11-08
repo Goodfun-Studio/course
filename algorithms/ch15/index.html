@@ -268,14 +268,15 @@ let BEATS = [
   let t = 3;
   
   // Step 0: Initialize with A
-  tw(nodeElements['A'], { fill: CURRENT, s: 1.2 }, t, 0.5);
+  tw(nodeElements['A'], { fill: CURRENT, s: 1.15 }, t, 0.5);
   tw(nodeElements['A'], { s: 1.0 }, t + 0.5, 0.3);
   queueState = ['A'];
   updateQueue(t);
   t += 3;
   
   // Step 1: Process A, add B and C (Layer 1)
-  tw(nodeElements['A'], { fill: VISITED }, t, 0.5);
+  tw(nodeElements['A'], { fill: VISITED, s: 1.2 }, t, 0.5);
+  tw(nodeElements['A'], { s: 1.0 }, t + 0.5, 0.3);
   resultState.push('A');
   updateResult(t);
   t += 1.5;
@@ -306,11 +307,11 @@ let BEATS = [
   t += 4;
   
   // Step 2: Process B, add D and E
-  tw(nodeElements['B'], { fill: CURRENT, s: 1.2 }, t, 0.5);
-  tw(nodeElements['B'], { s: 1.0 }, t + 0.5, 0.3);
+  tw(nodeElements['B'], { fill: CURRENT }, t, 0.5);
   t += 2;
   
-  tw(nodeElements['B'], { fill: VISITED }, t, 0.5);
+  tw(nodeElements['B'], { fill: VISITED, s: 1.2 }, t, 0.5);
+  tw(nodeElements['B'], { s: 1.0 }, t + 0.5, 0.3);
   resultState.push('B');
   resultTexts.forEach(el => hide(el, t));
   updateResult(t);
@@ -342,11 +343,11 @@ let BEATS = [
   t += 4;
   
   // Step 3: Process C, add F and G
-  tw(nodeElements['C'], { fill: CURRENT, s: 1.2 }, t, 0.5);
-  tw(nodeElements['C'], { s: 1.0 }, t + 0.5, 0.3);
+  tw(nodeElements['C'], { fill: CURRENT }, t, 0.5);
   t += 2;
   
-  tw(nodeElements['C'], { fill: VISITED }, t, 0.5);
+  tw(nodeElements['C'], { fill: VISITED, s: 1.2 }, t, 0.5);
+  tw(nodeElements['C'], { s: 1.0 }, t + 0.5, 0.3);
   resultState.push('C');
   resultTexts.forEach(el => hide(el, t));
   updateResult(t);
@@ -378,11 +379,11 @@ let BEATS = [
   t += 4;
   
   // Step 4: Process D
-  tw(nodeElements['D'], { fill: CURRENT, s: 1.2 }, t, 0.5);
-  tw(nodeElements['D'], { s: 1.0 }, t + 0.5, 0.3);
+  tw(nodeElements['D'], { fill: CURRENT }, t, 0.5);
   t += 2;
   
-  tw(nodeElements['D'], { fill: VISITED }, t, 0.5);
+  tw(nodeElements['D'], { fill: VISITED, s: 1.2 }, t, 0.5);
+  tw(nodeElements['D'], { s: 1.0 }, t + 0.5, 0.3);
   resultState.push('D');
   resultTexts.forEach(el => hide(el, t));
   updateResult(t);
@@ -391,11 +392,11 @@ let BEATS = [
   t += 3.5;
   
   // Step 5: Process E
-  tw(nodeElements['E'], { fill: CURRENT, s: 1.2 }, t, 0.5);
-  tw(nodeElements['E'], { s: 1.0 }, t + 0.5, 0.3);
+  tw(nodeElements['E'], { fill: CURRENT }, t, 0.5);
   t += 2;
   
-  tw(nodeElements['E'], { fill: VISITED }, t, 0.5);
+  tw(nodeElements['E'], { fill: VISITED, s: 1.2 }, t, 0.5);
+  tw(nodeElements['E'], { s: 1.0 }, t + 0.5, 0.3);
   resultState.push('E');
   resultTexts.forEach(el => hide(el, t));
   updateResult(t);
@@ -404,11 +405,11 @@ let BEATS = [
   t += 3.5;
   
   // Step 6: Process F
-  tw(nodeElements['F'], { fill: CURRENT, s: 1.2 }, t, 0.5);
-  tw(nodeElements['F'], { s: 1.0 }, t + 0.5, 0.3);
+  tw(nodeElements['F'], { fill: CURRENT }, t, 0.5);
   t += 2;
   
-  tw(nodeElements['F'], { fill: VISITED }, t, 0.5);
+  tw(nodeElements['F'], { fill: VISITED, s: 1.2 }, t, 0.5);
+  tw(nodeElements['F'], { s: 1.0 }, t + 0.5, 0.3);
   resultState.push('F');
   resultTexts.forEach(el => hide(el, t));
   updateResult(t);
@@ -417,11 +418,11 @@ let BEATS = [
   t += 3.5;
   
   // Step 7: Process G
-  tw(nodeElements['G'], { fill: CURRENT, s: 1.2 }, t, 0.5);
-  tw(nodeElements['G'], { s: 1.0 }, t + 0.5, 0.3);
+  tw(nodeElements['G'], { fill: CURRENT }, t, 0.5);
   t += 2;
   
-  tw(nodeElements['G'], { fill: VISITED }, t, 0.5);
+  tw(nodeElements['G'], { fill: VISITED, s: 1.2 }, t, 0.5);
+  tw(nodeElements['G'], { s: 1.0 }, t + 0.5, 0.3);
   resultState.push('G');
   resultTexts.forEach(el => hide(el, t));
   updateResult(t);

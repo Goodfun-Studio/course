@@ -128,12 +128,12 @@ let BEATS = [
     tw(label, { o: 1 }, 9 + i * 0.15, 0.4);
   }
   
-  // Dequeue arrow
-  const dequeueArrow = T(p, '← 出队（dequeue）', { x: 400, y: queueY + 35, size: 24, fill: PATH, o: 0 });
+  // Dequeue arrow（队首在左端，元素向左离开队列）
+  const dequeueArrow = T(p, '← 出队（dequeue）', { x: 485, y: queueY + 45, size: 24, fill: PATH, anchor: 'end', o: 0 });
   tw(dequeueArrow, { o: 1 }, 12, 0.5);
   
-  // Enqueue arrow
-  const enqueueArrow = T(p, '入队（enqueue）→', { x: 900, y: queueY + 35, size: 24, fill: VISITED, o: 0 });
+  // Enqueue arrow（队尾在右端，新元素从右侧向左进入队列）
+  const enqueueArrow = T(p, '← 入队（enqueue）', { x: 860, y: queueY + 45, size: 24, fill: VISITED, anchor: 'start', o: 0 });
   tw(enqueueArrow, { o: 1 }, 14, 0.5);
   
   const contrast = T(p, 'BFS 用队列 ≠ DFS 用栈', { x: 800, y: 620, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });

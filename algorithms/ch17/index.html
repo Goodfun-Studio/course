@@ -187,12 +187,27 @@ let BEATS = [
   T(example, '示例："ABAB"', { x: 0, y: -30, size: 26, weight: 600, fill: TEXT_COLOR, anchor: 'middle' });
   T(example, '前缀: A, AB, ABA', { x: -120, y: 10, size: 22, fill: MATCH_COLOR, anchor: 'middle' });
   T(example, '后缀: B, AB, BAB', { x: 120, y: 10, size: 22, fill: PATTERN_COLOR, anchor: 'middle' });
-  T(example, '最长相同前后缀: "AB" (长度 2)', { x: 0, y: 50, size: 24, weight: 600, fill: POINTER_COLOR, anchor: 'middle' });
+  const longestText = T(example, '最长相同前后缀: "AB" (长度 2)', { x: 0, y: 50, size: 24, weight: 600, fill: POINTER_COLOR, anchor: 'middle', o: 0 });
   tw(example, { o: 1 }, m('example'));
+  tw(longestText, { o: 1 }, m('example'));
   
-  // 最后补充动画，利用 longest 和 jump 标记
-  tw(example, { o: 1 }, m('longest'));
-  tw(example, { o: 1 }, m('jump'));
+  // 在 longest 标记处，高亮最长前后缀
+  const highlight = mk('rect', {
+    x: 250, y: 460,
+    width: 300, height: 40,
+    fill: 'none',
+    stroke: POINTER_COLOR,
+    'stroke-width': 4,
+    rx: 6,
+    o: 0
+  }, p);
+  tw(highlight, { o: 1 }, m('longest'));
+  
+  // 在 jump 标记处，添加应用说明
+  const application = T(p, '失配时使用这个信息，模式串跳到合适位置', {
+    x: 400, y: 540, size: 24, weight: 600, fill: TEXT_COLOR, anchor: 'middle', o: 0
+  });
+  tw(application, { o: 1 }, m('jump'));
 }, { audio: 'kmp-idea' }],
 
 ['next-intro', 'next 数组介绍', (m, dur) => {

@@ -33,7 +33,12 @@ const root = '/Users/ivywu/course/algorithms';
         document.querySelectorAll('text, rect, circle, line').forEach(el => {
           let op = 1, e = el;
           while (e) { if (e.style?.display==='none'){op=0;break;} const o=e.getAttribute&&e.getAttribute('opacity'); if(o!=null) op*=parseFloat(o); e=e.parentElement; }
-          if (op > 0.4) parts.push((el.textContent||'').substring(0,5)+Math.round(op*3)+(el.getAttribute('fill')||''));
+          if (op > 0.4) {
+            const tr = el.getAttribute('transform') || '';
+            const sm = tr.match(/scale\(([\d.]+)\)/);
+            const sc = sm ? Math.round(parseFloat(sm[1])*20)/20 : 1;
+            parts.push((el.textContent||'').substring(0,5)+Math.round(op*3)+(el.getAttribute('fill')||'')+'s'+sc);
+          }
         });
         return parts.join('|');
       }, t);

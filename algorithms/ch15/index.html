@@ -167,7 +167,7 @@ let BEATS = [
   tw(conclusion, { o: 1 }, 13, 0.7);
 }],
 
-['bfs-demo', 'BFS 演示动画', () => {
+['bfs-demo', 'BFS 演示动画', (m, dur) => {
   const p = panel(0);
   
   const title = T(p, 'BFS 遍历演示', { x: 800, y: 80, size: 48, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
@@ -190,50 +190,45 @@ let BEATS = [
     ['C', 'F'], ['C', 'G']
   ];
   
-  // Draw edges first
+  // Draw graph at the [[graph]] narration mark
+  const tg = m('graph');
   edges.forEach(([from, to]) => {
     const line = mk('line', {
       x1: nodes[from].x, y1: nodes[from].y,
       x2: nodes[to].x, y2: nodes[to].y,
       stroke: COL.dim, 'stroke-width': 2, o: 0
     }, p);
-    tw(line, { o: 0.4 }, 1, 0.5);
+    tw(line, { o: 0.4 }, tg, 0.5);
   });
   
-  // Draw nodes
   const nodeElements = {};
-  const nodeLabels = {};
   Object.entries(nodes).forEach(([id, pos]) => {
-    const circle = mk('circle', { 
-      cx: pos.x, cy: pos.y, r: 30, 
-      fill: UNVISITED, stroke: COL.dim, 'stroke-width': 2, o: 0 
+    const circle = mk('circle', {
+      cx: pos.x, cy: pos.y, r: 30,
+      fill: UNVISITED, stroke: COL.dim, 'stroke-width': 2, o: 0
     }, p);
-    tw(circle, { o: 1 }, 1.5, 0.5);
+    tw(circle, { o: 1 }, tg + 0.6, 0.5);
     nodeElements[id] = circle;
-    
-    const label = T(p, id, { 
+    const label = T(p, id, {
       x: pos.x, y: pos.y + 8, size: 28, weight: 700,
-      fill: 'white', anchor: 'middle', o: 0 
+      fill: 'white', anchor: 'middle', o: 0
     });
-    tw(label, { o: 1 }, 1.5, 0.5);
-    nodeLabels[id] = label;
+    tw(label, { o: 1 }, tg + 0.6, 0.5);
   });
   
-  // Queue display
+  // Queue + result UI
   const queueY = 530;
   const queueLabel = T(p, '队列：', { x: 300, y: queueY, size: 26, fill: COL.chalk, o: 0 });
-  tw(queueLabel, { o: 1 }, 2, 0.5);
-  
-  const queueBox = mk('rect', { 
-    x: 380, y: queueY - 25, width: 840, height: 50, 
-    rx: 8, fill: 'none', stroke: COL.dim, 'stroke-width': 2, o: 0 
+  tw(queueLabel, { o: 1 }, tg + 1, 0.5);
+  const queueBox = mk('rect', {
+    x: 380, y: queueY - 25, width: 840, height: 50,
+    rx: 8, fill: 'none', stroke: COL.dim, 'stroke-width': 2, o: 0
   }, p);
-  tw(queueBox, { o: 0.5 }, 2, 0.5);
+  tw(queueBox, { o: 0.5 }, tg + 1, 0.5);
   
-  // Result display
   const resultY = 610;
   const resultLabel = T(p, '遍历顺序：', { x: 300, y: resultY, size: 26, fill: COL.chalk, o: 0 });
-  tw(resultLabel, { o: 1 }, 2, 0.5);
+  tw(resultLabel, { o: 1 }, tg + 1, 0.5);
   
   let queueState = [];
   let resultState = [];
@@ -241,15 +236,12 @@ let BEATS = [
   const resultTexts = [];
   
   function updateQueue(t) {
-    // Clear old queue display
     queueTexts.forEach(el => hide(el, t));
     queueTexts.length = 0;
-    
-    // Draw new queue
     queueState.forEach((node, i) => {
-      const text = T(p, node, { 
-        x: 420 + i * 80, y: queueY + 5, size: 28, 
-        fill: QUEUED, anchor: 'middle', weight: 700, o: 0 
+      const text = T(p, node, {
+        x: 420 + i * 80, y: queueY + 5, size: 28,
+        fill: QUEUED, anchor: 'middle', weight: 700, o: 0
       });
       tw(text, { o: 1 }, t, 0.3);
       queueTexts.push(text);
@@ -257,200 +249,126 @@ let BEATS = [
   }
   
   function updateResult(t) {
-    const text = T(p, resultState.join(' → '), { 
-      x: 480, y: resultY, size: 28, fill: VISITED, weight: 600, o: 0 
+    const text = T(p, resultState.join(' → '), {
+      x: 480, y: resultY, size: 28, fill: VISITED, weight: 600, o: 0
     });
     tw(text, { o: 1 }, t, 0.4);
     resultTexts.push(text);
   }
   
-  // Animation sequence with wave effect
-  let t = 3;
+  // Node pulse: big for "process/visit", small for "enter queue"
+  function pulse(el, t, big) {
+    tw(el, { s: big ? 1.2 : 1.15 }, t, 0.4);
+    tw(el, { s: 1.0 }, t + 0.45, 0.3);
+  }
   
-  // Step 0: Initialize with A
-  tw(nodeElements['A'], { fill: CURRENT, s: 1.15 }, t, 0.5);
-  tw(nodeElements['A'], { s: 1.0 }, t + 0.5, 0.3);
+  // Dequeue: node leaves the queue (queue display updates immediately)
+  function dequeueNode(name, t) {
+    queueState = queueState.filter(n => n !== name);
+    updateQueue(t);
+  }
+  
+  // Enqueue: node enters the queue (colour + pulse + queue text, all at t)
+  function enqueueNode(name, t) {
+    queueState.push(name);
+    tw(nodeElements[name], { fill: QUEUED }, t, 0.4);
+    pulse(nodeElements[name], t, false);
+    updateQueue(t);
+  }
+  
+  // Visit complete: node turns green + pulse + joins the traversal order (all at t)
+  function visitNode(name, t) {
+    tw(nodeElements[name], { fill: VISITED }, t, 0.5);
+    pulse(nodeElements[name], t, true);
+    resultState.push(name);
+    resultTexts.forEach(el => hide(el, t));
+    updateResult(t);
+  }
+  
+  // Highlight the edge being followed
+  function flashEdge(from, to, t) {
+    const e = mk('line', {
+      x1: nodes[from].x, y1: nodes[from].y,
+      x2: nodes[to].x, y2: nodes[to].y,
+      stroke: CURRENT, 'stroke-width': 4, o: 0
+    }, p);
+    tw(e, { o: 1 }, t, 0.4);
+    tw(e, { o: 0 }, t + 1, 0.4);
+  }
+  
+  // ---- Timeline driven by narration marks ----
+  // [[init]] A 入队，标记为已访问。队列：A。
+  const tInit = m('init');
+  tw(nodeElements['A'], { fill: QUEUED }, tInit, 0.4);
+  pulse(nodeElements['A'], tInit, false);
   queueState = ['A'];
-  updateQueue(t);
-  t += 3;
+  updateQueue(tInit);
   
-  // Step 1: Process A, add B and C (Layer 1)
-  tw(nodeElements['A'], { fill: VISITED, s: 1.2 }, t, 0.5);
-  tw(nodeElements['A'], { s: 1.0 }, t + 0.5, 0.3);
-  resultState.push('A');
-  updateResult(t);
-  t += 1.5;
+  // [[step1]] 取出 A，处理它。访问 A 的邻居 B 和 C。
+  const t1 = m('step1');
+  dequeueNode('A', t1);
+  tw(nodeElements['A'], { fill: CURRENT }, t1, 0.4);
+  visitNode('A', t1 + 1.0);
+  flashEdge('A', 'B', t1 + 1.7);
+  flashEdge('A', 'C', t1 + 1.9);
   
-  // Highlight edges to B and C
-  const edgeAB = mk('line', {
-    x1: nodes['A'].x, y1: nodes['A'].y,
-    x2: nodes['B'].x, y2: nodes['B'].y,
-    stroke: CURRENT, 'stroke-width': 4, o: 0
-  }, p);
-  tw(edgeAB, { o: 1 }, t, 0.4);
-  tw(edgeAB, { o: 0 }, t + 1, 0.4);
+  // [[queue1]] B 和 C 入队。队列变成：B、C。
+  const tq1 = m('queue1');
+  enqueueNode('B', tq1);
+  enqueueNode('C', tq1 + 0.25);
   
-  const edgeAC = mk('line', {
-    x1: nodes['A'].x, y1: nodes['A'].y,
-    x2: nodes['C'].x, y2: nodes['C'].y,
-    stroke: CURRENT, 'stroke-width': 4, o: 0
-  }, p);
-  tw(edgeAC, { o: 1 }, t + 0.2, 0.4);
-  tw(edgeAC, { o: 0 }, t + 1.2, 0.4);
+  // [[step2]] 取出 B，处理它。访问 B 的邻居 D 和 E。
+  const t2 = m('step2');
+  dequeueNode('B', t2);
+  tw(nodeElements['B'], { fill: CURRENT }, t2, 0.4);
+  visitNode('B', t2 + 1.0);
+  flashEdge('B', 'D', t2 + 1.7);
+  flashEdge('B', 'E', t2 + 1.9);
   
-  queueState = ['B', 'C'];
-  tw(nodeElements['B'], { fill: QUEUED, s: 1.15 }, t + 0.3, 0.4);
-  tw(nodeElements['B'], { s: 1.0 }, t + 0.7, 0.3);
-  tw(nodeElements['C'], { fill: QUEUED, s: 1.15 }, t + 0.5, 0.4);
-  tw(nodeElements['C'], { s: 1.0 }, t + 0.9, 0.3);
-  updateQueue(t + 0.8);
-  t += 4;
+  // [[queue2]] D 和 E 入队。队列变成：C、D、E。
+  const tq2 = m('queue2');
+  enqueueNode('D', tq2);
+  enqueueNode('E', tq2 + 0.25);
   
-  // Step 2: Process B, add D and E
-  tw(nodeElements['B'], { fill: CURRENT }, t, 0.5);
-  t += 2;
+  // [[step3]] 取出 C，处理它。访问 C 的邻居 F 和 G。
+  const t3 = m('step3');
+  dequeueNode('C', t3);
+  tw(nodeElements['C'], { fill: CURRENT }, t3, 0.4);
+  visitNode('C', t3 + 1.0);
+  flashEdge('C', 'F', t3 + 1.7);
+  flashEdge('C', 'G', t3 + 1.9);
   
-  tw(nodeElements['B'], { fill: VISITED, s: 1.2 }, t, 0.5);
-  tw(nodeElements['B'], { s: 1.0 }, t + 0.5, 0.3);
-  resultState.push('B');
-  resultTexts.forEach(el => hide(el, t));
-  updateResult(t);
-  t += 1.5;
+  // [[queue3]] F 和 G 入队。队列变成：D、E、F、G。
+  const tq3 = m('queue3');
+  enqueueNode('F', tq3);
+  enqueueNode('G', tq3 + 0.25);
   
-  // Highlight edges from B
-  const edgeBD = mk('line', {
-    x1: nodes['B'].x, y1: nodes['B'].y,
-    x2: nodes['D'].x, y2: nodes['D'].y,
-    stroke: CURRENT, 'stroke-width': 4, o: 0
-  }, p);
-  tw(edgeBD, { o: 1 }, t, 0.4);
-  tw(edgeBD, { o: 0 }, t + 1, 0.4);
-  
-  const edgeBE = mk('line', {
-    x1: nodes['B'].x, y1: nodes['B'].y,
-    x2: nodes['E'].x, y2: nodes['E'].y,
-    stroke: CURRENT, 'stroke-width': 4, o: 0
-  }, p);
-  tw(edgeBE, { o: 1 }, t + 0.2, 0.4);
-  tw(edgeBE, { o: 0 }, t + 1.2, 0.4);
-  
-  queueState = ['C', 'D', 'E'];
-  tw(nodeElements['D'], { fill: QUEUED, s: 1.15 }, t + 0.3, 0.4);
-  tw(nodeElements['D'], { s: 1.0 }, t + 0.7, 0.3);
-  tw(nodeElements['E'], { fill: QUEUED, s: 1.15 }, t + 0.5, 0.4);
-  tw(nodeElements['E'], { s: 1.0 }, t + 0.9, 0.3);
-  updateQueue(t + 0.8);
-  t += 4;
-  
-  // Step 3: Process C, add F and G
-  tw(nodeElements['C'], { fill: CURRENT }, t, 0.5);
-  t += 2;
-  
-  tw(nodeElements['C'], { fill: VISITED, s: 1.2 }, t, 0.5);
-  tw(nodeElements['C'], { s: 1.0 }, t + 0.5, 0.3);
-  resultState.push('C');
-  resultTexts.forEach(el => hide(el, t));
-  updateResult(t);
-  t += 1.5;
-  
-  // Highlight edges from C
-  const edgeCF = mk('line', {
-    x1: nodes['C'].x, y1: nodes['C'].y,
-    x2: nodes['F'].x, y2: nodes['F'].y,
-    stroke: CURRENT, 'stroke-width': 4, o: 0
-  }, p);
-  tw(edgeCF, { o: 1 }, t, 0.4);
-  tw(edgeCF, { o: 0 }, t + 1, 0.4);
-  
-  const edgeCG = mk('line', {
-    x1: nodes['C'].x, y1: nodes['C'].y,
-    x2: nodes['G'].x, y2: nodes['G'].y,
-    stroke: CURRENT, 'stroke-width': 4, o: 0
-  }, p);
-  tw(edgeCG, { o: 1 }, t + 0.2, 0.4);
-  tw(edgeCG, { o: 0 }, t + 1.2, 0.4);
-  
-  queueState = ['D', 'E', 'F', 'G'];
-  tw(nodeElements['F'], { fill: QUEUED, s: 1.15 }, t + 0.3, 0.4);
-  tw(nodeElements['F'], { s: 1.0 }, t + 0.7, 0.3);
-  tw(nodeElements['G'], { fill: QUEUED, s: 1.15 }, t + 0.5, 0.4);
-  tw(nodeElements['G'], { s: 1.0 }, t + 0.9, 0.3);
-  updateQueue(t + 0.8);
-  t += 4;
-  
-  // Step 4: Process D
-  tw(nodeElements['D'], { fill: CURRENT }, t, 0.5);
-  t += 2;
-  
-  tw(nodeElements['D'], { fill: VISITED, s: 1.2 }, t, 0.5);
-  tw(nodeElements['D'], { s: 1.0 }, t + 0.5, 0.3);
-  resultState.push('D');
-  resultTexts.forEach(el => hide(el, t));
-  updateResult(t);
-  queueState = ['E', 'F', 'G'];
-  updateQueue(t + 0.8);
-  t += 3.5;
-  
-  // Step 5: Process E
-  tw(nodeElements['E'], { fill: CURRENT }, t, 0.5);
-  t += 2;
-  
-  tw(nodeElements['E'], { fill: VISITED, s: 1.2 }, t, 0.5);
-  tw(nodeElements['E'], { s: 1.0 }, t + 0.5, 0.3);
-  resultState.push('E');
-  resultTexts.forEach(el => hide(el, t));
-  updateResult(t);
-  queueState = ['F', 'G'];
-  updateQueue(t + 0.8);
-  t += 3.5;
-  
-  // Step 6: Process F
-  tw(nodeElements['F'], { fill: CURRENT }, t, 0.5);
-  t += 2;
-  
-  tw(nodeElements['F'], { fill: VISITED, s: 1.2 }, t, 0.5);
-  tw(nodeElements['F'], { s: 1.0 }, t + 0.5, 0.3);
-  resultState.push('F');
-  resultTexts.forEach(el => hide(el, t));
-  updateResult(t);
-  queueState = ['G'];
-  updateQueue(t + 0.8);
-  t += 3.5;
-  
-  // Step 7: Process G
-  tw(nodeElements['G'], { fill: CURRENT }, t, 0.5);
-  t += 2;
-  
-  tw(nodeElements['G'], { fill: VISITED, s: 1.2 }, t, 0.5);
-  tw(nodeElements['G'], { s: 1.0 }, t + 0.5, 0.3);
-  resultState.push('G');
-  resultTexts.forEach(el => hide(el, t));
-  updateResult(t);
-  queueState = [];
-  updateQueue(t + 0.8);
-  t += 3;
-  
-  // Wave effect - show all nodes pulsing (with absolute times for detection)
-  tw(nodeElements['A'], { s: 1.15 }, 40, 0.3);
-  tw(nodeElements['A'], { s: 1.0 }, 40.3, 0.3);
-  tw(nodeElements['B'], { s: 1.15 }, 40.1, 0.3);
-  tw(nodeElements['B'], { s: 1.0 }, 40.4, 0.3);
-  tw(nodeElements['C'], { s: 1.15 }, 40.2, 0.3);
-  tw(nodeElements['C'], { s: 1.0 }, 40.5, 0.3);
-  tw(nodeElements['D'], { s: 1.15 }, 40.3, 0.3);
-  tw(nodeElements['D'], { s: 1.0 }, 40.6, 0.3);
-  tw(nodeElements['E'], { s: 1.15 }, 40.4, 0.3);
-  tw(nodeElements['E'], { s: 1.0 }, 40.7, 0.3);
-  tw(nodeElements['F'], { s: 1.15 }, 40.5, 0.3);
-  tw(nodeElements['F'], { s: 1.0 }, 40.8, 0.3);
-  tw(nodeElements['G'], { s: 1.15 }, 40.6, 0.3);
-  tw(nodeElements['G'], { s: 1.0 }, 40.9, 0.3);
-  
-  // Final message
-  const complete = T(p, '✓ 层级遍历完成：A → B → C → D → E → F → G', { 
-    x: 800, y: 700, size: 30, fill: VISITED, anchor: 'middle', weight: 600, o: 0 
+  // [[step4]]~[[step7]] 依次取出 D、E、F、G，处理它们。
+  ['D', 'E', 'F', 'G'].forEach((name, i) => {
+    const t0 = m('step' + (4 + i));
+    dequeueNode(name, t0);
+    tw(nodeElements[name], { fill: CURRENT }, t0, 0.4);
+    visitNode(name, t0 + 1.0);
   });
-  tw(complete, { o: 1 }, 42, 0.7);
+  
+  // [[complete]] 队列为空，遍历完成。
+  const complete = T(p, '✓ 队列为空，遍历完成', {
+    x: 800, y: 690, size: 30, fill: VISITED, anchor: 'middle', weight: 600, o: 0
+  });
+  tw(complete, { o: 1 }, m('complete'), 0.7);
+  
+  // [[result]] 遍历顺序：A、B、C、D、E、F、G。
+  const finalMsg = T(p, '遍历顺序：A → B → C → D → E → F → G', {
+    x: 800, y: 740, size: 26, fill: CURRENT, anchor: 'middle', weight: 600, o: 0
+  });
+  tw(finalMsg, { o: 1 }, m('result'), 0.7);
+  
+  // Final layer-by-layer wave over all nodes
+  const twv = m('result') + 1.2;
+  ['A', 'B', 'C', 'D', 'E', 'F', 'G'].forEach((name, i) => {
+    tw(nodeElements[name], { s: 1.15 }, twv + i * 0.12, 0.3);
+    tw(nodeElements[name], { s: 1.0 }, twv + i * 0.12 + 0.3, 0.3);
+  });
 }],
 
 ['shortest-path', '最短路径应用', () => {

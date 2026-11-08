@@ -188,31 +188,33 @@ let BEATS = [
   const lcs = G(p, { x: 400, y: 280, o: 0 });
   mk('circle', { cx: 0, cy: 0, r: 80, fill: PRIMARY, opacity: 0.2 }, lcs);
   T(lcs, 'LCS', { x: 0, y: 0, size: 32, weight: 600, anchor: 'middle', fill: PRIMARY });
-  tw(lcs, { o: 1 }, 1.0, 0.5);
+  tw(lcs, { o: 1 }, m('twins'), 0.5);
   
   const edit = G(p, { x: 1200, y: 280, o: 0 });
   mk('circle', { cx: 0, cy: 0, r: 80, fill: SECONDARY, opacity: 0.2 }, edit);
   T(edit, '编辑距离', { x: 0, y: 0, size: 28, weight: 600, anchor: 'middle', fill: SECONDARY });
-  tw(edit, { o: 1 }, 1.5, 0.5);
+  tw(edit, { o: 1 }, m('twins') + 0.3, 0.5);
   
   // 连接线
   const link = mk('line', { x1: 480, y1: 280, x2: 1120, y2: 280, 
     stroke: COL.dim, 'stroke-width': 2, 'stroke-dasharray': '5,5', opacity: 0 }, p);
-  tw(link, { opacity: 0.6 }, 5.0, 0.4);
+  tw(link, { opacity: 0.6 }, m('formula') - 2.0, 0.4);
   
   // 公式
   const formula = T(p, '编辑距离 = (m + n) − 2 × LCS', 
     { x: 800, y: 420, size: 34, fill: HIGHLIGHT, anchor: 'middle', o: 0, weight: 600 });
-  tw(formula, { o: 1 }, 10.0, 0.7);
+  tw(formula, { o: 1 }, m('formula'), 0.7);
   
   const explain = T(p, '公共部分不需要改，非公共部分删除或插入', 
     { x: 800, y: 500, size: 28, fill: COL.dim, anchor: 'middle', o: 0, w: 900 });
-  tw(explain, { o: 1 }, 15.0, 0.6);
+  tw(explain, { o: 1 }, m('explain'), 0.6);
   
   // Git diff
   const git = T(p, 'Git diff 的核心就是 LCS', 
     { x: 800, y: 620, size: 36, fill: MATCH, anchor: 'middle', o: 0, weight: 600 });
-  tw(git, { o: 1 }, 25.0, 0.7);
+  tw(git, { o: 1 }, m('reverse') + 3.0, 0.7);
+  // 延伸动画尾巴持续到旁白结束
+  clockRun(tt => {}, dur, { tail: true });
 }],
 
 // beat 3: dp_state
@@ -225,21 +227,21 @@ let BEATS = [
   // 状态定义
   const def = T(p, 'dp[i][j] = 前i个字符与前j个字符的LCS长度', 
     { x: 800, y: 280, size: 32, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
-  tw(def, { o: 1 }, 3.0, 0.7);
+  tw(def, { o: 1 }, m('define'), 0.7);
   
   // 示例
   const ex1 = T(p, 'i = 0：空序列', 
     { x: 800, y: 380, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(ex1, { o: 1 }, 10.0, 0.5);
+  tw(ex1, { o: 1 }, m('zero'), 0.5);
   
   const ex2 = T(p, 'dp[m][n]：完整序列的LCS长度（最终答案）', 
     { x: 800, y: 450, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(ex2, { o: 1 }, 15.0, 0.6);
+  tw(ex2, { o: 1 }, m('target'), 0.6);
   
   // 关键问题
   const question = T(p, '关键：如何从小问题推出大问题？', 
     { x: 800, y: 580, size: 34, fill: HIGHLIGHT, anchor: 'middle', o: 0, weight: 600 });
-  tw(question, { o: 1 }, 22.0, 0.7);
+  tw(question, { o: 1 }, m('key') - 2.0, 0.7);
 }],
 
 // beat 4: transition
@@ -335,18 +337,22 @@ let BEATS = [
   // 填充第一行
   for (let j = 0; j < 8; j++) {
     const val = setCellValue(table, 0, j, 0, 50);
-    tw(val, { o: 1 }, 3.0 + j * 0.15, 0.3);
+    tw(val, { o: 1 }, m('row') + j * 0.15, 0.3);
   }
   
   // 填充第一列
   for (let i = 1; i < 7; i++) {
     const val = setCellValue(table, i, 0, 0, 50);
-    tw(val, { o: 1 }, 8.0 + i * 0.15, 0.3);
+    tw(val, { o: 1 }, m('col') + i * 0.15, 0.3);
   }
   
   const explain = T(p, '空序列与任何序列的LCS = 0', 
     { x: 800, y: 600, size: 30, fill: PRIMARY, anchor: 'middle', o: 0 });
-  tw(explain, { o: 1 }, 12.0, 0.6);
+  tw(explain, { o: 1 }, m('foundation'), 0.6);
+  
+  const ready = T(p, '边界填好了，开始填内部', 
+    { x: 800, y: 660, size: 28, fill: HIGHLIGHT, anchor: 'middle', o: 0 });
+  tw(ready, { o: 1 }, m('ready'), 0.6);
 }],
 
 // beat 7: inner_fill
@@ -375,30 +381,30 @@ let BEATS = [
   const s2 = 'GXTXAYB';
   
   // 填充关键格子并高亮
-  let t = 2.0;
+  let t = m('order');
   
   // (1,1): A vs G，不同
   let hl = highlightCell(table, 1, 1, 50, HIGHLIGHT);
   tw(hl, { opacity: 0.8 }, t, 0.3);
   let val = setCellValue(table, 1, 1, 0, 50);
   tw(val, { o: 1 }, t + 0.3, 0.3);
-  tw(hl, { opacity: 0 }, t + 1.0, 0.3);
-  t += 1.5;
+  tw(hl, { opacity: 0 }, m('second') - 2.0, 0.3);
+  t = m('first');
   
   // (1,2): A vs X，不同
   hl = highlightCell(table, 1, 2, 50, HIGHLIGHT);
   tw(hl, { opacity: 0.8 }, t, 0.3);
   val = setCellValue(table, 1, 2, 0, 50);
   tw(val, { o: 1 }, t + 0.3, 0.3);
-  tw(hl, { opacity: 0 }, t + 1.0, 0.3);
-  t += 1.5;
+  tw(hl, { opacity: 0 }, m('match') - 1.0, 0.3);
   
   // (2,1): G vs G，匹配！
+  t = m('match');
   hl = highlightCell(table, 2, 1, 50, MATCH);
   tw(hl, { opacity: 0.8 }, t, 0.3);
   val = setCellValue(table, 2, 1, 1, 50);
   tw(val, { o: 1 }, t + 0.3, 0.3);
-  t += 2.0;
+  tw(hl, { opacity: 0 }, m('inherit') + 1.0, 0.3);
   
   // 快速填充剩余部分（简化动画）
   const dpTable = [
@@ -411,22 +417,31 @@ let BEATS = [
     [0,1,1,2,2,3,3,4]
   ];
   
+  t = m('continue');
   for (let i = 1; i < 7; i++) {
     for (let j = 1; j < 8; j++) {
       if ((i === 1 && j <= 2) || (i === 2 && j === 1)) continue;
       const v = setCellValue(table, i, j, dpTable[i][j], 50);
       tw(v, { o: 1 }, t, 0.2);
-      t += 0.1;
+      t += 0.08;
     }
   }
   
   // 高亮最终答案
+  t = m('highlight');
   const finalHL = highlightCell(table, 6, 7, 50, HIGHLIGHT);
-  tw(finalHL, { opacity: 0.9 }, t + 1.0, 0.5);
+  tw(finalHL, { opacity: 0.9 }, t, 0.5);
   
   const answer = T(p, '答案：4', 
     { x: 800, y: 580, size: 40, fill: HIGHLIGHT, anchor: 'middle', o: 0, weight: 700 });
-  tw(answer, { o: 1 }, t + 1.5, 0.7);
+  tw(answer, { o: 1 }, t + 1.0, 1.0);
+  
+  // 保持到最后
+  clockRun(tt => {
+    if (tt > 30) {
+      put(answer, { o: 1 });
+    }
+  }, dur, { tail: true });
 }],
 
 // beat 8: traceback
@@ -459,7 +474,7 @@ let BEATS = [
   
   // 回溯路径：(6,7) → (5,6) → (4,3) → (2,1) → (0,0)
   const path = [[6,7], [5,6], [4,3], [2,1], [0,0]];
-  let t = 10.0;
+  let t = m('start');
   
   for (let i = 0; i < path.length - 1; i++) {
     const [r1, c1] = path[i];
@@ -477,17 +492,23 @@ let BEATS = [
     const arrow = drawArrow(p, x1, y1, x2, y2, PATH_COLOR);
     tw(arrow, { o: 1 }, t + 0.3, 0.4);
     
-    t += 1.5;
+    // 使用 marks 推进时间
+    if (i === 0) t = m('rule1');
+    else if (i === 1) t = m('rule2');
+    else t += 2.0;
   }
   
-  // 最终高亮起点
+  // 最终高亡点
+  t = m('path');
   const startHL = highlightCell(table, 0, 0, 50, PATH_COLOR);
   tw(startHL, { opacity: 0.8 }, t, 0.4);
   
   // 显示LCS
   const result = T(p, 'LCS = GTAB', 
     { x: 800, y: 580, size: 42, fill: MATCH, anchor: 'middle', o: 0, weight: 700 });
-  tw(result, { o: 1 }, t + 1.0, 0.7);
+  tw(result, { o: 1 }, m('result'), 1.5);
+  // 延伸动画尾巴
+  clockRun(tt => {}, dur, { tail: true });
 }],
 
 // beat 9: complexity

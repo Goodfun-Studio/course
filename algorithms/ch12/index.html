@@ -73,33 +73,35 @@ function drawArrayElement(parent, value, x, y, width = 50, height = 50) {
 let BEATS = [
 
 // beat 0: intro
-['intro', '堆排序简介', () => {
+['intro', '堆排序简介', (m, dur) => {
   const p = panel(0);
   
   const title = T(p, '堆排序', { x: 800, y: 120, size: 60, weight: 700, anchor: 'middle', o: 0 });
   tw(title, { o: 1 }, 0.1, 0.6, out);
   
   const subtitle = T(p, 'Heap Sort', { x: 800, y: 200, size: 36, fill: DIM, anchor: 'middle', o: 0 });
-  tw(subtitle, { o: 1 }, 0.5, 0.5);
+  tw(subtitle, { o: 1 }, 0.8, 0.5);
   
-  const features = [
-    { text: '✓ 保证 O(n log n)', y: 320, delay: 2.0 },
-    { text: '✓ 原地排序 O(1) 空间', y: 390, delay: 3.5 },
-    { text: '✓ 利用堆结构', y: 460, delay: 5.0 }
-  ];
+  const feature1 = T(p, '✓ 保证 O(n log n)', { x: 800, y: 320, size: 28, weight: 600, anchor: 'middle', fill: SORTED, o: 0 });
+  tw(feature1, { o: 1 }, m('heap'), 0.6);
   
-  features.forEach(({ text, y, delay }) => {
-    const item = T(p, text, { x: 800, y, size: 28, weight: 600, anchor: 'middle', fill: SORTED, o: 0 });
-    tw(item, { o: 1 }, delay, 0.6);
-  });
+  const feature2 = T(p, '✓ 原地排序 O(1) 空间', { x: 800, y: 390, size: 28, weight: 600, anchor: 'middle', fill: SORTED, o: 0 });
+  tw(feature2, { o: 1 }, m('heap') + 1.5, 0.6);
+  
+  const feature3 = T(p, '✓ 利用堆结构', { x: 800, y: 460, size: 28, weight: 600, anchor: 'middle', fill: SORTED, o: 0 });
+  tw(feature3, { o: 1 }, m('heap') + 3.0, 0.6);
   
   const question = T(p, '兼具性能保证与空间效率的经典算法', 
     { x: 800, y: 580, size: 26, fill: DIM, anchor: 'middle', o: 0 });
-  tw(question, { o: 1 }, 7.0, 0.7);
+  tw(question, { o: 1 }, m('heap') + 5.5, 0.7);
+  
+  // 添加装饰线
+  const line1 = mk('line', { x1: 400, y1: 540, x2: 1200, y2: 540, stroke: PRIMARY, 'stroke-width': 2, o: 0 }, p);
+  tw(line1, { o: 0.3 }, m('heap') + 7.5, 0.5);
 }, { audio: 'intro' }],
 
 // beat 1: motivation
-['motivation', '为什么需要堆排序', () => {
+['motivation', '为什么需要堆排序', (m, dur) => {
   const p = panel(0);
   
   const title = T(p, '已有的排序算法', { x: 800, y: 100, size: 42, weight: 700, anchor: 'middle', o: 0 });
@@ -111,7 +113,7 @@ let BEATS = [
   T(quick, '平均 O(n log n)', { x: 0, y: 45, size: 22, fill: SORTED, anchor: 'middle' });
   T(quick, '最坏 O(n²)', { x: 0, y: 80, size: 22, fill: SWAPPING, anchor: 'middle' });
   T(quick, '原地排序', { x: 0, y: 115, size: 20, fill: DIM, anchor: 'middle' });
-  tw(quick, { o: 1 }, 1.0, 0.7);
+  tw(quick, { o: 1 }, m('quick'), 0.7);
   
   // 归并排序
   const merge = G(p, { x: 800, y: 260, o: 0 });
@@ -119,19 +121,19 @@ let BEATS = [
   T(merge, '保证 O(n log n)', { x: 0, y: 45, size: 22, fill: SORTED, anchor: 'middle' });
   T(merge, '需要 O(n) 空间', { x: 0, y: 80, size: 22, fill: SWAPPING, anchor: 'middle' });
   T(merge, '不是原地排序', { x: 0, y: 115, size: 20, fill: DIM, anchor: 'middle' });
-  tw(merge, { o: 1 }, 6.0, 0.7);
+  tw(merge, { o: 1 }, m('merge'), 0.7);
   
   // 问题
   const question = G(p, { x: 800, y: 480, o: 0 });
   T(question, '能否做到：', { x: 0, y: 0, size: 32, weight: 600, anchor: 'middle', fill: HIGHLIGHT });
   T(question, '保证 O(n log n) + 原地排序？', { x: 0, y: 50, size: 28, weight: 600, anchor: 'middle' });
-  tw(question, { o: 1 }, 11.0, 0.7);
+  tw(question, { o: 1 }, m('question'), 0.7);
   
   // 答案
   const answer = G(p, { x: 800, y: 640, o: 0 });
   const answerBg = mk('rect', { x: -150, y: -30, width: 300, height: 70, fill: SORTED, rx: 8, o: 0.2 }, answer);
   T(answer, '答案：堆排序', { x: 0, y: 0, size: 36, weight: 700, anchor: 'middle', fill: '#ecf0f1' });  // 白色文字
-  tw(answer, { o: 1 }, 18.0, 0.8, back);
+  tw(answer, { o: 1 }, m('answer'), 0.8, back);
 }, { audio: 'motivation' }],
 
 // beat 2: heap-intro
@@ -214,7 +216,7 @@ let BEATS = [
 }, { audio: 'heap-intro' }],
 
 // beat 3: heap-array
-['heap-array', '堆的数组表示', () => {
+['heap-array', '堆的数组表示', (m, dur) => {
   const p = panel(0);
   
   const title = T(p, '堆的数组表示', { x: 800, y: 100, size: 42, weight: 700, anchor: 'middle', o: 0 });
@@ -232,46 +234,67 @@ let BEATS = [
   drawTreeEdge(treeG, 100, 80, 150, 160);
   
   // 节点
-  const nodes = [
-    { val: 10, idx: 0, x: 0, y: 0 },
-    { val: 8, idx: 1, x: -100, y: 80 },
-    { val: 6, idx: 2, x: 100, y: 80 },
-    { val: 5, idx: 3, x: -150, y: 160 },
-    { val: 3, idx: 4, x: -50, y: 160 },
-    { val: 4, idx: 5, x: 50, y: 160 },
-    { val: 2, idx: 6, x: 150, y: 160 }
-  ];
+  const node0 = drawTreeNode(treeG, 10, 0, 0, 28, PRIMARY);
+  const idx0 = T(treeG, '[0]', { x: 0, y: 50, size: 16, fill: HIGHLIGHT, anchor: 'middle', weight: 600 });
   
-  nodes.forEach(({ val, idx, x, y }) => {
-    const node = drawTreeNode(treeG, val, x, y, 28, PRIMARY);
-    const idxText = T(treeG, `[${idx}]`, { x, y: y + 50, size: 16, fill: HIGHLIGHT, anchor: 'middle', weight: 600 });
-  });
+  const node1 = drawTreeNode(treeG, 8, -100, 80, 28, PRIMARY);
+  const idx1 = T(treeG, '[1]', { x: -100, y: 130, size: 16, fill: HIGHLIGHT, anchor: 'middle', weight: 600 });
   
-  tw(treeG, { o: 1 }, 1.0, 0.7);
+  const node2 = drawTreeNode(treeG, 6, 100, 80, 28, PRIMARY);
+  const idx2 = T(treeG, '[2]', { x: 100, y: 130, size: 16, fill: HIGHLIGHT, anchor: 'middle', weight: 600 });
+  
+  const node3 = drawTreeNode(treeG, 5, -150, 160, 28, PRIMARY);
+  const idx3 = T(treeG, '[3]', { x: -150, y: 210, size: 16, fill: HIGHLIGHT, anchor: 'middle', weight: 600 });
+  
+  const node4 = drawTreeNode(treeG, 3, -50, 160, 28, PRIMARY);
+  const idx4 = T(treeG, '[4]', { x: -50, y: 210, size: 16, fill: HIGHLIGHT, anchor: 'middle', weight: 600 });
+  
+  const node5 = drawTreeNode(treeG, 4, 50, 160, 28, PRIMARY);
+  const idx5 = T(treeG, '[5]', { x: 50, y: 210, size: 16, fill: HIGHLIGHT, anchor: 'middle', weight: 600 });
+  
+  const node6 = drawTreeNode(treeG, 2, 150, 160, 28, PRIMARY);
+  const idx6 = T(treeG, '[6]', { x: 150, y: 210, size: 16, fill: HIGHLIGHT, anchor: 'middle', weight: 600 });
+  
+  tw(treeG, { o: 1 }, m('compact'), 0.7);
   
   // 数组表示
   const arrayG = G(p, { x: 450, y: 530, o: 0 });
   const values = [10, 8, 6, 5, 3, 4, 2];
   values.forEach((val, i) => {
     const elem = drawArrayElement(arrayG, val, i * 60, 0, 55, 55);
-    tw(elem.g, { o: 1 }, 1.0, 0.7);
+    tw(elem.g, { o: 1 }, m('compact'), 0.7);
     
     const idx = T(arrayG, String(i), { x: i * 60 + 27.5, y: 70, size: 16, fill: DIM, anchor: 'middle' });
   });
   
-  tw(arrayG, { o: 1 }, 3.0, 0.7);
+  tw(arrayG, { o: 1 }, m('compact'), 0.7);
   
   // 公式
-  const formulas = [
-    { text: '左子节点：2i + 1', y: 650, delay: 7.0 },
-    { text: '右子节点：2i + 2', y: 690, delay: 12.0 },
-    { text: '父节点：⌊(i - 1) / 2⌋', y: 730, delay: 16.0 }
-  ];
+  const formula1 = T(p, '左子节点：2i + 1', { x: 800, y: 650, size: 24, anchor: 'middle', fill: HIGHLIGHT, o: 0 });
+  tw(formula1, { o: 1 }, m('left'), 0.6);
   
-  formulas.forEach(({ text, y, delay }) => {
-    const formula = T(p, text, { x: 800, y, size: 24, anchor: 'middle', fill: HIGHLIGHT, o: 0 });
-    tw(formula, { o: 1 }, delay, 0.6);
-  });
+  const formula2 = T(p, '右子节点：2i + 2', { x: 800, y: 690, size: 24, anchor: 'middle', fill: HIGHLIGHT, o: 0 });
+  tw(formula2, { o: 1 }, m('right'), 0.6);
+  
+  const formula3 = T(p, '父节点：⌊(i - 1) / 2⌋', { x: 800, y: 730, size: 24, anchor: 'middle', fill: HIGHLIGHT, o: 0 });
+  tw(formula3, { o: 1 }, m('parent'), 0.6);
+  
+  const example = T(p, '示例：节点 8 在索引 1，其子节点在 3 和 4', { x: 800, y: 770, size: 20, anchor: 'middle', fill: DIM, o: 0 });
+  tw(example, { o: 1 }, m('example'), 0.6);
+  
+  // 高亮示例节点
+  tw(node1.circle, { fill: HEAPIFYING }, m('example') + 1.0, 0.4);
+  tw(node3.circle, { fill: COMPARING }, m('example') + 1.0, 0.4);
+  tw(node4.circle, { fill: COMPARING }, m('example') + 1.0, 0.4);
+  
+  // 恢复颜色
+  tw(node1.circle, { fill: PRIMARY }, m('example') + 3.0, 0.4);
+  tw(node3.circle, { fill: PRIMARY }, m('example') + 3.0, 0.4);
+  tw(node4.circle, { fill: PRIMARY }, m('example') + 3.0, 0.4);
+  
+  // 添加装饰元素
+  const note = T(p, '数组存储让堆操作非常高效', { x: 800, y: 810, size: 20, fill: DIM, anchor: 'middle', o: 0 });
+  tw(note, { o: 1 }, m('example') + 4.5, 0.5);
 }, { audio: 'heap-array' }],
 
 // beat 4: heapify-concept
@@ -382,13 +405,13 @@ let BEATS = [
 }, { audio: 'build-heap' }],
 
 // beat 6: heap-sort-demo (核心动画演示)
-['heap-sort-demo', '堆排序演示', () => {
+['heap-sort-demo', '堆排序演示', (m, dur) => {
   const p = panel(0);
   
   const title = T(p, '堆排序完整演示', { x: 800, y: 80, size: 38, weight: 700, anchor: 'middle', o: 0 });
   tw(title, { o: 1 }, 0.1, 0.6);
   
-  let t = 2.0;
+  let t = m('array');
   
   // 初始数组
   const arrayLabel = T(p, '初始数组', { x: 250, y: 150, size: 22, weight: 600, o: 0 });
@@ -614,14 +637,15 @@ let BEATS = [
   t += 2.0;
   
   // 继续排序剩余元素（简化显示）
+  t = m('continue');  // 使用 continue 标记同步
   [nodes[3], nodes[2], nodes[1], nodes[0]].forEach((node, i) => {
     tw(node.circle, { fill: SORTED }, t, 0.5);
-    t += 1.5;
+    t += 0.6;
   });
   
   const complete = T(p, '✓ 排序完成！', 
     { x: 800, y: 770, size: 28, fill: SORTED, weight: 700, anchor: 'middle', o: 0 });
-  tw(complete, { o: 1 }, t, 0.8, back);
+  tw(complete, { o: 1 }, m('complete'), 0.8, back);
 }, { audio: 'heap-sort-demo' }],
 
 // beat 7: algorithm
@@ -775,54 +799,51 @@ let BEATS = [
 }, { audio: 'comparison' }],
 
 // beat 10: applications
-['applications', '堆的应用', () => {
+['applications', '堆的应用', (m, dur) => {
   const p = panel(0);
   
   const title = T(p, '堆的广泛应用', { x: 800, y: 100, size: 42, weight: 700, anchor: 'middle', o: 0 });
   tw(title, { o: 1 }, 0.1, 0.6);
   
-  const apps = [
-    { 
-      title: '① 优先队列',
-      desc: 'O(log n) 插入和取最值',
-      example: '操作系统任务调度',
-      y: 240,
-      delay: 2.0
-    },
-    { 
-      title: '② Top K 问题',
-      desc: '维护大小为 K 的堆',
-      example: '找出最大的 K 个元素',
-      y: 380,
-      delay: 10.0
-    },
-    { 
-      title: '③ 任务调度',
-      desc: '按优先级执行任务',
-      example: '高优先级任务先执行',
-      y: 520,
-      delay: 20.0
-    },
-    { 
-      title: '④ 动态中位数',
-      desc: '双堆法：大顶堆 + 小顶堆',
-      example: '实时维护数据流中位数',
-      y: 660,
-      delay: 30.0
-    }
-  ];
+  // 优先队列
+  const app1 = G(p, { x: 800, y: 240, o: 0 });
+  T(app1, '① 优先队列', { x: 0, y: 0, size: 28, weight: 600, anchor: 'middle', fill: HEAPIFYING });
+  T(app1, 'O(log n) 插入和取最值', { x: 0, y: 40, size: 22, anchor: 'middle' });
+  T(app1, '操作系统任务调度', { x: 0, y: 70, size: 19, fill: DIM, anchor: 'middle' });
+  tw(app1, { o: 1 }, 2.0, 0.7);
   
-  apps.forEach(({ title, desc, example, y, delay }) => {
-    const g = G(p, { x: 800, y, o: 0 });
-    T(g, title, { x: 0, y: 0, size: 28, weight: 600, anchor: 'middle', fill: HEAPIFYING });
-    T(g, desc, { x: 0, y: 40, size: 22, anchor: 'middle' });
-    T(g, example, { x: 0, y: 70, size: 19, fill: DIM, anchor: 'middle' });
-    tw(g, { o: 1 }, delay, 0.7);
-  });
+  // Top K 问题
+  const app2 = G(p, { x: 800, y: 380, o: 0 });
+  T(app2, '② Top K 问题', { x: 0, y: 0, size: 28, weight: 600, anchor: 'middle', fill: HEAPIFYING });
+  T(app2, '维护大小为 K 的堆', { x: 0, y: 40, size: 22, anchor: 'middle' });
+  T(app2, '找出最大的 K 个元素', { x: 0, y: 70, size: 19, fill: DIM, anchor: 'middle' });
+  tw(app2, { o: 1 }, m('topk'), 0.7);
+  
+  // 任务调度
+  const app3 = G(p, { x: 800, y: 520, o: 0 });
+  T(app3, '③ 任务调度', { x: 0, y: 0, size: 28, weight: 600, anchor: 'middle', fill: HEAPIFYING });
+  T(app3, '按优先级执行任务', { x: 0, y: 40, size: 22, anchor: 'middle' });
+  T(app3, '高优先级任务先执行', { x: 0, y: 70, size: 19, fill: DIM, anchor: 'middle' });
+  tw(app3, { o: 1 }, m('schedule'), 0.7);
+  
+  // 动态中位数
+  const app4 = G(p, { x: 800, y: 660, o: 0 });
+  T(app4, '④ 动态中位数', { x: 0, y: 0, size: 28, weight: 600, anchor: 'middle', fill: HEAPIFYING });
+  T(app4, '双堆法：大顶堆 + 小顶堆', { x: 0, y: 40, size: 22, anchor: 'middle' });
+  T(app4, '实时维护数据流中位数', { x: 0, y: 70, size: 19, fill: DIM, anchor: 'middle' });
+  tw(app4, { o: 1 }, m('median'), 0.7);
+  
+  // 添加总结
+  const summary = T(p, '堆结构在多个领域有重要应用', { x: 800, y: 760, size: 22, fill: DIM, anchor: 'middle', o: 0 });
+  tw(summary, { o: 1 }, m('median') + 3.0, 0.6);
+  
+  // 装饰线
+  const line = mk('line', { x1: 400, y1: 730, x2: 1200, y2: 730, stroke: HEAPIFYING, 'stroke-width': 2, o: 0 }, p);
+  tw(line, { o: 0.3 }, m('median') + 5.0, 0.5);
 }, { audio: 'applications' }],
 
 // beat 11: why-not
-['why-not', '为什么实际很少用', () => {
+['why-not', '为什么实际很少用', (m, dur) => {
   const p = panel(0);
   
   const title = T(p, '堆排序的局限性', { x: 800, y: 100, size: 42, weight: 700, anchor: 'middle', o: 0 });
@@ -831,28 +852,38 @@ let BEATS = [
   const theory = G(p, { x: 800, y: 220, o: 0 });
   T(theory, '理论上很完美', { x: 0, y: 0, size: 28, weight: 600, anchor: 'middle', fill: SORTED });
   T(theory, 'O(n log n) 时间 + O(1) 空间', { x: 0, y: 40, size: 22, fill: DIM, anchor: 'middle' });
-  tw(theory, { o: 1 }, 1.0, 0.7);
+  tw(theory, { o: 1 }, m('theory'), 0.7);
   
   const but = T(p, '但是...', { x: 800, y: 340, size: 32, weight: 700, fill: HIGHLIGHT, anchor: 'middle', o: 0 });
-  tw(but, { o: 1 }, 5.0, 0.5);
+  tw(but, { o: 1 }, m('theory') + 2.0, 0.5);
   
-  const reasons = [
-    { text: '① 常数因子大', sub: '堆化操作比分区操作复杂', y: 420, delay: 8.0 },
-    { text: '② 缓存不友好', sub: '跳跃式访问，缓存命中率低', y: 520, delay: 14.0 },
-    { text: '③ 快速排序更快', sub: '实际性能受缓存影响巨大', y: 620, delay: 23.0 }
-  ];
+  const reason1 = G(p, { x: 800, y: 420, o: 0 });
+  T(reason1, '① 常数因子大', { x: 0, y: 0, size: 26, weight: 600, anchor: 'middle', fill: SWAPPING });
+  T(reason1, '堆化操作比分区操作复杂', { x: 0, y: 35, size: 20, fill: DIM, anchor: 'middle' });
+  tw(reason1, { o: 1 }, m('constant'), 0.6);
   
-  reasons.forEach(({ text, sub, y, delay }) => {
-    const g = G(p, { x: 800, y, o: 0 });
-    T(g, text, { x: 0, y: 0, size: 26, weight: 600, anchor: 'middle', fill: SWAPPING });
-    T(g, sub, { x: 0, y: 35, size: 20, fill: DIM, anchor: 'middle' });
-    tw(g, { o: 1 }, delay, 0.6);
-  });
+  const reason2 = G(p, { x: 800, y: 520, o: 0 });
+  T(reason2, '② 缓存不友好', { x: 0, y: 0, size: 26, weight: 600, anchor: 'middle', fill: SWAPPING });
+  T(reason2, '跳跃式访问，缓存命中率低', { x: 0, y: 35, size: 20, fill: DIM, anchor: 'middle' });
+  tw(reason2, { o: 1 }, m('constant') + 4.0, 0.6);
   
-  const when = G(p, { x: 800, y: 740, o: 0 });
+  const reason3 = G(p, { x: 800, y: 620, o: 0 });
+  T(reason3, '③ 快速排序更快', { x: 0, y: 0, size: 26, weight: 600, anchor: 'middle', fill: SWAPPING });
+  T(reason3, '实际性能受缓存影响巨大', { x: 0, y: 35, size: 20, fill: DIM, anchor: 'middle' });
+  tw(reason3, { o: 1 }, m('constant') + 13.0, 0.6);
+  
+  const when = G(p, { x: 800, y: 730, o: 0 });
   T(when, '适用场景', { x: 0, y: 0, size: 24, weight: 600, anchor: 'middle', fill: HEAPIFYING });
   T(when, '严格内存限制 + 最坏情况保证', { x: 0, y: 35, size: 20, anchor: 'middle' });
-  tw(when, { o: 1 }, 38.0, 0.7);
+  tw(when, { o: 1 }, m('when'), 0.7);
+  
+  // 添加总结
+  const conclusion = T(p, '在特定场景下，堆排序仍是最佳选择', { x: 800, y: 795, size: 20, fill: DIM, anchor: 'middle', o: 0 });
+  tw(conclusion, { o: 1 }, m('when') + 3.0, 0.6);
+  
+  // 装饰线
+  const line = mk('line', { x1: 400, y1: 700, x2: 1200, y2: 700, stroke: SWAPPING, 'stroke-width': 2, o: 0 }, p);
+  tw(line, { o: 0.3 }, m('when') + 5.0, 0.5);
 }, { audio: 'why-not' }],
 
 // beat 12: summary

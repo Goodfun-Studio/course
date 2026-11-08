@@ -410,12 +410,12 @@ window.BEATS = [
     { title: '示例3：100万商品，5%误判率', n: '1,000,000', fpr: '5%', m: '≈ 800 KB', k: '4', y: 390, color: WARNING, mark: 'example3' }
   ];
   
-  examples.forEach(({ title, n, fpr, m, k, y, color, mark }) => {
+  examples.forEach(({ title, n, fpr, m: mem, k, y, color, mark }) => {
     const g = G(p, { x: 80, y, o: 0 });
     T(g, title, { x: 0, y: 0, size: 24, weight: 700, fill: color });
     T(g, `n = ${n}`, { x: 20, y: 35, size: 18, fill: DARK });
     T(g, `误判率 = ${fpr}`, { x: 20, y: 60, size: 18, fill: DARK });
-    T(g, `位数组 = ${m}`, { x: 20, y: 85, size: 18, fill: DARK });
+    T(g, `位数组 = ${mem}`, { x: 20, y: 85, size: 18, fill: DARK });
     T(g, `哈希函数 = ${k} 个`, { x: 20, y: 110, size: 18, fill: DARK });
     tw(g, { o: 1 }, m(mark));
   });

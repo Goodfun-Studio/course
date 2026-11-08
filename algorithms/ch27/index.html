@@ -536,15 +536,54 @@ window.BEATS = [
   
   const codeLines = code.split('\n');
   let y = 100;
+  const lineElements = [];
   
-  const showTime = m('code');
+  // 逐行显示代码
   codeLines.forEach((line, i) => {
     const text = T(p, line, { 
       x: 50, y, size: 13, fill: TEXT_COLOR, 
       family: 'Monaco, Consolas, monospace', o: 0 
     });
-    tw(text, { o: 1 }, 0.05, showTime + i * 0.05);
+    lineElements.push({ text, line: i, y });
+    
+    // 根据内容关联 marks
+    let showTime = m('code');
+    if (line.includes('PriorityQueue')) showTime = m('priority_queue');
+    else if (line.includes('closedSet')) showTime = m('visited_set');
+    else if (line.includes('start.g') || line.includes('start.h')) showTime = m('node_data');
+    else if (line.includes('start.f')) showTime = m('init');
+    else if (line.includes('enqueue(start')) showTime = m('enqueue');
+    else if (line.includes('while')) showTime = m('loop');
+    else if (line.includes('current === end')) showTime = m('found');
+    else if (line.includes('reconstructPath')) showTime = m('found');
+    else if (line.includes('closedSet.add')) showTime = m('mark');
+    else if (line.includes('getNeighbors')) showTime = m('neighbors');
+    else if (line.includes('continue')) showTime = m('skip');
+    else if (line.includes('tentativeG')) showTime = m('calc_g');
+    else if (line.includes('neighbor.h =')) showTime = m('calc_h');
+    else if (line.includes('neighbor.f =')) showTime = m('calc_f');
+    else if (line.includes('!openSet.contains')) showTime = m('add');
+    else if (line.includes('updatePriority')) showTime = m('update');
+    else if (line.includes('neighbor.parent')) showTime = m('parent');
+    else if (line.includes('return null')) showTime = m('end');
+    
+    tw(text, { o: 1 }, 0.3, showTime);
     y += 16;
+  });
+  
+  // 添加高亮框在关键部分
+  const highlights = [
+    { y: 100 + 1*16, mark: 'priority_queue', label: '优先队列' },
+    { y: 100 + 14*16, mark: 'loop', label: '主循环' },
+    { y: 100 + 29*16, mark: 'calc_g', label: '计算 g 值' },
+    { y: 100 + 31*16, mark: 'calc_h', label: '计算 h 值' }
+  ];
+  
+  highlights.forEach(({ y, mark, label }) => {
+    const box = G(p, { x: 40, y: y - 5, o: 0 });
+    mk('rect', { x: 0, y: 0, width: 720, height: 20, fill: 'none', stroke: HIGHLIGHT, 'stroke-width': 2, rx: 3 }, box);
+    tw(box, { o: 0.5 }, 0.3, m(mark));
+    tw(box, { o: 0 }, 0.5, m(mark) + 2);
   });
 }],
 
@@ -557,23 +596,33 @@ window.BEATS = [
   const dijkstra = G(p, { x: 200, y: 180, o: 0 });
   mk('rect', { x: -120, y: -40, width: 240, height: 280, fill: VISITED_COLOR, rx: 10 }, dijkstra);
   T(dijkstra, 'Dijkstra', { x: 0, y: -10, size: 28, weight: 700, fill: '#fff', anchor: 'middle' });
-  T(dijkstra, '只考虑 g(n)', { x: 0, y: 40, size: 20, fill: '#fff', anchor: 'middle' });
-  T(dijkstra, '从起点出发的', { x: 0, y: 80, size: 18, fill: '#fff', anchor: 'middle' });
-  T(dijkstra, '实际代价', { x: 0, y: 110, size: 18, fill: '#fff', anchor: 'middle' });
-  T(dijkstra, '保证最优解', { x: 0, y: 160, size: 18, fill: '#fff', anchor: 'middle', weight: 600 });
-  T(dijkstra, '但访问节点多', { x: 0, y: 190, size: 18, fill: '#fff', anchor: 'middle' });
+  const dText1 = T(dijkstra, '只考虑 g(n)', { x: 0, y: 40, size: 20, fill: '#fff', anchor: 'middle', o: 0 });
+  const dText2 = T(dijkstra, '从起点出发的', { x: 0, y: 80, size: 18, fill: '#fff', anchor: 'middle', o: 0 });
+  const dText3 = T(dijkstra, '实际代价', { x: 0, y: 110, size: 18, fill: '#fff', anchor: 'middle', o: 0 });
+  const dText4 = T(dijkstra, '保证最优解', { x: 0, y: 160, size: 18, fill: '#fff', anchor: 'middle', weight: 600, o: 0 });
+  const dText5 = T(dijkstra, '但访问节点多', { x: 0, y: 190, size: 18, fill: '#fff', anchor: 'middle', o: 0 });
   tw(dijkstra, { o: 1 }, 0.5, m('dijkstra'));
+  tw(dText1, { o: 1 }, 0.3, m('g_only'));
+  tw(dText2, { o: 1 }, 0.3, m('g_only') + 0.3);
+  tw(dText3, { o: 1 }, 0.3, m('g_only') + 0.6);
+  tw(dText4, { o: 1 }, 0.3, m('guarantee'));
+  tw(dText5, { o: 1 }, 0.3, m('guarantee') + 0.5);
   
   // A*
   const astar = G(p, { x: 600, y: 180, o: 0 });
   mk('rect', { x: -120, y: -40, width: 240, height: 280, fill: PATH_COLOR, rx: 10 }, astar);
   T(astar, 'A*', { x: 0, y: -10, size: 28, weight: 700, fill: '#fff', anchor: 'middle' });
-  T(astar, 'g(n) + h(n)', { x: 0, y: 40, size: 20, fill: '#fff', anchor: 'middle' });
-  T(astar, '实际代价 +', { x: 0, y: 80, size: 18, fill: '#fff', anchor: 'middle' });
-  T(astar, '启发估计', { x: 0, y: 110, size: 18, fill: '#fff', anchor: 'middle' });
-  T(astar, '保证最优解', { x: 0, y: 160, size: 18, fill: '#fff', anchor: 'middle', weight: 600 });
-  T(astar, '且更高效', { x: 0, y: 190, size: 18, fill: '#fff', anchor: 'middle' });
+  const aText1 = T(astar, 'g(n) + h(n)', { x: 0, y: 40, size: 20, fill: '#fff', anchor: 'middle', o: 0 });
+  const aText2 = T(astar, '实际代价 +', { x: 0, y: 80, size: 18, fill: '#fff', anchor: 'middle', o: 0 });
+  const aText3 = T(astar, '启发估计', { x: 0, y: 110, size: 18, fill: '#fff', anchor: 'middle', o: 0 });
+  const aText4 = T(astar, '保证最优解', { x: 0, y: 160, size: 18, fill: '#fff', anchor: 'middle', weight: 600, o: 0 });
+  const aText5 = T(astar, '且更高效', { x: 0, y: 190, size: 18, fill: '#fff', anchor: 'middle', o: 0 });
   tw(astar, { o: 1 }, 0.5, m('add_h'));
+  tw(aText1, { o: 1 }, 0.3, m('add_h') + 0.3);
+  tw(aText2, { o: 1 }, 0.3, m('add_h') + 0.6);
+  tw(aText3, { o: 1 }, 0.3, m('add_h') + 0.9);
+  tw(aText4, { o: 1 }, 0.3, m('faster'));
+  tw(aText5, { o: 1 }, 0.3, m('faster') + 0.5);
   
   const arrow = G(p, { x: 400, y: 320, o: 0 });
   mk('line', { x1: -50, y1: 0, x2: 50, y2: 0, stroke: HIGHLIGHT, 'stroke-width': 3 }, arrow);
@@ -585,6 +634,10 @@ window.BEATS = [
     x: 400, y: 500, size: 22, fill: TEXT_COLOR, anchor: 'middle', o: 0 
   });
   tw(note, { o: 1 }, 0.5, m('degenerate'));
+  
+  // 添加脉动效果延伸到 smart_version
+  tw(arrow, { y: 315 }, 1.0, m('optimal'));
+  tw(arrow, { y: 320 }, 1.0, m('smart_version') - 1);
 }],
 
 ['applications', '应用场景', (m, dur) => {
@@ -630,13 +683,27 @@ window.BEATS = [
   apps.forEach((app) => {
     const g = G(p, { x: 100, y: app.y, o: 0 });
     
-    mk('rect', { x: 0, y: -30, width: 600, height: 80, fill: app.color, rx: 10, o: 0.2 }, g);
-    T(g, app.icon, { x: 30, y: 10, size: 40, anchor: 'middle' });
+    const bg = mk('rect', { x: 0, y: -30, width: 600, height: 80, fill: app.color, rx: 10, o: 0.2 }, g);
+    const icon = T(g, app.icon, { x: 30, y: 10, size: 40, anchor: 'middle' });
     T(g, app.title, { x: 80, y: 0, size: 24, weight: 700, fill: TEXT_COLOR });
     T(g, app.desc, { x: 80, y: 30, size: 18, fill: TEXT_COLOR });
     
     tw(g, { o: 1 }, 0.5, m(app.mark));
+    
+    // 添加脉动效果
+    tw(bg, { o: 0.3 }, 0.5, m(app.mark) + 1);
+    tw(bg, { o: 0.2 }, 0.5, m(app.mark) + 1.5);
+    tw(icon, { size: 45 }, 0.5, m(app.mark) + 0.5);
+    tw(icon, { size: 40 }, 0.5, m(app.mark) + 1);
   });
+  
+  // 添加总结性文字延伸到 classic
+  const summary = T(p, 'A* 是最经典的启发式搜索算法', { 
+    x: 400, y: 520, size: 24, weight: 600, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+  });
+  tw(summary, { o: 1 }, 0.5, m('puzzle'));
+  tw(summary, { o: 0.8 }, 1.0, m('classic') - 1);
+  tw(summary, { o: 1 }, 1.0, m('classic'));
 }],
 
 ['optimization', '算法优化', (m, dur) => {
@@ -709,6 +776,7 @@ window.BEATS = [
   const startY = 120;
   
   const showTime = m('summary');
+  const cellElements = [];
   table.forEach((row, i) => {
     row.forEach((cell, j) => {
       const x = startX + j * cellWidth;
@@ -733,6 +801,7 @@ window.BEATS = [
       text.setAttribute('dominant-baseline', 'central');
       
       tw(g, { o: 1 }, 0.3, showTime + i * 0.15);
+      cellElements.push(g);
     });
   });
   
@@ -745,6 +814,12 @@ window.BEATS = [
     x: 400, y: 480, size: 24, weight: 700, fill: HIGHLIGHT, anchor: 'middle', o: 0 
   });
   tw(summary, { o: 1 }, 0.5, m('target'));
+  
+  // 添加脉动效果延伸到 traverse
+  tw(summary, { size: 26 }, 1.0, m('feasible'));
+  tw(summary, { size: 24 }, 1.0, m('feasible') + 1);
+  tw(note, { o: 0.8 }, 1.0, m('traverse') - 1);
+  tw(note, { o: 1 }, 1.0, m('traverse'));
 }],
 
 ['finish', '总结', (m, dur) => {
@@ -761,15 +836,31 @@ window.BEATS = [
   
   points.forEach((point) => {
     const g = G(p, { x: 150, y: point.y, o: 0 });
-    T(g, point.icon, { x: 0, y: 0, size: 40, anchor: 'middle' });
-    T(g, point.text, { x: 70, y: 0, size: 28, fill: TEXT_COLOR, anchor: 'start', weight: 600 });
+    const icon = T(g, point.icon, { x: 0, y: 0, size: 40, anchor: 'middle' });
+    const text = T(g, point.text, { x: 70, y: 0, size: 28, fill: TEXT_COLOR, anchor: 'start', weight: 600 });
     tw(g, { o: 1 }, 0.5, m(point.mark));
+    
+    // 添加脉动效果
+    tw(icon, { size: 45 }, 0.5, m(point.mark) + 1);
+    tw(icon, { size: 40 }, 0.5, m(point.mark) + 1.5);
   });
   
   const core = T(p, '核心思想：智能 + 最优', { 
     x: 400, y: 510, size: 32, weight: 700, fill: HIGHLIGHT, anchor: 'middle', o: 0 
   });
   tw(core, { o: 1 }, 0.5, m('core'));
+  
+  // 添加更多解释延伸到 core 的最后
+  const detail1 = T(p, '曼哈顿距离、欧几里得距离是常用启发函数', { 
+    x: 400, y: 475, size: 18, fill: TEXT_COLOR, anchor: 'middle', o: 0 
+  });
+  tw(detail1, { o: 1 }, 0.5, m('common'));
+  tw(detail1, { o: 0.8 }, 1.0, m('master') - 1);
+  tw(detail1, { o: 1 }, 1.0, m('master'));
+  
+  // 添加闪烁效果
+  tw(core, { o: 0.8 }, 1.0, m('master'));
+  tw(core, { o: 1 }, 1.0, m('core') - 0.5);
 }]
 
 ];

@@ -287,7 +287,7 @@ let BEATS = [
   const p = panel(0);
   
   const title = T(p, 'Dijkstra 的困境', { x: 800, y: 80, size: 44, weight: 600, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.5);
+  tw(title, { o: 1 }, 0, 0.5);
   
   // 简单示例图
   const exG = G(p, { o: 0 });
@@ -312,23 +312,23 @@ let BEATS = [
   drawArrow(exG, 600, 450, 600, 280, EDGE_NEGATIVE);
   T(exG, '-10', { x: 680, y: 350, size: 20, fill: EDGE_NEGATIVE, anchor: 'middle', weight: 700 });
   
-  tw(exG, { o: 1 }, 3.0, 0.7);
+  tw(exG, { o: 1 }, m('why'), 0.7);
   
   const issue = T(p, 'Dijkstra：B = 5，确定！', 
     { x: 950, y: 300, size: 28, fill: PRIMARY, o: 0, weight: 600 });
-  tw(issue, { o: 1 }, 7.0, 0.6);
+  tw(issue, { o: 1 }, m('example'), 0.6);
   
   const better = T(p, '实际：A → C → B = -2', 
     { x: 950, y: 360, size: 28, fill: EDGE_NEGATIVE, o: 0, weight: 600 });
-  tw(better, { o: 1 }, 10.0, 0.7);
+  tw(better, { o: 1 }, m('greedy_stuck'), 0.7);
   
   const conclusion = T(p, '贪心策略假设「越走越远」', 
     { x: 800, y: 550, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(conclusion, { o: 1 }, 13.0, 0.6);
+  tw(conclusion, { o: 1 }, m('better_path'), 0.6);
   
   const broken = T(p, '负权边打破了这个假设！', 
     { x: 800, y: 610, size: 32, fill: EDGE_NEGATIVE, anchor: 'middle', o: 0, weight: 700 });
-  tw(broken, { o: 1 }, 15.0, 0.7);
+  tw(broken, { o: 1 }, m('better_path') + 1.0, 0.7);
 }],
 
 // beat 3: bellman_ford_idea
@@ -372,31 +372,31 @@ let BEATS = [
   const p = panel(0);
   
   const title = T(p, '松弛 (Relaxation)', { x: 800, y: 100, size: 48, weight: 600, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.5);
+  tw(title, { o: 1 }, 0, 0.5);
   
   const same = T(p, '和 Dijkstra 一样', 
     { x: 800, y: 200, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(same, { o: 1 }, 3.0, 0.5);
+  tw(same, { o: 1 }, m('same'), 0.5);
   
   const formula = T(p, 'if  dist[u] + w(u,v) < dist[v]:', 
     { x: 450, y: 310, size: 28, fill: PRIMARY, o: 0, weight: 500, font: 'monospace' });
-  tw(formula, { o: 1 }, 6.0, 0.6);
+  tw(formula, { o: 1 }, m('formula'), 0.6);
   
   const update = T(p, '    dist[v] = dist[u] + w(u,v)', 
     { x: 450, y: 360, size: 28, fill: VISITED, o: 0, weight: 500, font: 'monospace' });
-  tw(update, { o: 1 }, 8.0, 0.6);
+  tw(update, { o: 1 }, m('formula') + 1.0, 0.6);
   
   const diff = T(p, '区别', 
     { x: 800, y: 470, size: 32, fill: SECONDARY, anchor: 'middle', o: 0, weight: 600 });
-  tw(diff, { o: 1 }, 12.0, 0.5);
+  tw(diff, { o: 1 }, m('equation'), 0.5);
   
   const dijkstra = T(p, 'Dijkstra：只松弛已确定节点的邻居', 
     { x: 800, y: 540, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(dijkstra, { o: 1 }, 14.0, 0.5);
+  tw(dijkstra, { o: 1 }, m('dijkstra_selective'), 0.5);
   
   const bellman = T(p, 'Bellman-Ford：无差别松弛所有边', 
     { x: 800, y: 590, size: 26, fill: VISITED, anchor: 'middle', o: 0, weight: 600 });
-  tw(bellman, { o: 1 }, 16.0, 0.7);
+  tw(bellman, { o: 1 }, m('dijkstra_selective') + 1.0, 0.7);
 }],
 
 // beat 5: iteration_logic
@@ -442,24 +442,24 @@ let BEATS = [
   const p = panel(0);
   
   const title = T(p, 'Bellman-Ford 演示', { x: 800, y: 60, size: 40, weight: 600, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.5);
+  tw(title, { o: 1 }, 0, 0.5);
   
   const graph = drawGraph(p);
-  tw(graph, { o: 1 }, 3.0, 0.8);
+  tw(graph, { o: 1 }, m('demo'), 0.8);
   
   const labels = drawDistanceLabels(p);
-  tw(labels, { o: 1 }, 3.5, 0.6);
+  tw(labels, { o: 1 }, m('graph'), 0.6);
   
   // 初始化距离
-  updateDistance(labels, 'A', 0, 6.0);
+  updateDistance(labels, 'A', 0, m('init'));
   
   const initNote = T(p, '起点 A = 0，其他节点 = ∞', 
     { x: 800, y: 750, size: 26, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
-  tw(initNote, { o: 1 }, 8.0, 0.6);
+  tw(initNote, { o: 1 }, m('init'), 0.6);
   
   const roundNote = T(p, '共需 4 轮松弛（n-1 = 5）', 
     { x: 800, y: 790, size: 24, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(roundNote, { o: 1 }, 12.0, 0.5);
+  tw(roundNote, { o: 1 }, m('rounds'), 0.5);
 }],
 
 // beat 7: demo_iteration (动画演示 - 必须通过质量检测)
@@ -467,21 +467,21 @@ let BEATS = [
   const p = panel(0);
   
   const title = T(p, '第 1 轮松弛', { x: 800, y: 60, size: 38, weight: 600, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.5);
+  tw(title, { o: 1 }, 0, 0.5);
   
   const graph = drawGraph(p);
-  tw(graph, { o: 1 }, 0.3, 0.3);
+  tw(graph, { o: 1 }, 0, 0.3);
   
   const labels = drawDistanceLabels(p);
-  tw(labels, { o: 1 }, 0.3, 0.3);
+  tw(labels, { o: 1 }, 0, 0.3);
   
   // 初始状态
-  updateDistance(labels, 'A', 0, 0.5);
+  updateDistance(labels, 'A', 0, 0.2);
   
   const edgeEls = graph._edgeElements;
   
   // 第一轮松弛演示（遍历所有边）
-  let t = 3.0;
+  let t = m('round_1_start');
   
   // 边1: A -> B (权重4)
   highlightEdge(edgeEls, 'A', 'B', EDGE_TRYING, t, 0.4);
@@ -493,12 +493,17 @@ let BEATS = [
   highlightEdge(edgeEls, 'A', 'C', EDGE_TRYING, t, 0.4);
   updateDistance(labels, 'C', 2, t + 0.5);
   highlightEdge(edgeEls, 'A', 'C', EDGE_SELECTED, t + 0.9, 0.3);
-  t += 1.4;
+  
+  // update_b 标记后继续动画
+  t = m('update_b');
   
   // 边3: B -> D (权重3，但B还是无穷，不更新)
   highlightEdge(edgeEls, 'B', 'D', EDGE_TRYING, t, 0.4);
   resetEdge(edgeEls, 'B', 'D', t + 0.6);
   t += 1.0;
+  
+  // update_c 标记后继续动画
+  t = m('update_c');
   
   // 边4: C -> D (权重-5，负权边！)
   highlightEdge(edgeEls, 'C', 'D', EDGE_TRYING, t, 0.4);
@@ -510,6 +515,9 @@ let BEATS = [
   highlightEdge(edgeEls, 'B', 'E', EDGE_TRYING, t, 0.4);
   resetEdge(edgeEls, 'B', 'E', t + 0.6);
   t += 1.0;
+  
+  // negative_edge 标记附近的动画
+  t = m('negative_edge') - 2.0;
   
   // 边6: D -> E
   highlightEdge(edgeEls, 'D', 'E', EDGE_TRYING, t, 0.4);
@@ -531,7 +539,7 @@ let BEATS = [
   
   const roundEnd = T(p, '第 1 轮结束，3 个节点被更新', 
     { x: 800, y: 750, size: 26, fill: VISITED, anchor: 'middle', o: 0, weight: 600 });
-  tw(roundEnd, { o: 1 }, t + 0.5, 0.7);
+  tw(roundEnd, { o: 1 }, m('negative_edge') + 2.0, 0.7);
 }],
 
 // beat 8: demo_convergence

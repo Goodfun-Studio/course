@@ -362,10 +362,11 @@ window.BEATS = [
   tw(angleText, { o: 1 }, m('arranged'));
 }],
 
-['build_hull', '凸包构建动画', () => {
+['build_hull', '凸包构建动画', (m, dur) => {
   const p = panel(0);
   
-  T(p, '步骤2：栈维护凸包', { x: 400, y: 50, size: 36, weight: 700, fill: TEXT_COLOR });
+  const title = T(p, '步骤2：栈维护凸包', { x: 400, y: 50, size: 36, weight: 700, fill: TEXT_COLOR });
+  tw(title, { o: 1 }, 0);
   
   // 使用排序后的点
   const p0 = { x: 250, y: 450 };
@@ -387,92 +388,85 @@ window.BEATS = [
   // 栈可视化区域
   const stackX = 50;
   const stackY = 100;
-  T(p, '栈', { x: stackX, y: stackY, size: 20, weight: 600, fill: STACK_COLOR });
+  const stackTitle = T(p, '栈', { x: stackX, y: stackY, size: 20, weight: 600, fill: STACK_COLOR });
+  tw(stackTitle, { o: 1 }, 0);
   
-  let time = 0.5;
-  const stack = [0, 1]; // 初始栈：p0, p1
+  // 初始化栈
+  const stack = [0, 1];
   const hullLines = [];
   
   // 显示初始栈
-  [0, 1].forEach((idx, i) => {
-    const stackItem = T(p, `p${idx}`, { 
-      x: stackX, y: stackY + 40 + i * 25, 
-      size: 18, fill: STACK_COLOR, o: 0 
-    });
-    tw(stackItem, { o: 1 }, time);
-  });
-  time += 0.5;
+  const stack0 = T(p, 'p0', { x: stackX, y: stackY + 40, size: 18, fill: STACK_COLOR, o: 0 });
+  const stack1 = T(p, 'p1', { x: stackX, y: stackY + 65, size: 18, fill: STACK_COLOR, o: 0 });
+  tw(stack0, { o: 1 }, m('init'));
+  tw(stack1, { o: 1 }, m('first'));
   
   // 初始连线
   let line = drawLine(p, sortedPoints[0].x, sortedPoints[0].y, 
                       sortedPoints[1].x, sortedPoints[1].y, HULL_COLOR, 3);
-  tw(line, { o: 1 }, time);
+  tw(line, { o: 1 }, m('two'));
   hullLines.push(line);
-  time += 0.5;
   
-  // 处理每个后续点
-  for (let i = 2; i < sortedPoints.length; i++) {
-    const current = sortedPoints[i];
-    
-    // 高亮当前点
-    const currentHighlight = mk('circle', { 
-      cx: current.x, cy: current.y, r: 12, 
-      fill: 'none', stroke: HIGHLIGHT, 'stroke-width': 3, o: 0 
-    }, p);
-    tw(currentHighlight, { o: 1 }, time);
-    time += 0.3;
-    
-    // 检查并弹栈
-    while (stack.length >= 2) {
-      const top = stack[stack.length - 1];
-      const second = stack[stack.length - 2];
-      const cross = crossProduct(sortedPoints[second], sortedPoints[top], current);
-      
-      if (cross <= 0) {
-        // 右转，弹栈
-        stack.pop();
-        
-        // 移除最后一条线
-        if (hullLines.length > 0) {
-          const removeLine = hullLines.pop();
-          tw(removeLine, { o: 0 }, time);
-        }
-        
-        // 栈可视化更新（淡出）
-        const removeItem = T(p, `p${top} ✗`, { 
-          x: stackX + 60, y: stackY + 40 + stack.length * 25, 
-          size: 18, fill: START_COLOR, o: 0 
-        });
-        tw(removeItem, { o: 1 }, time);
-        tw(removeItem, { o: 0 }, time + 0.3);
-        
-        time += 0.4;
-      } else {
-        break;
-      }
-    }
-    
-    // 压入新点
+  // 处理第3个点 (i=2)
+  const h2 = mk('circle', { cx: sortedPoints[2].x, cy: sortedPoints[2].y, r: 12, 
+    fill: 'none', stroke: HIGHLIGHT, 'stroke-width': 3, o: 0 }, p);
+  tw(h2, { o: 1 }, m('third'));
+  tw(h2, { o: 0 }, m('check'));
+  
+  stack.push(2);
+  line = drawLine(p, sortedPoints[1].x, sortedPoints[1].y, 
+                  sortedPoints[2].x, sortedPoints[2].y, HULL_COLOR, 3);
+  tw(line, { o: 1 }, m('push'));
+  hullLines.push(line);
+  const stack2 = T(p, 'p2', { x: stackX, y: stackY + 90, size: 18, fill: HULL_COLOR, o: 0 });
+  tw(stack2, { o: 1 }, m('push'));
+  
+  // 处理第4个点 (i=3) - 右转，需要弹栈
+  const h3 = mk('circle', { cx: sortedPoints[3].x, cy: sortedPoints[3].y, r: 12, 
+    fill: 'none', stroke: HIGHLIGHT, 'stroke-width': 3, o: 0 }, p);
+  tw(h3, { o: 1 }, m('fourth'));
+  tw(h3, { o: 0 }, m('right'));
+  
+  // 弹出p2
+  tw(hullLines[1], { o: 0 }, m('pop'));
+  hullLines.pop();
+  stack.pop();
+  const removeP2 = T(p, 'p2 ✗', { x: stackX + 60, y: stackY + 90, size: 18, fill: START_COLOR, o: 0 });
+  tw(removeP2, { o: 1 }, m('pop'));
+  tw(removeP2, { o: 0 }, m('continue'));
+  
+  // 压入p3
+  stack.push(3);
+  line = drawLine(p, sortedPoints[1].x, sortedPoints[1].y, 
+                  sortedPoints[3].x, sortedPoints[3].y, HULL_COLOR, 3);
+  tw(line, { o: 1 }, m('continue'));
+  hullLines.push(line);
+  const stack3 = T(p, 'p3', { x: stackX, y: stackY + 90, size: 18, fill: HULL_COLOR, o: 0 });
+  tw(stack3, { o: 1 }, m('continue'));
+  
+  // 处理第5个点 (i=4)
+  const h4 = mk('circle', { cx: sortedPoints[4].x, cy: sortedPoints[4].y, r: 12, 
+    fill: 'none', stroke: HIGHLIGHT, 'stroke-width': 3, o: 0 }, p);
+  tw(h4, { o: 1 }, m('fifth'));
+  tw(h4, { o: 0 }, m('push2'));
+  
+  stack.push(4);
+  line = drawLine(p, sortedPoints[3].x, sortedPoints[3].y, 
+                  sortedPoints[4].x, sortedPoints[4].y, HULL_COLOR, 3);
+  tw(line, { o: 1 }, m('push2'));
+  hullLines.push(line);
+  const stack4 = T(p, 'p4', { x: stackX, y: stackY + 115, size: 18, fill: HULL_COLOR, o: 0 });
+  tw(stack4, { o: 1 }, m('push2'));
+  
+  // 快速处理剩余点
+  const remainingT = m('more');
+  for (let i = 5; i < sortedPoints.length; i++) {
+    const prevIdx = stack[stack.length - 1];
     stack.push(i);
-    
-    // 添加新连线
-    if (stack.length >= 2) {
-      const prevIdx = stack[stack.length - 2];
-      line = drawLine(p, sortedPoints[prevIdx].x, sortedPoints[prevIdx].y, 
-                      current.x, current.y, HULL_COLOR, 3);
-      tw(line, { o: 1 }, time);
-      hullLines.push(line);
-    }
-    
-    // 栈可视化更新
-    const stackItem = T(p, `p${i}`, { 
-      x: stackX, y: stackY + 40 + (stack.length - 1) * 25, 
-      size: 18, fill: HULL_COLOR, o: 0 
-    });
-    tw(stackItem, { o: 1 }, time);
-    
-    tw(currentHighlight, { o: 0 }, time + 0.2);
-    time += 0.5;
+    line = drawLine(p, sortedPoints[prevIdx].x, sortedPoints[prevIdx].y,
+                    sortedPoints[i].x, sortedPoints[i].y, HULL_COLOR, 3);
+    tw(line, { o: 1 }, remainingT);
+    hullLines.push(line);
   }
   
   // 闭合凸包
@@ -481,19 +475,20 @@ window.BEATS = [
   const closeLine = drawLine(p, sortedPoints[lastIdx].x, sortedPoints[lastIdx].y,
                               sortedPoints[firstIdx].x, sortedPoints[firstIdx].y, 
                               HULL_COLOR, 3);
-  tw(closeLine, { o: 1 }, time);
+  tw(closeLine, { o: 1 }, m('connect'));
   
   // 最终标注
   const finalText = T(p, `凸包完成！${stack.length} 个顶点`, { 
     x: 400, y: 550, size: 26, weight: 600, fill: HULL_COLOR, anchor: 'middle', o: 0 
   });
-  tw(finalText, { o: 1 }, time + 0.5);
+  tw(finalText, { o: 1 }, m('inside'));
 }],
 
-['implementation', '代码实现', () => {
+['implementation', '代码实现', (m, dur) => {
   const p = panel(0);
   
-  T(p, '代码实现', { x: 400, y: 50, size: 36, weight: 700, fill: TEXT_COLOR });
+  const title = T(p, '代码实现', { x: 400, y: 50, size: 36, weight: 700, fill: TEXT_COLOR });
+  tw(title, { o: 1 }, 0);
   
   const code = `function grahamScan(points) {
   // 1. 找最低点
@@ -531,22 +526,23 @@ window.BEATS = [
     x: 50, y: 120, size: 14, family: 'monospace', fill: TEXT_COLOR, o: 0 
   });
   codeElem.setAttribute('white-space', 'pre');
-  tw(codeElem, { o: 1 }, 0.5);
+  tw(codeElem, { o: 1 }, m('code'));
   
   const notes = [
-    { text: '• O(n log n) 主要是排序', y: 500, color: PURPLE },
-    { text: '• 每个点最多入栈、出栈各一次', y: 530, color: HULL_COLOR }
+    { text: '• O(n log n) 主要是排序', y: 500, color: PURPLE, mark: 'return' },
+    { text: '• 每个点最多入栈、出栈各一次', y: 530, color: HULL_COLOR, mark: 'clean' }
   ];
-  notes.forEach(({ text, y, color }, i) => {
+  notes.forEach(({ text, y, color, mark }) => {
     const note = T(p, text, { x: 50, y, size: 20, fill: color, o: 0 });
-    tw(note, { o: 1 }, 1.5 + i * 0.3);
+    tw(note, { o: 1 }, m(mark));
   });
 }],
 
-['cross_calculation', '叉积的几何意义', () => {
+['cross_calculation', '叉积的几何意义', (m, dur) => {
   const p = panel(0);
   
-  T(p, '叉积的几何意义', { x: 400, y: 50, size: 36, weight: 700, fill: TEXT_COLOR });
+  const title = T(p, '叉积的几何意义', { x: 400, y: 50, size: 36, weight: 700, fill: TEXT_COLOR });
+  tw(title, { o: 1 }, 0);
   
   // 中心：两个向量
   const origin = { x: 300, y: 300 };
@@ -554,19 +550,22 @@ window.BEATS = [
   const v2_end = { x: 350, y: 450 };
   
   // 原点
-  drawPoint(p, origin.x, origin.y, 'O', TEXT_COLOR, 8).g.setAttribute('opacity', 1);
+  const originPt = drawPoint(p, origin.x, origin.y, 'O', TEXT_COLOR, 8);
+  tw(originPt.g, { o: 1 }, m('geometry'));
   
   // 向量v1
   const v1_arrow = drawArrow(p, origin.x, origin.y, v1_end.x, v1_end.y, PURPLE);
-  tw(v1_arrow, { o: 1 }, 0.5);
-  T(p, 'v₁', { x: (origin.x + v1_end.x) / 2 + 20, y: (origin.y + v1_end.y) / 2 - 20, 
+  tw(v1_arrow, { o: 1 }, m('vectors'));
+  const v1_label = T(p, 'v₁', { x: (origin.x + v1_end.x) / 2 + 20, y: (origin.y + v1_end.y) / 2 - 20, 
                size: 24, weight: 600, fill: PURPLE, o: 0 });
+  tw(v1_label, { o: 1 }, m('vectors'));
   
   // 向量v2
   const v2_arrow = drawArrow(p, origin.x, origin.y, v2_end.x, v2_end.y, CYAN);
-  tw(v2_arrow, { o: 1 }, 1);
-  T(p, 'v₂', { x: (origin.x + v2_end.x) / 2 - 30, y: (origin.y + v2_end.y) / 2, 
+  tw(v2_arrow, { o: 1 }, m('vectors'));
+  const v2_label = T(p, 'v₂', { x: (origin.x + v2_end.x) / 2 - 30, y: (origin.y + v2_end.y) / 2, 
                size: 24, weight: 600, fill: CYAN, o: 0 });
+  tw(v2_label, { o: 1 }, m('vectors'));
   
   // 平行四边形
   const parallelogram = [
@@ -575,9 +574,9 @@ window.BEATS = [
     drawLine(p, v2_end.x, v2_end.y, v1_end.x + (v2_end.x - origin.x), 
              v1_end.y + (v2_end.y - origin.y), HIGHLIGHT, 2)
   ];
-  parallelogram.forEach((line, i) => {
+  parallelogram.forEach((line) => {
     line.setAttribute('stroke-dasharray', '5,5');
-    tw(line, { o: 0.5 }, 1.5 + i * 0.2);
+    tw(line, { o: 0.5 }, m('formula'));
   });
   
   // 面积标注
@@ -586,63 +585,65 @@ window.BEATS = [
     y: (origin.y + v1_end.y + v2_end.y) / 3, 
     size: 22, weight: 600, fill: HIGHLIGHT, anchor: 'middle', o: 0 
   });
-  tw(areaLabel, { o: 1 }, 2);
+  tw(areaLabel, { o: 1 }, m('area'));
   
   // 公式和说明
   const formula = T(p, 'v₁ × v₂ = x₁y₂ - y₁x₂', { 
     x: 550, y: 250, size: 24, family: 'monospace', fill: TEXT_COLOR, o: 0 
   });
-  tw(formula, { o: 1 }, 2.5);
+  tw(formula, { o: 1 }, m('formula'));
   
   const explanations = [
-    { text: '> 0：逆时针（左转）', y: 300, color: HULL_COLOR },
-    { text: '< 0：顺时针（右转）', y: 340, color: START_COLOR },
-    { text: '= 0：共线', y: 380, color: TEXT_COLOR }
+    { text: '> 0：逆时针（左转）', y: 300, color: HULL_COLOR, mark: 'positive' },
+    { text: '< 0：顺时针（右转）', y: 340, color: START_COLOR, mark: 'negative' },
+    { text: '= 0：共线', y: 380, color: TEXT_COLOR, mark: 'left' }
   ];
-  explanations.forEach(({ text, y, color }, i) => {
+  explanations.forEach(({ text, y, color, mark }) => {
     const note = T(p, text, { x: 550, y, size: 20, fill: color, o: 0 });
-    tw(note, { o: 1 }, 3 + i * 0.3);
+    tw(note, { o: 1 }, m(mark));
   });
 }],
 
-['complexity', '复杂度分析', () => {
+['complexity', '复杂度分析', (m, dur) => {
   const p = panel(0);
   
-  T(p, '时间复杂度分析', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
+  const title = T(p, '时间复杂度分析', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
+  tw(title, { o: 1 }, 0);
   
   const steps = [
-    { step: '找最低点', time: 'O(n)', desc: '遍历所有点', y: 160, color: START_COLOR },
-    { step: '极角排序', time: 'O(n log n)', desc: '排序主导总体复杂度', y: 240, color: HIGHLIGHT },
-    { step: '构建凸包', time: 'O(n)', desc: '每个点最多入栈、出栈各一次', y: 320, color: HULL_COLOR },
-    { step: '总体', time: 'O(n log n)', desc: '由排序决定', y: 420, color: PURPLE }
+    { step: '找最低点', time: 'O(n)', desc: '遍历所有点', y: 160, color: START_COLOR, mark: 'find' },
+    { step: '极角排序', time: 'O(n log n)', desc: '排序主导总体复杂度', y: 240, color: HIGHLIGHT, mark: 'sort' },
+    { step: '构建凸包', time: 'O(n)', desc: '每个点最多入栈、出栈各一次', y: 320, color: HULL_COLOR, mark: 'build' },
+    { step: '总体', time: 'O(n log n)', desc: '由排序决定', y: 420, color: PURPLE, mark: 'total' }
   ];
   
-  steps.forEach(({ step, time, desc, y, color }, i) => {
+  steps.forEach(({ step, time, desc, y, color, mark }) => {
     const g = G(p, { x: 100, y, o: 0 });
     
     T(g, step, { x: 0, y: 0, size: 24, weight: 700, fill: color, anchor: 'start' });
     T(g, time, { x: 250, y: 0, size: 26, weight: 700, fill: color, anchor: 'start', family: 'monospace' });
     T(g, desc, { x: 0, y: 35, size: 18, fill: TEXT_COLOR, anchor: 'start' });
     
-    tw(g, { o: 1 }, 0.5 + i * 0.6);
+    tw(g, { o: 1 }, m(mark));
   });
   
   // 空间复杂度
   const space = T(p, '空间复杂度：O(n)', { 
     x: 100, y: 500, size: 24, weight: 600, fill: CYAN, o: 0 
   });
-  tw(space, { o: 1 }, 3);
+  tw(space, { o: 1 }, m('space'));
   
   const spaceNote = T(p, '需要存储栈和排序后的点', { 
     x: 100, y: 535, size: 18, fill: TEXT_COLOR, o: 0 
   });
-  tw(spaceNote, { o: 1 }, 3.5);
+  tw(spaceNote, { o: 1 }, m('efficient'));
 }],
 
-['applications', '实际应用', () => {
+['applications', '实际应用', (m, dur) => {
   const p = panel(0);
   
-  T(p, '凸包的实际应用', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
+  const title = T(p, '凸包的实际应用', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
+  tw(title, { o: 1 }, 0);
   
   const applications = [
     { 
@@ -650,53 +651,59 @@ window.BEATS = [
       title: '计算几何基础', 
       desc: '旋转卡壳、最远点对、最小外接圆',
       y: 150,
-      color: PURPLE
+      color: PURPLE,
+      mark: 'foundation'
     },
     { 
       icon: '🎮', 
       title: '碰撞检测', 
       desc: '用凸包简化复杂形状，加速判断',
       y: 230,
-      color: HIGHLIGHT
+      color: HIGHLIGHT,
+      mark: 'collision'
     },
     { 
       icon: '🖼️', 
       title: '模式识别', 
       desc: '提取形状轮廓特征，图像分析',
       y: 310,
-      color: CYAN
+      color: CYAN,
+      mark: 'feature'
     },
     { 
       icon: '🗺️', 
       title: 'GIS系统', 
       desc: '计算位置覆盖范围，区域分析',
       y: 390,
-      color: HULL_COLOR
+      color: HULL_COLOR,
+      mark: 'gis'
     },
     { 
       icon: '🤖', 
       title: '机器人路径规划', 
       desc: '避障区域划分，可行空间计算',
       y: 470,
-      color: START_COLOR
+      color: START_COLOR,
+      mark: 'robot'
     }
   ];
   
-  applications.forEach(({ icon, title, desc, y, color }, i) => {
+  applications.forEach(({ icon, title, desc, y, color, mark }) => {
     const g = G(p, { x: 100, y, o: 0 });
     
     T(g, icon, { x: 0, y: 0, size: 36, anchor: 'middle' });
     T(g, title, { x: 70, y: -5, size: 24, weight: 700, fill: color, anchor: 'start' });
     T(g, desc, { x: 70, y: 25, size: 18, fill: TEXT_COLOR, anchor: 'start' });
     
-    tw(g, { o: 1 }, 0.5 + i * 0.4);
+    tw(g, { o: 1 }, m(mark));
   });
 }],
 
-['variants', '其他凸包算法', () => {
+['variants', '其他凸包算法', (m, dur) => {
   const p = panel(0);
   
-  T(p, '其他凸包算法', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
+  const title = T(p, '其他凸包算法', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
+  tw(title, { o: 1 }, 0);
   
   const algorithms = [
     {
@@ -705,7 +712,8 @@ window.BEATS = [
       time: 'O(n × h)',
       desc: '从最左点开始，每次选极角最小的下一点',
       y: 150,
-      color: PURPLE
+      color: PURPLE,
+      mark: 'jarvis'
     },
     {
       name: 'QuickHull',
@@ -713,7 +721,8 @@ window.BEATS = [
       time: 'O(n log n) 平均',
       desc: '分治思想，类似快速排序，最坏 O(n²)',
       y: 250,
-      color: HIGHLIGHT
+      color: HIGHLIGHT,
+      mark: 'quickhull'
     },
     {
       name: "Chan's Algorithm",
@@ -721,7 +730,8 @@ window.BEATS = [
       time: 'O(n log h)',
       desc: '结合 Jarvis 和 Graham，在 h 小时更优',
       y: 350,
-      color: CYAN
+      color: CYAN,
+      mark: 'chan'
     },
     {
       name: 'Incremental',
@@ -729,11 +739,12 @@ window.BEATS = [
       time: 'O(n log n)',
       desc: '逐点插入，常用于三维凸包',
       y: 450,
-      color: HULL_COLOR
+      color: HULL_COLOR,
+      mark: '3d'
     }
   ];
   
-  algorithms.forEach(({ name, aka, time, desc, y, color }, i) => {
+  algorithms.forEach(({ name, aka, time, desc, y, color, mark }) => {
     const g = G(p, { x: 80, y, o: 0 });
     
     T(g, name, { x: 0, y: 0, size: 24, weight: 700, fill: color, anchor: 'start' });
@@ -741,44 +752,45 @@ window.BEATS = [
     T(g, time, { x: 0, y: 30, size: 18, family: 'monospace', fill: color, anchor: 'start' });
     T(g, desc, { x: 0, y: 55, size: 16, fill: TEXT_COLOR, anchor: 'start' });
     
-    tw(g, { o: 1 }, 0.5 + i * 0.6);
+    tw(g, { o: 1 }, m(mark));
   });
   
   const note = T(p, 'h：凸包顶点数', { 
     x: 80, y: 540, size: 18, fill: PURPLE, o: 0 
   });
-  tw(note, { o: 1 }, 3);
+  tw(note, { o: 1 }, m('choose'));
 }],
 
-['summary', '总结', () => {
+['summary', '总结', (m, dur) => {
   const p = panel(0);
   
-  T(p, '凸包算法总结', { x: 400, y: 60, size: 40, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  const title = T(p, '凸包算法总结', { x: 400, y: 60, size: 40, weight: 700, fill: TEXT_COLOR, anchor: 'middle' });
+  tw(title, { o: 1 }, 0);
   
   const points = [
-    { text: '✓ 凸包：包含所有点的最小凸多边形', y: 160, color: HULL_COLOR },
-    { text: '✓ Graham扫描：极角排序 + 栈维护', y: 220, color: PURPLE },
-    { text: '✓ 叉积判断：左转保留，右转弹栈', y: 280, color: HIGHLIGHT },
-    { text: '✓ 时间复杂度：O(n log n)', y: 340, color: CYAN },
-    { text: '✓ 应用广泛：几何、图形学、机器人', y: 400, color: START_COLOR }
+    { text: '✓ 凸包：包含所有点的最小凸多边形', y: 160, color: HULL_COLOR, mark: 'definition' },
+    { text: '✓ Graham扫描：极角排序 + 栈维护', y: 220, color: PURPLE, mark: 'three' },
+    { text: '✓ 叉积判断：左转保留，右转弹栈', y: 280, color: HIGHLIGHT, mark: 'cross' },
+    { text: '✓ 时间复杂度：O(n log n)', y: 340, color: CYAN, mark: 'complexity' },
+    { text: '✓ 应用广泛：几何、图形学、机器人', y: 400, color: START_COLOR, mark: 'applications' }
   ];
   
-  points.forEach(({ text, y, color }, i) => {
+  points.forEach(({ text, y, color, mark }) => {
     const label = T(p, text, { 
       x: 120, y, size: 26, weight: 600, fill: color, o: 0 
     });
-    tw(label, { o: 1 }, 0.5 + i * 0.4);
+    tw(label, { o: 1 }, m(mark));
   });
   
   const core = T(p, '核心思想：极角排序 → 栈操作 → 凸包', { 
     x: 400, y: 490, size: 28, weight: 700, fill: PURPLE, anchor: 'middle', o: 0 
   });
-  tw(core, { o: 1 }, 3);
+  tw(core, { o: 1 }, m('core'));
   
   const footer = T(p, '计算几何的基石算法', { 
     x: 400, y: 540, size: 22, fill: TEXT_COLOR, anchor: 'middle', o: 0 
   });
-  tw(footer, { o: 1 }, 3.5);
+  tw(footer, { o: 1 }, m('rule'));
 }]
 
 ];

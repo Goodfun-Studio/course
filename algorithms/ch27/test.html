@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Ch27 Beat Test</title>
+</head>
+<body>
+    <h1>Ch27 Beat Duration Test</h1>
+    <pre id="output">Loading...</pre>
+    
+    <script src="audio/zh/timings.js"></script>
+    <script src="../lib/engine.js"></script>
+    <script src="../lib/math.js"></script>
+    <script>
+        // 从 index.html 复制必要的代码
+        const CHAPTER = { number: 27, title: 'A* 启发式搜索', language: 'zh', minutes: 13 };
+        
+        const START_COLOR = '#2ecc71';
+        const END_COLOR = '#e74c3c';
+        const OBSTACLE_COLOR = '#95a5a6';
+        const VISITED_COLOR = '#3498db';
+        const OPEN_COLOR = '#f39c12';
+        const PATH_COLOR = '#e74c3c';
+        const GRID_COLOR = '#ecf0f1';
+        const TEXT_COLOR = '#2c3e50';
+        const HIGHLIGHT = '#9b59b6';
+        const BFS_COLOR = '#1abc9c';
+        
+        function drawGrid(parent, startX, startY, rows, cols, cellSize, obstacles = []) {
+            const grid = [];
+            for (let i = 0; i < rows; i++) {
+                grid[i] = [];
+                for (let j = 0; j < cols; j++) {
+                    const x = startX + j * cellSize;
+                    const y = startY + i * cellSize;
+                    const isObstacle = obstacles.some(obs => obs.row === i && obs.col === j);
+                    
+                    const cell = G(parent, { x, y, o: 0 });
+                    const rect = mk('rect', {
+                        x: 0, y: 0, width: cellSize - 2, height: cellSize - 2,
+                        fill: isObstacle ? OBSTACLE_COLOR : GRID_COLOR,
+                        stroke: '#bdc3c7',
+                        'stroke-width': 1
+                    }, cell);
+                    
+                    grid[i][j] = { cell, rect, x, y, isObstacle };
+                }
+            }
+            return grid;
+        }
+        
+        function drawCell(parent, x, y, size, color, label = '') {
+            const g = G(parent, { x, y, o: 0 });
+            const rect = mk('rect', {
+                x: 0, y: 0, width: size - 2, height: size - 2,
+                fill: color,
+                stroke: '#2c3e50',
+                'stroke-width': 2
+            }, g);
+            
+            if (label) {
+                const text = T(g, label, { x: size/2, y: size/2, size: 14, weight: 600, fill: '#fff', anchor: 'middle' });
+                text.setAttribute('dominant-baseline', 'central');
+            }
+            
+            return { g, rect };
+        }
+        
+        function drawNodeValues(parent, x, y, g, h, f) {
+            const group = G(parent, { x, y, o: 0 });
+            T(group, `g:${g}`, { x: 2, y: 10, size: 10, fill: TEXT_COLOR, weight: 600 });
+            T(group, `h:${h}`, { x: 2, y: 22, size: 10, fill: TEXT_COLOR, weight: 600 });
+            T(group, `f:${f}`, { x: 2, y: 34, size: 10, fill: HIGHLIGHT, weight: 700 });
+            return group;
+        }
+        
+        function manhattanDistance(row1, col1, row2, col2) {
+            return Math.abs(row1 - row2) + Math.abs(col1 - col2);
+        }
+    </script>
+    
+    <iframe src="index.html" style="display:none;" id="iframe"></iframe>
+    
+    <script>
+        setTimeout(() => {
+            const iframe = document.getElementById('iframe');
+            const iframeWindow = iframe.contentWindow;
+            
+            if (!iframeWindow.BEATS) {
+                document.getElementById('output').textContent = 'ERROR: Could not load beats from index.html';
+                return;
+            }
+            
+            const beats = iframeWindow.BEATS;
+            const timings = window.TIMINGS;
+            
+            let output = 'Beat ID              | Anim (s) | Narr (s) | Ratio  | Status\\n';
+            output += '-'.repeat(70) + '\\n';
+            
+            let allPass = true;
+            
+            beats.forEach(beat => {
+                const timing = timings[beat.id];
+                if (!timing) {
+                    output += `${beat.id.padEnd(20)} | ERROR: No timing found\\n`;
+                    allPass = false;
+                    return;
+                }
+                
+                // 创建临时容器
+                const tempDiv = document.createElement('div');
+                tempDiv.style.display = 'none';
+                document.body.appendChild(tempDiv);
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.id = 'panel-0';
+                tempDiv.appendChild(svg);
+                
+                const m = (mark) => timing.marks[mark] || 0;
+                const dur = timing.dur;
+                
+                try {
+                    // 清空全局 TW
+                    window.TW = [];
+                    
+                    beat.run(m, dur);
+                    
+                    // 计算最大动画时间
+                    let maxTime = 0;
+                    if (window.TW && window.TW.length > 0) {
+                        window.TW.forEach(tw => {
+                            const endTime = (tw.delay || 0) + (tw.duration || 0);
+                            if (endTime > maxTime) maxTime = endTime;
+                        });
+                    }
+                    
+                    const ratio = maxTime / dur;
+                    const pass = ratio >= 0.8 && ratio <= 1.2;
+                    const status = pass ? '✅ PASS' : '❌ FAIL';
+                    
+                    output += `${beat.id.padEnd(20)} | ${maxTime.toFixed(2).padStart(8)} | ${dur.toFixed(2).padStart(8)} | ${ratio.toFixed(3).padStart(6)} | ${status}\\n`;
+                    
+                    if (!pass) allPass = false;
+                } catch (e) {
+                    output += `${beat.id.padEnd(20)} | ERROR: ${e.message}\\n`;
+                    allPass = false;
+                }
+                
+                document.body.removeChild(tempDiv);
+            });
+            
+            output += '\\n' + '='.repeat(70) + '\\n';
+            if (allPass) {
+                output += '✅ 所有 beats 通过验收（比值在 [0.8, 1.2] 范围内）';
+            } else {
+                output += '❌ 部分 beats 未通过验收';
+            }
+            
+            document.getElementById('output').textContent = output;
+        }, 2000);
+    </script>
+</body>
+</html>

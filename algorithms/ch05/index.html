@@ -312,29 +312,29 @@ let BEATS = [
   
   const strategy = T(p, '每次选择当前距离最近的节点', 
     { x: 800, y: 220, size: 34, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
-  tw(strategy, { o: 1 }, 3.0, 0.6);
+  tw(strategy, { o: 1 }, m('insight') - 3.0, 0.6);
   
   // 关键洞察
   const insight = T(p, '关键洞察', 
     { x: 800, y: 320, size: 30, fill: SECONDARY, anchor: 'middle', o: 0, weight: 600 });
-  tw(insight, { o: 1 }, 8.0, 0.5);
+  tw(insight, { o: 1 }, m('insight'), 0.5);
   
   const proof1 = T(p, '对于非负权重图', 
     { x: 800, y: 390, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(proof1, { o: 1 }, 10.0, 0.5);
+  tw(proof1, { o: 1 }, m('positive') - 1.0, 0.5);
   
   const proof2 = T(p, '已确定的最短路径不会被更新', 
     { x: 800, y: 440, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(proof2, { o: 1 }, 11.0, 0.5);
+  tw(proof2, { o: 1 }, m('positive'), 0.5);
   
   const proof3 = T(p, '因为：所有边权重 > 0', 
     { x: 800, y: 490, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(proof3, { o: 1 }, 12.0, 0.5);
+  tw(proof3, { o: 1 }, m('positive') + 1.0, 0.5);
   
   // 类比
   const analogy = T(p, '就像高速公路：只能越走越远', 
     { x: 800, y: 600, size: 32, fill: VISITED, anchor: 'middle', o: 0, weight: 600 });
-  tw(analogy, { o: 1 }, 15.0, 0.7);
+  tw(analogy, { o: 1 }, m('proof'), 0.7);
 }],
 
 // beat 4: relax
@@ -442,23 +442,32 @@ let BEATS = [
   const p = panel(0);
   
   const title = T(p, '算法演示', { x: 800, y: 60, size: 40, weight: 600, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.5);
+  tw(title, { o: 1 }, m('run') - 1.0, 0.5);
   
   // 绘制图
   const graph = drawGraph(p);
-  tw(graph, { o: 1 }, 0.5, 0.5);
+  tw(graph, { o: 1 }, m('run'), 0.5);
   
   // 距离标签
   const labels = drawDistanceLabels(p);
-  tw(labels, { o: 1 }, 1.0, 0.5);
+  tw(labels, { o: 1 }, m('run') + 0.5, 0.5);
   
   // 初始化
-  updateDistance(labels, 'A', 0, 5.0);
-  updateNodeColor(graph._nodes, 'A', CURRENT, 5.5);
+  updateDistance(labels, 'A', 0, m('init'));
+  updateNodeColor(graph._nodes, 'A', CURRENT, m('init') + 0.5);
   
   const step = T(p, '步骤 1：起点 A 距离 = 0，其余 = ∞', 
     { x: 800, y: 750, size: 26, fill: PRIMARY, anchor: 'middle', o: 0, weight: 600 });
-  tw(step, { o: 1 }, 8.0, 0.6);
+  tw(step, { o: 1 }, m('init') + 1.0, 0.6);
+  
+  // 循环提示
+  const loop = T(p, '循环：取出最小 → 松弛邻居 → 更新', 
+    { x: 800, y: 720, size: 26, fill: SECONDARY, anchor: 'middle', o: 0, weight: 600 });
+  tw(loop, { o: 1 }, m('loop'), 0.6);
+  
+  const watch = T(p, '看着距离标签一个个被更新……', 
+    { x: 800, y: 770, size: 24, fill: COL.dim, anchor: 'middle', o: 0 });
+  tw(watch, { o: 1 }, m('loop') + 1.0, 0.6);
 }],
 
 // beat 7: demo_middle
@@ -466,39 +475,39 @@ let BEATS = [
   const p = panel(0);
   
   const title = T(p, '松弛邻居', { x: 800, y: 60, size: 40, weight: 600, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.5);
+  tw(title, { o: 1 }, m('first_step') - 2.0, 0.5);
   
   const graph = drawGraph(p);
-  tw(graph, { o: 1 }, 0.3, 0.3);
+  tw(graph, { o: 1 }, m('first_step') - 1.5, 0.3);
   
   const labels = drawDistanceLabels(p);
-  tw(labels, { o: 1 }, 0.3, 0.3);
+  tw(labels, { o: 1 }, m('first_step') - 1.5, 0.3);
   
   // 恢复状态
-  updateDistance(labels, 'A', 0, 0.5);
-  updateNodeColor(graph._nodes, 'A', CURRENT, 0.5);
+  updateDistance(labels, 'A', 0, m('first_step') - 1.0);
+  updateNodeColor(graph._nodes, 'A', CURRENT, m('first_step') - 1.0);
   
   // A 的邻居：B(4), C(2)
-  highlightEdge(graph._edges, 'A', 'B', EDGE_ACTIVE, 3.0);
-  updateDistance(labels, 'B', 4, 3.5);
+  highlightEdge(graph._edges, 'A', 'B', EDGE_ACTIVE, m('first_step'));
+  updateDistance(labels, 'B', 4, m('first_step') + 0.5);
   
-  highlightEdge(graph._edges, 'A', 'C', EDGE_ACTIVE, 5.0);
-  updateDistance(labels, 'C', 2, 5.5);
+  highlightEdge(graph._edges, 'A', 'C', EDGE_ACTIVE, m('first_step') + 1.5);
+  updateDistance(labels, 'C', 2, m('first_step') + 2.0);
   
   // 选择 C（距离最小）
-  updateNodeColor(graph._nodes, 'A', VISITED, 8.0);
-  updateNodeColor(graph._nodes, 'C', CURRENT, 8.5);
+  updateNodeColor(graph._nodes, 'A', VISITED, m('pick_c'));
+  updateNodeColor(graph._nodes, 'C', CURRENT, m('pick_c') + 0.5);
   
   // C 的邻居
-  highlightEdge(graph._edges, 'C', 'D', EDGE_ACTIVE, 10.0);
-  updateDistance(labels, 'D', 7, 10.5);
+  highlightEdge(graph._edges, 'C', 'D', EDGE_ACTIVE, m('update_d') - 0.5);
+  updateDistance(labels, 'D', 7, m('update_d'));
   
-  highlightEdge(graph._edges, 'C', 'B', EDGE_ACTIVE, 13.0);
-  updateDistance(labels, 'B', 3, 13.5);
+  highlightEdge(graph._edges, 'C', 'B', EDGE_ACTIVE, m('update_b') - 0.5);
+  updateDistance(labels, 'B', 3, m('update_b'));
   
   const note = T(p, 'B 更新：4 → 3（通过 C 更近）', 
     { x: 800, y: 750, size: 26, fill: VISITED, anchor: 'middle', o: 0, weight: 600 });
-  tw(note, { o: 1 }, 15.0, 0.7);
+  tw(note, { o: 1 }, m('update_b') + 0.5, 0.7);
 }],
 
 // beat 8: demo_end
@@ -627,24 +636,24 @@ let BEATS = [
     '5. 重复 2-4，直到所有节点处理完'
   ];
   
-  let t = 5.0;
+  // 将步骤按 marks 均匀分布
+  const stepMarks = [m('init_summary'), m('greedy_summary'), m('relax_summary'), m('relax_summary') + 1.5, m('done')];
   steps.forEach((step, i) => {
     const text = T(p, step, 
       { x: 350, y: 220 + i * 70, size: 28, fill: PRIMARY, o: 0, weight: 500 });
-    tw(text, { o: 1 }, t, 0.6);
-    t += 3.0;
+    tw(text, { o: 1 }, stepMarks[i], 0.6);
   });
   
   const key = T(p, '关键：贪心 + 优先队列', 
     { x: 800, y: 650, size: 36, fill: SECONDARY, anchor: 'middle', o: 0, weight: 700 });
-  tw(key, { o: 1 }, 22.0, 0.7);
+  tw(key, { o: 1 }, m('done') + 1.0, 0.7);
   
   const beauty = T(p, '简洁、高效、实用', 
     { x: 800, y: 720, size: 32, fill: VISITED, anchor: 'middle', o: 0, weight: 600 });
-  tw(beauty, { o: 1 }, 25.0, 0.7);
+  tw(beauty, { o: 1 }, m('done') + 2.0, 0.7);
   
   clockRun(t => {
-    if (t > 20) {
+    if (t > m('done')) {
       const phase = Math.sin(t * 0.6) * 0.03 + 1;
       put(title, { s: phase });
     }

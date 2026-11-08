@@ -122,7 +122,7 @@ function intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(title, 0.5, { o: 1 }, '<');
+  tl(title, 14.48, { o: 1 }, '<');
   
   // 问题展示
   const problem1 = T(p, '区间求和', {x: 500, y: 220, 
@@ -131,7 +131,7 @@ function intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(problem1, 0.5, { o: 1 }, '>0.3');
+  tl(problem1, 14.48, { o: 1 }, '>0.3');
   
   const problem2 = T(p, '区间最值', {x: 500, y: 280, 
     fill: COLOR_TEXT,
@@ -139,7 +139,7 @@ function intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(problem2, 0.5, { o: 1 }, '>0.2');
+  tl(problem2, 14.48, { o: 1 }, '>0.2');
   
   const problem3 = T(p, '区间更新', {x: 500, y: 340, 
     fill: COLOR_TEXT,
@@ -147,7 +147,7 @@ function intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(problem3, 0.5, { o: 1 }, '>0.2');
+  tl(problem3, 14.48, { o: 1 }, '>0.2');
   
   // 朴素方法的困境
   const naive = T(p, '朴素方法：查询O(n) 或 更新O(n)', {x: 500, y: 450, 
@@ -156,7 +156,7 @@ function intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(naive, 0.6, { o: 1 }, '>0.4');
+  tl(naive, 17.38, { o: 1 }, '>0.4');
   
   // 解决方案
   const solution = T(p, '线段树：查询和更新都是O(log n)！', {x: 500, y: 550, 
@@ -166,7 +166,7 @@ function intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(solution, 0.6, { o: 1 }, '>0.5');
+  tl(solution, 17.38, { o: 1 }, '>0.5');
 }
 
 function problem() {
@@ -180,12 +180,12 @@ function problem() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(title, 0.5, { o: 1 }, '<');
+  tl(title, 14.48, { o: 1 }, '<');
   
   // 示例数组
   const arrData = [3, 5, 2, 8, 6, 9];
   const arrayVis = drawArray(p, arrData, 320, 150);
-  tl(arrayVis.g, 0.5, { o: 1 }, '>0.3');
+  tl(arrayVis.g, 14.48, { o: 1 }, '>0.3');
   
   // 操作1：区间查询
   const op1Label = T(p, '操作1：查询区间[1,4]的和', {x: 500, y: 260, 
@@ -194,11 +194,11 @@ function problem() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(op1Label, 0.5, { o: 1 }, '>0.4');
+  tl(op1Label, 14.48, { o: 1 }, '>0.4');
   
   // 高亮区间
   [1, 2, 3, 4].forEach((i, idx) => {
-    tl(arrayVis.cells[i].rect, 0.3, { fill: COLOR_QUERY_PATH }, `>0.2+${idx * 0.1}`);
+    tl(arrayVis.cells[i].rect, 8.69, { fill: COLOR_QUERY_PATH }, `>0.2+${idx * 0.1}`);
   });
   
   const result1 = T(p, '结果: 5 + 2 + 8 + 6 = 21', {x: 500, y: 320, 
@@ -207,7 +207,7 @@ function problem() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(result1, 0.5, { o: 1 }, '>0.5');
+  tl(result1, 14.48, { o: 1 }, '>0.5');
   
   // 操作2：单点更新
   const op2Label = T(p, '操作2：将位置2的值改为7', {x: 500, y: 420, 
@@ -216,10 +216,10 @@ function problem() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(op2Label, 0.5, { o: 1 }, '>0.6');
+  tl(op2Label, 14.48, { o: 1 }, '>0.6');
   
-  tl(arrayVis.cells[2].rect, 0.3, { fill: COLOR_NODE_ACTIVE }, '>0.3');
-  tl(arrayVis.cells[2].text, 0.3, { textContent: '7' }, '>0');
+  tl(arrayVis.cells[2].rect, 8.69, { fill: COLOR_NODE_ACTIVE }, '>0.3');
+  tl(arrayVis.cells[2].text, 8.69, { textContent: '7' }, '>0');
   
   // 朴素方法的问题
   const problem = T(p, '朴素方法：每次查询O(n)，每次更新O(n)', {x: 500, y: 520, 
@@ -228,7 +228,7 @@ function problem() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(problem, 0.6, { o: 1 }, '>0.5');
+  tl(problem, 17.38, { o: 1 }, '>0.5');
   
   const need = T(p, '需要平衡查询和更新的效率！', {x: 500, y: 600, 
     fill: COLOR_SECONDARY,
@@ -237,7 +237,7 @@ function problem() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(need, 0.6, { o: 1 }, '>0.3');
+  tl(need, 17.38, { o: 1 }, '>0.3');
 }
 
 function structure() {
@@ -250,39 +250,39 @@ function structure() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(title, 0.5, { o: 1 }, '<');
+  tl(title, 14.48, { o: 1 }, '<');
   
   // 画一个简单的树结构示意图
   // 根节点
   const root = drawTreeNode(p, 500, 180, [0, 5], '总和', { fill: COLOR_PRIMARY });
-  tl(root.g, 0.5, { o: 1 }, '>0.3');
+  tl(root.g, 14.48, { o: 1 }, '>0.3');
   
   // 第二层
   const left1 = drawTreeNode(p, 300, 300, [0, 2], '左半', { fill: COLOR_SECONDARY });
   const right1 = drawTreeNode(p, 700, 300, [3, 5], '右半', { fill: COLOR_SECONDARY });
-  tl(left1.g, 0.5, { o: 1 }, '>0.4');
-  tl(right1.g, 0.5, { o: 1 }, '>0');
+  tl(left1.g, 14.48, { o: 1 }, '>0.4');
+  tl(right1.g, 14.48, { o: 1 }, '>0');
   
   // 连线
   const line1 = L_(500, 215, 300, 265, { stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 }, p);
   const line2 = L_(500, 215, 700, 265, { stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 }, p);
-  tl(line1, 0.3, { o: 1 }, '<');
-  tl(line2, 0.3, { o: 1 }, '<');
+  tl(line1, 8.69, { o: 1 }, '<');
+  tl(line2, 8.69, { o: 1 }, '<');
   
   // 第三层（示意）
   const leaf1 = drawTreeNode(p, 200, 420, [0, 0], '1', { fill: COLOR_LEAF });
   const leaf2 = drawTreeNode(p, 320, 420, [1, 1], '3', { fill: COLOR_LEAF });
   const leaf3 = drawTreeNode(p, 440, 420, [2, 2], '5', { fill: COLOR_LEAF });
-  tl(leaf1.g, 0.4, { o: 1 }, '>0.4');
-  tl(leaf2.g, 0.4, { o: 1 }, '>0.1');
-  tl(leaf3.g, 0.4, { o: 1 }, '>0.1');
+  tl(leaf1.g, 11.59, { o: 1 }, '>0.4');
+  tl(leaf2.g, 11.59, { o: 1 }, '>0.1');
+  tl(leaf3.g, 11.59, { o: 1 }, '>0.1');
   
   const line3 = L_(300, 335, 200, 385, { stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 }, p);
   const line4 = L_(300, 335, 320, 385, { stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 }, p);
   const line5 = L_(300, 335, 440, 385, { stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 }, p);
-  tl(line3, 0.3, { o: 1 }, '<');
-  tl(line4, 0.3, { o: 1 }, '<');
-  tl(line5, 0.3, { o: 1 }, '<');
+  tl(line3, 8.69, { o: 1 }, '<');
+  tl(line4, 8.69, { o: 1 }, '<');
+  tl(line5, 8.69, { o: 1 }, '<');
   
   // 说明文字
   const desc1 = T(p, '完全二叉树，每个节点存储区间信息', {x: 500, y: 520, 
@@ -291,7 +291,7 @@ function structure() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(desc1, 0.5, { o: 1 }, '>0.5');
+  tl(desc1, 14.48, { o: 1 }, '>0.5');
   
   const desc2 = T(p, '树高log n，操作复杂度O(log n)', {x: 500, y: 580, 
     fill: COLOR_NODE_VISITED,
@@ -300,10 +300,11 @@ function structure() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(desc2, 0.6, { o: 1 }, '>0.3');
+  tl(desc2, 17.38, { o: 1 }, '>0.3');
 }
 
 function build_intro() {
+  _tlStart = 0; _tlEnd = 0;  // 重置时间轴
   const p = panel(0);
   
   const title = T(p, '构建线段树', {x: 500, y: 80, 
@@ -313,7 +314,7 @@ function build_intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(title, 0.5, { o: 1 }, '<');
+  tl(title, '<', { o: 1 });
   
   // 原始数组
   const arrLabel = T(p, '原始数组:', {x: 200, y: 180, 
@@ -322,11 +323,11 @@ function build_intro() {
     'text-anchor': 'start',
     o: 0
   });
-  tl(arrLabel, 0.5, { o: 1 }, '>0.3');
+  tl(arrLabel, '>1.65', { o: 1 });
   
   const arrData = [1, 3, 5, 7, 9, 11];
   const arrayVis = drawArray(p, arrData, 200, 220);
-  tl(arrayVis.g, 0.5, { o: 1 }, '>0.2');
+  tl(arrayVis.g, '>1.10', { o: 1 });
   
   // 构建策略
   const strategy = T(p, '自底向上构建：', {x: 500, y: 350, 
@@ -336,7 +337,7 @@ function build_intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(strategy, 0.5, { o: 1 }, '>0.5');
+  tl(strategy, '>2.76', { o: 1 });
   
   const step1 = T(p, '1. 叶子节点 = 数组元素', {x: 500, y: 420, 
     fill: COLOR_TEXT,
@@ -344,7 +345,7 @@ function build_intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(step1, 0.5, { o: 1 }, '>0.3');
+  tl(step1, '>1.65', { o: 1 });
   
   const step2 = T(p, '2. 父节点 = 左子 + 右子', {x: 500, y: 480, 
     fill: COLOR_TEXT,
@@ -352,7 +353,7 @@ function build_intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(step2, 0.5, { o: 1 }, '>0.2');
+  tl(step2, '>1.10', { o: 1 });
   
   const step3 = T(p, '3. 逐层向上合并', {x: 500, y: 540, 
     fill: COLOR_TEXT,
@@ -360,7 +361,7 @@ function build_intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(step3, 0.5, { o: 1 }, '>0.2');
+  tl(step3, '>1.10', { o: 1 });
   
   const note = T(p, '节点格式: [start, end, sum]', {x: 500, y: 620, 
     fill: COLOR_SECONDARY,
@@ -368,7 +369,7 @@ function build_intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(note, 0.5, { o: 1 }, '>0.4');
+  tl(note, '>2.21', { o: 1 });
 }
 
 function build_demo() {
@@ -381,14 +382,14 @@ function build_demo() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(title, 0.5, { o: 1 }, '<');
+  tl(title, 14.48, { o: 1 }, '<');
   
   const arrData = [1, 3, 5, 7, 9, 11];
   const n = arrData.length;
   
   // 数组显示
   const arrayVis = drawArray(p, arrData, 320, 100);
-  tl(arrayVis.g, 0.5, { o: 1 }, '>0.2');
+  tl(arrayVis.g, 14.48, { o: 1 }, '>0.2');
   
   // 树节点位置规划（3层）
   // 叶子层 (6个节点)
@@ -397,7 +398,7 @@ function build_demo() {
   for (let i = 0; i < n; i++) {
     const x = 150 + i * 130;
     const node = drawTreeNode(p, x, leafY, [i, i], arrData[i], { fill: COLOR_LEAF });
-    tl(node.g, 0.4, { o: 1 }, `>0.3+${i * 0.15}`);
+    tl(node.g, 11.59, { o: 1 }, `>0.3+${i * 0.15}`);
     leafNodes.push(node);
   }
   
@@ -413,7 +414,7 @@ function build_demo() {
   layer2Data.forEach((data, i) => {
     const x = 215 + i * 260;
     const node = drawTreeNode(p, x, layer2Y, data.range, '?', { fill: COLOR_NODE });
-    tl(node.g, 0.4, { o: 1 }, `>0.8+${i * 0.2}`);
+    tl(node.g, 11.59, { o: 1 }, `>0.8+${i * 0.2}`);
     layer2Nodes.push(node);
     
     // 连线到子节点
@@ -425,12 +426,12 @@ function build_demo() {
     const line2 = L_(x, layer2Y + 35, rightX, leafY - 35, { 
       stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 
     }, p);
-    tl(line1, 0.3, { o: 1 }, '<');
-    tl(line2, 0.3, { o: 1 }, '<');
+    tl(line1, 8.69, { o: 1 }, '<');
+    tl(line2, 8.69, { o: 1 }, '<');
     
     // 计算和值
-    tl(node.valueText, 0.4, { textContent: data.value }, `>0.3`);
-    tl(node.rect, 0.3, { fill: COLOR_NODE_VISITED }, '>0.1');
+    tl(node.valueText, 11.59, { textContent: data.value }, `>0.3`);
+    tl(node.rect, 8.69, { fill: COLOR_NODE_VISITED }, '>0.1');
   });
   
   // 第一层 (2个节点)
@@ -443,7 +444,7 @@ function build_demo() {
   
   // 调整：左节点覆盖[0,2]，右节点覆盖[3,5]
   const node1 = drawTreeNode(p, 345, layer1Y, [0, 2], '?', { fill: COLOR_NODE });
-  tl(node1.g, 0.4, { o: 1 }, '>1.2');
+  tl(node1.g, 11.59, { o: 1 }, '>1.2');
   
   const line1_1 = L_(345, layer1Y + 35, 215, layer2Y - 35, { 
     stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 
@@ -451,36 +452,36 @@ function build_demo() {
   const line1_2 = L_(345, layer1Y + 35, 475, layer2Y - 35, { 
     stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 
   }, p);
-  tl(line1_1, 0.3, { o: 1 }, '<');
-  tl(line1_2, 0.3, { o: 1 }, '<');
+  tl(line1_1, 8.69, { o: 1 }, '<');
+  tl(line1_2, 8.69, { o: 1 }, '<');
   
   // 左节点合并：4+12=16
-  tl(node1.valueText, 0.4, { textContent: '16' }, '>0.3');
-  tl(node1.rect, 0.3, { fill: COLOR_NODE_VISITED }, '>0.1');
+  tl(node1.valueText, 11.59, { textContent: '16' }, '>0.3');
+  tl(node1.rect, 8.69, { fill: COLOR_NODE_VISITED }, '>0.1');
   
   const node2 = drawTreeNode(p, 655, layer1Y, [3, 5], '?', { fill: COLOR_NODE });
-  tl(node2.g, 0.4, { o: 1 }, '>0.3');
+  tl(node2.g, 11.59, { o: 1 }, '>0.3');
   
   const line2_1 = L_(655, layer1Y + 35, 735, layer2Y - 35, { 
     stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 
   }, p);
-  tl(line2_1, 0.3, { o: 1 }, '<');
+  tl(line2_1, 8.69, { o: 1 }, '<');
   
   // 右节点只有一个子节点，但实际上应该有两个
   // 修正：右节点应该连接layer2的第2和第3个节点
   const line2_2 = L_(655, layer1Y + 35, 475, layer2Y - 35, { 
     stroke: COLOR_EDGE, 'stroke-width': 2, o: 0, 'stroke-dasharray': '5,5'
   }, p);
-  tl(line2_2, 0.3, { o: 1 }, '<');
+  tl(line2_2, 8.69, { o: 1 }, '<');
   
   // 右节点合并：12+20=32（修正）
-  tl(node2.valueText, 0.4, { textContent: '32' }, '>0.3');
-  tl(node2.rect, 0.3, { fill: COLOR_NODE_VISITED }, '>0.1');
+  tl(node2.valueText, 11.59, { textContent: '32' }, '>0.3');
+  tl(node2.rect, 8.69, { fill: COLOR_NODE_VISITED }, '>0.1');
   
   // 根节点
   const rootY = 650;
   const root = drawTreeNode(p, 500, 650, [0, 5], '?', { fill: COLOR_PRIMARY });
-  tl(root.g, 0.5, { o: 1 }, '>1.0');
+  tl(root.g, 14.48, { o: 1 }, '>1.0');
   
   const rootLine1 = L_(500, 650 + 35, 345, layer1Y - 35, { 
     stroke: COLOR_EDGE, 'stroke-width': 3, o: 0 
@@ -488,14 +489,14 @@ function build_demo() {
   const rootLine2 = L_(500, 650 + 35, 655, layer1Y - 35, { 
     stroke: COLOR_EDGE, 'stroke-width': 3, o: 0 
   }, p);
-  tl(rootLine1, 0.4, { o: 1 }, '<');
-  tl(rootLine2, 0.4, { o: 1 }, '<');
+  tl(rootLine1, 11.59, { o: 1 }, '<');
+  tl(rootLine2, 11.59, { o: 1 }, '<');
   
   // 根节点合并：16+32=48（修正）
   // 但实际数组和是1+3+5+7+9+11=36
   // 重新调整树结构
-  tl(root.valueText, 0.5, { textContent: '36' }, '>0.4');
-  tl(root.rect, 0.4, { fill: COLOR_NODE_ACTIVE }, '>0.2');
+  tl(root.valueText, 14.48, { textContent: '36' }, '>0.4');
+  tl(root.rect, 11.59, { fill: COLOR_NODE_ACTIVE }, '>0.2');
   
   const complete = T(p, '构建完成！时间复杂度 O(n)', {x: 500, y: 760, 
     fill: COLOR_NODE_VISITED,
@@ -504,7 +505,7 @@ function build_demo() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(complete, 0.6, { o: 1 }, '>0.5');
+  tl(complete, 17.38, { o: 1 }, '>0.5');
 }
 
 function query_intro() {
@@ -517,7 +518,7 @@ function query_intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(title, 0.5, { o: 1 }, '<');
+  tl(title, 14.48, { o: 1 }, '<');
   
   // 查询目标
   const target = T(p, '目标：查询区间 [2, 5] 的和', {x: 500, y: 180, 
@@ -526,7 +527,7 @@ function query_intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(target, 0.5, { o: 1 }, '>0.3');
+  tl(target, 14.48, { o: 1 }, '>0.3');
   
   // 策略步骤
   const step1 = T(p, '1. 从根节点开始递归', {x: 150, y: 280, 
@@ -535,7 +536,7 @@ function query_intro() {
     'text-anchor': 'start',
     o: 0
   });
-  tl(step1, 0.5, { o: 1 }, '>0.4');
+  tl(step1, 14.48, { o: 1 }, '>0.4');
   
   const step2 = T(p, '2. 当前节点区间完全包含在', {x: 150, y: 350, 
     fill: COLOR_TEXT,
@@ -549,8 +550,8 @@ function query_intro() {
     'text-anchor': 'start',
     o: 0
   });
-  tl(step2, 0.5, { o: 1 }, '>0.2');
-  tl(step2b, 0.5, { o: 1 }, '>0.1');
+  tl(step2, 14.48, { o: 1 }, '>0.2');
+  tl(step2b, 14.48, { o: 1 }, '>0.1');
   
   const step3 = T(p, '3. 否则递归访问左右子节点', {x: 150, y: 470, 
     fill: COLOR_TEXT,
@@ -558,7 +559,7 @@ function query_intro() {
     'text-anchor': 'start',
     o: 0
   });
-  tl(step3, 0.5, { o: 1 }, '>0.3');
+  tl(step3, 14.48, { o: 1 }, '>0.3');
   
   const step4 = T(p, '4. 合并左右子树的结果', {x: 150, y: 540, 
     fill: COLOR_TEXT,
@@ -566,7 +567,7 @@ function query_intro() {
     'text-anchor': 'start',
     o: 0
   });
-  tl(step4, 0.5, { o: 1 }, '>0.2');
+  tl(step4, 14.48, { o: 1 }, '>0.2');
   
   // 复杂度
   const complexity = T(p, '只访问 O(log n) 个节点！', {x: 500, y: 630, 
@@ -576,7 +577,7 @@ function query_intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(complexity, 0.6, { o: 1 }, '>0.5');
+  tl(complexity, 17.38, { o: 1 }, '>0.5');
 }
 
 function query_demo() {
@@ -589,47 +590,47 @@ function query_demo() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(title, 0.5, { o: 1 }, '<');
+  tl(title, 14.48, { o: 1 }, '<');
   
   const arrData = [1, 3, 5, 7, 9, 11];
   
   // 简化的树结构（固定位置）
   // 根节点 [0,5]=36
   const root = drawTreeNode(p, 500, 120, [0, 5], 36, { fill: COLOR_NODE });
-  tl(root.g, 0.4, { o: 1 }, '>0.2');
+  tl(root.g, 11.59, { o: 1 }, '>0.2');
   
   // 第二层
   const node_02 = drawTreeNode(p, 300, 240, [0, 2], 9, { fill: COLOR_NODE });
   const node_35 = drawTreeNode(p, 700, 240, [3, 5], 27, { fill: COLOR_NODE });
-  tl(node_02.g, 0.4, { o: 1 }, '>0.2');
-  tl(node_35.g, 0.4, { o: 1 }, '>0');
+  tl(node_02.g, 11.59, { o: 1 }, '>0.2');
+  tl(node_35.g, 11.59, { o: 1 }, '>0');
   
   const line_r_l = L_(500, 155, 300, 205, { stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 }, p);
   const line_r_r = L_(500, 155, 700, 205, { stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 }, p);
-  tl(line_r_l, 0.3, { o: 1 }, '<');
-  tl(line_r_r, 0.3, { o: 1 }, '<');
+  tl(line_r_l, 8.69, { o: 1 }, '<');
+  tl(line_r_r, 8.69, { o: 1 }, '<');
   
   // 第三层（左子树）
   const node_01 = drawTreeNode(p, 200, 360, [0, 1], 4, { fill: COLOR_NODE });
   const node_22 = drawTreeNode(p, 400, 360, [2, 2], 5, { fill: COLOR_LEAF });
-  tl(node_01.g, 0.4, { o: 1 }, '>0.2');
-  tl(node_22.g, 0.4, { o: 1 }, '>0');
+  tl(node_01.g, 11.59, { o: 1 }, '>0.2');
+  tl(node_22.g, 11.59, { o: 1 }, '>0');
   
   const line_02_01 = L_(300, 275, 200, 325, { stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 }, p);
   const line_02_22 = L_(300, 275, 400, 325, { stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 }, p);
-  tl(line_02_01, 0.3, { o: 1 }, '<');
-  tl(line_02_22, 0.3, { o: 1 }, '<');
+  tl(line_02_01, 8.69, { o: 1 }, '<');
+  tl(line_02_22, 8.69, { o: 1 }, '<');
   
   // 第三层（右子树）
   const node_34 = drawTreeNode(p, 600, 360, [3, 4], 16, { fill: COLOR_NODE });
   const node_55 = drawTreeNode(p, 800, 360, [5, 5], 11, { fill: COLOR_LEAF });
-  tl(node_34.g, 0.4, { o: 1 }, '>0.2');
-  tl(node_55.g, 0.4, { o: 1 }, '>0');
+  tl(node_34.g, 11.59, { o: 1 }, '>0.2');
+  tl(node_55.g, 11.59, { o: 1 }, '>0');
   
   const line_35_34 = L_(700, 275, 600, 325, { stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 }, p);
   const line_35_55 = L_(700, 275, 800, 325, { stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 }, p);
-  tl(line_35_34, 0.3, { o: 1 }, '<');
-  tl(line_35_55, 0.3, { o: 1 }, '<');
+  tl(line_35_34, 8.69, { o: 1 }, '<');
+  tl(line_35_55, 8.69, { o: 1 }, '<');
   
   // 第四层（叶子）
   const node_00 = drawTreeNode(p, 150, 480, [0, 0], 1, { fill: COLOR_LEAF });
@@ -637,32 +638,32 @@ function query_demo() {
   const node_33 = drawTreeNode(p, 550, 480, [3, 3], 7, { fill: COLOR_LEAF });
   const node_44 = drawTreeNode(p, 650, 480, [4, 4], 9, { fill: COLOR_LEAF });
   
-  tl(node_00.g, 0.3, { o: 1 }, '>0.2');
-  tl(node_11.g, 0.3, { o: 1 }, '>0');
-  tl(node_33.g, 0.3, { o: 1 }, '>0');
-  tl(node_44.g, 0.3, { o: 1 }, '>0');
+  tl(node_00.g, 8.69, { o: 1 }, '>0.2');
+  tl(node_11.g, 8.69, { o: 1 }, '>0');
+  tl(node_33.g, 8.69, { o: 1 }, '>0');
+  tl(node_44.g, 8.69, { o: 1 }, '>0');
   
   const line_01_00 = L_(200, 395, 150, 445, { stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 }, p);
   const line_01_11 = L_(200, 395, 250, 445, { stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 }, p);
   const line_34_33 = L_(600, 395, 550, 445, { stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 }, p);
   const line_34_44 = L_(600, 395, 650, 445, { stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 }, p);
   
-  tl(line_01_00, 0.3, { o: 1 }, '<');
-  tl(line_01_11, 0.3, { o: 1 }, '<');
-  tl(line_34_33, 0.3, { o: 1 }, '<');
-  tl(line_34_44, 0.3, { o: 1 }, '<');
+  tl(line_01_00, 8.69, { o: 1 }, '<');
+  tl(line_01_11, 8.69, { o: 1 }, '<');
+  tl(line_34_33, 8.69, { o: 1 }, '<');
+  tl(line_34_44, 8.69, { o: 1 }, '<');
   
   // 查询过程模拟
   // 步骤1：访问根节点[0,5]，部分重叠
-  tl(root.rect, 0.4, { fill: COLOR_QUERY_PATH }, '>1.0');
+  tl(root.rect, 11.59, { fill: COLOR_QUERY_PATH }, '>1.0');
   
   // 步骤2：递归左子[0,2]，部分重叠
-  tl(node_02.rect, 0.4, { fill: COLOR_QUERY_PATH }, '>0.5');
-  tl(line_r_l, 0.3, { stroke: COLOR_QUERY_PATH, 'stroke-width': 3 }, '<');
+  tl(node_02.rect, 11.59, { fill: COLOR_QUERY_PATH }, '>0.5');
+  tl(line_r_l, 8.69, { stroke: COLOR_QUERY_PATH, 'stroke-width': 3 }, '<');
   
   // 步骤3：递归右子[3,5]，完全包含！
-  tl(node_35.rect, 0.5, { fill: COLOR_NODE_ACTIVE }, '>0.3');
-  tl(line_r_r, 0.3, { stroke: COLOR_NODE_ACTIVE, 'stroke-width': 3 }, '<');
+  tl(node_35.rect, 14.48, { fill: COLOR_NODE_ACTIVE }, '>0.3');
+  tl(line_r_r, 8.69, { stroke: COLOR_NODE_ACTIVE, 'stroke-width': 3 }, '<');
   
   const match1 = T(p, '✓ 完全匹配', {x: 700, y: 320, 
     fill: COLOR_NODE_ACTIVE,
@@ -671,11 +672,11 @@ function query_demo() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(match1, 0.5, { o: 1 }, '>0.3');
+  tl(match1, 14.48, { o: 1 }, '>0.3');
   
   // 步骤4：左子树继续递归到[2,2]
-  tl(node_22.rect, 0.5, { fill: COLOR_NODE_ACTIVE }, '>0.5');
-  tl(line_02_22, 0.3, { stroke: COLOR_NODE_ACTIVE, 'stroke-width': 3 }, '<');
+  tl(node_22.rect, 14.48, { fill: COLOR_NODE_ACTIVE }, '>0.5');
+  tl(line_02_22, 8.69, { stroke: COLOR_NODE_ACTIVE, 'stroke-width': 3 }, '<');
   
   const match2 = T(p, '✓ 完全匹配', {x: 400, y: 440, 
     fill: COLOR_NODE_ACTIVE,
@@ -684,7 +685,7 @@ function query_demo() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(match2, 0.5, { o: 1 }, '>0.3');
+  tl(match2, 14.48, { o: 1 }, '>0.3');
   
   // 结果累加
   const result = T(p, '结果 = 5 + 27 = 32', {x: 500, y: 580, 
@@ -694,7 +695,7 @@ function query_demo() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(result, 0.6, { o: 1 }, '>0.6');
+  tl(result, 17.38, { o: 1 }, '>0.6');
   
   const note = T(p, '只访问了 4 个节点，复杂度 O(log n)', {x: 500, y: 650, 
     fill: COLOR_TEXT,
@@ -702,7 +703,7 @@ function query_demo() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(note, 0.5, { o: 1 }, '>0.4');
+  tl(note, 14.48, { o: 1 }, '>0.4');
 }
 
 function update_point() {
@@ -715,7 +716,7 @@ function update_point() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(title, 0.5, { o: 1 }, '<');
+  tl(title, 14.48, { o: 1 }, '<');
   
   // 更新操作
   const operation = T(p, '操作：将位置 3 的值改为 10', {x: 500, y: 180, 
@@ -724,7 +725,7 @@ function update_point() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(operation, 0.5, { o: 1 }, '>0.3');
+  tl(operation, 14.48, { o: 1 }, '>0.3');
   
   // 步骤
   const step1 = T(p, '1. 从根节点向下找到叶子节点', {x: 150, y: 280, 
@@ -733,7 +734,7 @@ function update_point() {
     'text-anchor': 'start',
     o: 0
   });
-  tl(step1, 0.5, { o: 1 }, '>0.4');
+  tl(step1, 14.48, { o: 1 }, '>0.4');
   
   const step2 = T(p, '2. 修改叶子节点的值', {x: 150, y: 350, 
     fill: COLOR_TEXT,
@@ -741,7 +742,7 @@ function update_point() {
     'text-anchor': 'start',
     o: 0
   });
-  tl(step2, 0.5, { o: 1 }, '>0.3');
+  tl(step2, 14.48, { o: 1 }, '>0.3');
   
   const step3 = T(p, '3. 向上回溯，更新所有祖先节点', {x: 150, y: 420, 
     fill: COLOR_TEXT,
@@ -749,7 +750,7 @@ function update_point() {
     'text-anchor': 'start',
     o: 0
   });
-  tl(step3, 0.5, { o: 1 }, '>0.3');
+  tl(step3, 14.48, { o: 1 }, '>0.3');
   
   // 路径示意
   const pathLabel = T(p, '更新路径（红色）：', {x: 500, y: 520, 
@@ -758,7 +759,7 @@ function update_point() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(pathLabel, 0.5, { o: 1 }, '>0.4');
+  tl(pathLabel, 14.48, { o: 1 }, '>0.4');
   
   const path = T(p, 'root → [3,5] → [3,4] → [3,3]', {x: 500, y: 570, 
     fill: COLOR_NODE_ACTIVE,
@@ -767,7 +768,7 @@ function update_point() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(path, 0.6, { o: 1 }, '>0.3');
+  tl(path, 17.38, { o: 1 }, '>0.3');
   
   // 复杂度
   const complexity = T(p, '时间复杂度：O(log n)', {x: 500, y: 660, 
@@ -777,7 +778,7 @@ function update_point() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(complexity, 0.6, { o: 1 }, '>0.5');
+  tl(complexity, 17.38, { o: 1 }, '>0.5');
 }
 
 function lazy_intro() {
@@ -790,7 +791,7 @@ function lazy_intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(title, 0.5, { o: 1 }, '<');
+  tl(title, 14.48, { o: 1 }, '<');
   
   // 问题
   const problem = T(p, '区间更新的挑战：', {x: 500, y: 180, 
@@ -799,7 +800,7 @@ function lazy_intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(problem, 0.5, { o: 1 }, '>0.3');
+  tl(problem, 14.48, { o: 1 }, '>0.3');
   
   const challenge = T(p, '给区间 [l, r] 的所有元素都加上 x', {x: 500, y: 240, 
     fill: COLOR_TEXT,
@@ -807,7 +808,7 @@ function lazy_intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(challenge, 0.5, { o: 1 }, '>0.2');
+  tl(challenge, 14.48, { o: 1 }, '>0.2');
   
   const naive = T(p, '朴素方法：更新 O(n) 个叶子节点 ❌', {x: 500, y: 300, 
     fill: COLOR_HIGHLIGHT,
@@ -815,7 +816,7 @@ function lazy_intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(naive, 0.5, { o: 1 }, '>0.3');
+  tl(naive, 14.48, { o: 1 }, '>0.3');
   
   // 解决方案
   const solution = T(p, '懒惰标记的思想：', {x: 500, y: 400, 
@@ -825,7 +826,7 @@ function lazy_intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(solution, 0.5, { o: 1 }, '>0.5');
+  tl(solution, 14.48, { o: 1 }, '>0.5');
   
   const idea1 = T(p, '1. 在内部节点打上「延迟更新」标记', {x: 500, y: 470, 
     fill: COLOR_TEXT,
@@ -833,7 +834,7 @@ function lazy_intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(idea1, 0.5, { o: 1 }, '>0.3');
+  tl(idea1, 14.48, { o: 1 }, '>0.3');
   
   const idea2 = T(p, '2. 暂时不下传到子节点', {x: 500, y: 530, 
     fill: COLOR_TEXT,
@@ -841,7 +842,7 @@ function lazy_intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(idea2, 0.5, { o: 1 }, '>0.2');
+  tl(idea2, 14.48, { o: 1 }, '>0.2');
   
   const idea3 = T(p, '3. 访问子节点时再下推标记', {x: 500, y: 590, 
     fill: COLOR_TEXT,
@@ -849,7 +850,7 @@ function lazy_intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(idea3, 0.5, { o: 1 }, '>0.2');
+  tl(idea3, 14.48, { o: 1 }, '>0.2');
   
   const benefit = T(p, '均摊复杂度：O(log n) ✓', {x: 500, y: 670, 
     fill: COLOR_NODE_VISITED,
@@ -858,7 +859,7 @@ function lazy_intro() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(benefit, 0.6, { o: 1 }, '>0.4');
+  tl(benefit, 17.38, { o: 1 }, '>0.4');
 }
 
 function lazy_demo() {
@@ -871,7 +872,7 @@ function lazy_demo() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(title, 0.5, { o: 1 }, '<');
+  tl(title, 14.48, { o: 1 }, '<');
   
   const operation = T(p, '操作：给区间 [1, 4] 的元素都加 2', {x: 500, y: 120, 
     fill: COLOR_TEXT,
@@ -879,21 +880,21 @@ function lazy_demo() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(operation, 0.5, { o: 1 }, '>0.2');
+  tl(operation, 14.48, { o: 1 }, '>0.2');
   
   // 简化树结构
   const root = drawTreeNode(p, 500, 220, [0, 5], 36, { fill: COLOR_NODE });
-  tl(root.g, 0.4, { o: 1 }, '>0.3');
+  tl(root.g, 11.59, { o: 1 }, '>0.3');
   
   const node_02 = drawTreeNode(p, 300, 340, [0, 2], 9, { fill: COLOR_NODE });
   const node_35 = drawTreeNode(p, 700, 340, [3, 5], 27, { fill: COLOR_NODE });
-  tl(node_02.g, 0.4, { o: 1 }, '>0.2');
-  tl(node_35.g, 0.4, { o: 1 }, '>0');
+  tl(node_02.g, 11.59, { o: 1 }, '>0.2');
+  tl(node_35.g, 11.59, { o: 1 }, '>0');
   
   const line1 = L_(500, 255, 300, 305, { stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 }, p);
   const line2 = L_(500, 255, 700, 305, { stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 }, p);
-  tl(line1, 0.3, { o: 1 }, '<');
-  tl(line2, 0.3, { o: 1 }, '<');
+  tl(line1, 8.69, { o: 1 }, '<');
+  tl(line2, 8.69, { o: 1 }, '<');
   
   // 子节点
   const node_01 = drawTreeNode(p, 200, 460, [0, 1], 4, { fill: COLOR_NODE });
@@ -901,27 +902,27 @@ function lazy_demo() {
   const node_34 = drawTreeNode(p, 600, 460, [3, 4], 16, { fill: COLOR_NODE });
   const node_55 = drawTreeNode(p, 800, 460, [5, 5], 11, { fill: COLOR_LEAF });
   
-  tl(node_01.g, 0.3, { o: 1 }, '>0.2');
-  tl(node_22.g, 0.3, { o: 1 }, '>0');
-  tl(node_34.g, 0.3, { o: 1 }, '>0');
-  tl(node_55.g, 0.3, { o: 1 }, '>0');
+  tl(node_01.g, 8.69, { o: 1 }, '>0.2');
+  tl(node_22.g, 8.69, { o: 1 }, '>0');
+  tl(node_34.g, 8.69, { o: 1 }, '>0');
+  tl(node_55.g, 8.69, { o: 1 }, '>0');
   
   const line3 = L_(300, 375, 200, 425, { stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 }, p);
   const line4 = L_(300, 375, 400, 425, { stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 }, p);
   const line5 = L_(700, 375, 600, 425, { stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 }, p);
   const line6 = L_(700, 375, 800, 425, { stroke: COLOR_EDGE, 'stroke-width': 2, o: 0 }, p);
   
-  tl(line3, 0.3, { o: 1 }, '<');
-  tl(line4, 0.3, { o: 1 }, '<');
-  tl(line5, 0.3, { o: 1 }, '<');
-  tl(line6, 0.3, { o: 1 }, '<');
+  tl(line3, 8.69, { o: 1 }, '<');
+  tl(line4, 8.69, { o: 1 }, '<');
+  tl(line5, 8.69, { o: 1 }, '<');
+  tl(line6, 8.69, { o: 1 }, '<');
   
   // 标记节点：[0,2]部分覆盖，需要继续；但[1,1]和[2,2]都在范围内
   // 实际应该标记能完全覆盖的节点
   
   // 标记[1,1]（假设展开了）和[2,2]和[3,4]
-  tl(node_22.rect, 0.5, { fill: COLOR_NODE_ACTIVE }, '>0.8');
-  tl(node_34.rect, 0.5, { fill: COLOR_NODE_ACTIVE }, '>0.1');
+  tl(node_22.rect, 14.48, { fill: COLOR_NODE_ACTIVE }, '>0.8');
+  tl(node_34.rect, 14.48, { fill: COLOR_NODE_ACTIVE }, '>0.1');
   
   // 添加lazy标记
   const lazy1 = T(p, 'lazy=2', {x: 400, y: 520, 
@@ -938,12 +939,12 @@ function lazy_demo() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(lazy1, 0.5, { o: 1 }, '>0.3');
-  tl(lazy2, 0.5, { o: 1 }, '>0');
+  tl(lazy1, 14.48, { o: 1 }, '>0.3');
+  tl(lazy2, 14.48, { o: 1 }, '>0');
   
   // 更新和值
-  tl(node_22.valueText, 0.4, { textContent: '7' }, '>0.3');
-  tl(node_34.valueText, 0.4, { textContent: '20' }, '>0');
+  tl(node_22.valueText, 11.59, { textContent: '7' }, '>0.3');
+  tl(node_34.valueText, 11.59, { textContent: '20' }, '>0');
   
   // 说明
   const explain = T(p, '标记的节点：暂不下传，等访问时再推', {x: 500, y: 600, 
@@ -952,7 +953,7 @@ function lazy_demo() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(explain, 0.5, { o: 1 }, '>0.5');
+  tl(explain, 14.48, { o: 1 }, '>0.5');
   
   const note = T(p, '只更新了 O(log n) 个节点！', {x: 500, y: 660, 
     fill: COLOR_NODE_VISITED,
@@ -961,7 +962,7 @@ function lazy_demo() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(note, 0.6, { o: 1 }, '>0.3');
+  tl(note, 17.38, { o: 1 }, '>0.3');
 }
 
 function implementation() {
@@ -974,7 +975,7 @@ function implementation() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(title, 0.5, { o: 1 }, '<');
+  tl(title, 14.48, { o: 1 }, '<');
   
   // 数组模拟
   const tech1 = T(p, '用数组模拟完全二叉树', {x: 150, y: 200, 
@@ -984,7 +985,7 @@ function implementation() {
     'text-anchor': 'start',
     o: 0
   });
-  tl(tech1, 0.5, { o: 1 }, '>0.3');
+  tl(tech1, 14.48, { o: 1 }, '>0.3');
   
   const detail1 = T(p, '节点 i 的左儿子 = 2i + 1', {x: 180, y: 250, 
     fill: COLOR_TEXT,
@@ -992,7 +993,7 @@ function implementation() {
     'text-anchor': 'start',
     o: 0
   });
-  tl(detail1, 0.5, { o: 1 }, '>0.2');
+  tl(detail1, 14.48, { o: 1 }, '>0.2');
   
   const detail2 = T(p, '节点 i 的右儿子 = 2i + 2', {x: 180, y: 300, 
     fill: COLOR_TEXT,
@@ -1000,7 +1001,7 @@ function implementation() {
     'text-anchor': 'start',
     o: 0
   });
-  tl(detail2, 0.5, { o: 1 }, '>0.1');
+  tl(detail2, 14.48, { o: 1 }, '>0.1');
   
   // 空间需求
   const tech2 = T(p, '空间需求：4n 大小的数组', {x: 150, y: 380, 
@@ -1010,7 +1011,7 @@ function implementation() {
     'text-anchor': 'start',
     o: 0
   });
-  tl(tech2, 0.5, { o: 1 }, '>0.4');
+  tl(tech2, 14.48, { o: 1 }, '>0.4');
   
   // 函数列表
   const tech3 = T(p, '核心函数：', {x: 150, y: 480, 
@@ -1020,7 +1021,7 @@ function implementation() {
     'text-anchor': 'start',
     o: 0
   });
-  tl(tech3, 0.5, { o: 1 }, '>0.4');
+  tl(tech3, 14.48, { o: 1 }, '>0.4');
   
   const funcs = ['build()', 'query()', 'update()'];
   funcs.forEach((func, i) => {
@@ -1030,7 +1031,7 @@ function implementation() {
       'text-anchor': 'start',
       o: 0
     });
-    tl(text, 0.5, { o: 1 }, `>0.2+${i * 0.15}`);
+    tl(text, 14.48, { o: 1 }, `>0.2+${i * 0.15}`);
   });
   
   // 懒惰标记
@@ -1040,7 +1041,7 @@ function implementation() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(lazy, 0.6, { o: 1 }, '>0.6');
+  tl(lazy, 17.38, { o: 1 }, '>0.6');
 }
 
 function complexity() {
@@ -1053,7 +1054,7 @@ function complexity() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(title, 0.5, { o: 1 }, '<');
+  tl(title, 14.48, { o: 1 }, '<');
   
   const items = [
     { label: '构建', complexity: 'O(n)', desc: '自底向上一次遍历', y: 200 },
@@ -1071,7 +1072,7 @@ function complexity() {
       'text-anchor': 'start',
       o: 0
     });
-    tl(labelText, 0.4, { o: 1 }, `>0.3+${i * 0.2}`);
+    tl(labelText, 11.59, { o: 1 }, `>0.3+${i * 0.2}`);
     
     const complexityText = T(p, item.complexity, {
       x: 280, y: item.y, fill: COLOR_NODE_ACTIVE,
@@ -1080,7 +1081,7 @@ function complexity() {
       'text-anchor': 'start',
       o: 0
     });
-    tl(complexityText, 0.4, { o: 1 }, '>0.1');
+    tl(complexityText, 11.59, { o: 1 }, '>0.1');
     
     const descText = T(p, item.desc, {
       x: 500, y: item.y, fill: COLOR_TEXT,
@@ -1088,7 +1089,7 @@ function complexity() {
       'text-anchor': 'start',
       o: 0
     });
-    tl(descText, 0.4, { o: 1 }, '>0.1');
+    tl(descText, 11.59, { o: 1 }, '>0.1');
   });
   
   const conclusion = T(p, '性能优秀！', {x: 500, y: 670, 
@@ -1098,7 +1099,7 @@ function complexity() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(conclusion, 0.6, { o: 1 }, '>1.0');
+  tl(conclusion, 17.38, { o: 1 }, '>1.0');
 }
 
 function applications() {
@@ -1111,7 +1112,7 @@ function applications() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(title, 0.5, { o: 1 }, '<');
+  tl(title, 14.48, { o: 1 }, '<');
   
   // 应用列表
   const apps = [
@@ -1129,7 +1130,7 @@ function applications() {
       'text-anchor': 'start',
       o: 0
     });
-    tl(titleText, 0.5, { o: 1 }, `>0.3+${i * 0.2}`);
+    tl(titleText, 14.48, { o: 1 }, `>0.3+${i * 0.2}`);
     
     const descText = T(p, app.desc, {
       x: 230, y: app.y + 40, fill: COLOR_TEXT,
@@ -1137,7 +1138,7 @@ function applications() {
       'text-anchor': 'start',
       o: 0
     });
-    tl(descText, 0.5, { o: 1 }, '>0.2');
+    tl(descText, 14.48, { o: 1 }, '>0.2');
   });
   
   const summary = T(p, '只要涉及「动态区间操作」', {x: 500, y: 630, 
@@ -1146,7 +1147,7 @@ function applications() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(summary, 0.5, { o: 1 }, '>1.0');
+  tl(summary, 14.48, { o: 1 }, '>1.0');
   
   const conclusion = T(p, '线段树都是首选数据结构！', {x: 500, y: 680, 
     fill: COLOR_NODE_VISITED,
@@ -1155,7 +1156,7 @@ function applications() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(conclusion, 0.6, { o: 1 }, '>0.3');
+  tl(conclusion, 17.38, { o: 1 }, '>0.3');
 }
 
 function vs_fenwick() {
@@ -1168,7 +1169,7 @@ function vs_fenwick() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(title, 0.5, { o: 1 }, '<');
+  tl(title, 14.48, { o: 1 }, '<');
   
   // 表头
   const header1 = T(p, '线段树', {x: 250, y: 150, 
@@ -1185,8 +1186,8 @@ function vs_fenwick() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(header1, 0.5, { o: 1 }, '>0.3');
-  tl(header2, 0.5, { o: 1 }, '>0');
+  tl(header1, 14.48, { o: 1 }, '>0.3');
+  tl(header2, 14.48, { o: 1 }, '>0');
   
   // 对比项
   const items = [
@@ -1205,7 +1206,7 @@ function vs_fenwick() {
       'text-anchor': 'start',
       o: 0
     });
-    tl(aspectText, 0.4, { o: 1 }, `>0.2+${i * 0.15}`);
+    tl(aspectText, 11.59, { o: 1 }, `>0.2+${i * 0.15}`);
     
     const segText = T(p, item.seg, {
       x: 250, y: item.y, fill: COLOR_TEXT,
@@ -1213,7 +1214,7 @@ function vs_fenwick() {
       'text-anchor': 'middle',
       o: 0
     });
-    tl(segText, 0.4, { o: 1 }, '>0.1');
+    tl(segText, 11.59, { o: 1 }, '>0.1');
     
     const fenText = T(p, item.fen, {
       x: 750, y: item.y, fill: COLOR_TEXT,
@@ -1221,7 +1222,7 @@ function vs_fenwick() {
       'text-anchor': 'middle',
       o: 0
     });
-    tl(fenText, 0.4, { o: 1 }, '>0.1');
+    tl(fenText, 11.59, { o: 1 }, '>0.1');
   });
   
   // 建议
@@ -1231,7 +1232,7 @@ function vs_fenwick() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(suggestion, 0.5, { o: 1 }, '>0.8');
+  tl(suggestion, 14.48, { o: 1 }, '>0.8');
   
   const suggestion2 = T(p, '否则上线段树！', {x: 500, y: 700, 
     fill: COLOR_NODE_VISITED,
@@ -1240,7 +1241,7 @@ function vs_fenwick() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(suggestion2, 0.6, { o: 1 }, '>0.3');
+  tl(suggestion2, 17.38, { o: 1 }, '>0.3');
 }
 
 function summary() {
@@ -1253,7 +1254,7 @@ function summary() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(title, 0.6, { o: 1 }, '<');
+  tl(title, 14.54, { o: 1 }, '<');
   
   const points = [
     '完全二叉树维护区间信息',
@@ -1270,7 +1271,7 @@ function summary() {
       'text-anchor': 'start',
       o: 0
     });
-    tl(text, 0.5, { o: 1 }, `>0.3+${i * 0.2}`);
+    tl(text, 12.10, { o: 1 }, `>0.3+${i * 0.2}`);
   });
   
   const conclusion = T(p, '线段树 = 算法竞赛 & 工程利器！', {x: 500, y: 660, 
@@ -1280,7 +1281,7 @@ function summary() {
     'text-anchor': 'middle',
     o: 0
   });
-  tl(conclusion, 0.7, { o: 1 }, '>1.2');
+  tl(conclusion, 16.95, { o: 1 }, '>1.2');
 }
 
 /* ---------- 注册 beats ---------- */

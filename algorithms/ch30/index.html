@@ -602,6 +602,22 @@ window.BEATS = [
     const note = T(p, text, { x: 550, y, size: 20, fill: color, o: 0 });
     tw(note, { o: 1 }, m(mark));
   });
+  
+  // 应用说明（使用剩余 marks）
+  const keepNote = T(p, '左转保留点', { 
+    x: 100, y: 450, size: 22, weight: 600, fill: HULL_COLOR, o: 0 
+  });
+  tw(keepNote, { o: 1 }, m('keep'));
+  
+  const discardNote = T(p, '右转弹出栈', { 
+    x: 300, y: 450, size: 22, weight: 600, fill: START_COLOR, o: 0 
+  });
+  tw(discardNote, { o: 1 }, m('discard'));
+  
+  const efficientNote = T(p, '高效判断转向', { 
+    x: 500, y: 450, size: 22, weight: 600, fill: PURPLE, o: 0 
+  });
+  tw(efficientNote, { o: 1 }, m('efficient'));
 }],
 
 ['complexity', '复杂度分析', (m, dur) => {

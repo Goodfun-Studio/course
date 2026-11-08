@@ -67,30 +67,31 @@ let BEATS = [
 
 ['definition', '问题定义', () => {
   const p = panel(0);
+  const factor = 1.184;
   
   const title = T(p, '0-1 背包问题', { x: 800, y: 120, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.1 * factor, 0.6, out);
   
   const def1 = T(p, 'n 个物品，每个物品 i：', { x: 400, y: 230, size: 32, fill: COL.chalk, o: 0 });
-  tw(def1, { o: 1 }, 1.5, 0.5);
+  tw(def1, { o: 1 }, 1.5 * factor, 0.5);
   
   const def2 = T(p, '  • weight[i]（重量）', { x: 450, y: 300, size: 28, fill: DEPEND, o: 0 });
-  tw(def2, { o: 1 }, 2.5, 0.5);
+  tw(def2, { o: 1 }, 2.5 * factor, 0.5);
   
   const def3 = T(p, '  • value[i]（价值）', { x: 450, y: 360, size: 28, fill: FILLED, o: 0 });
-  tw(def3, { o: 1 }, 3.5, 0.5);
+  tw(def3, { o: 1 }, 3.5 * factor, 0.5);
   
   const capacity = T(p, '背包容量：W', { x: 400, y: 440, size: 32, fill: COL.chalk, o: 0 });
-  tw(capacity, { o: 1 }, 5, 0.5);
+  tw(capacity, { o: 1 }, 5 * factor, 0.5);
   
   const goal = T(p, '目标：max(总价值)', { x: 400, y: 520, size: 32, fill: CURRENT, o: 0 });
-  tw(goal, { o: 1 }, 6.5, 0.5);
+  tw(goal, { o: 1 }, 6.5 * factor, 0.5);
   
   const constraint = T(p, '约束：总重量 ≤ W', { x: 400, y: 590, size: 32, fill: COL.dim, o: 0 });
-  tw(constraint, { o: 1 }, 8, 0.5);
+  tw(constraint, { o: 1 }, 8 * factor, 0.5);
   
   const decision = T(p, '决策：每个物品选或不选（0-1选择）', { x: 800, y: 680, size: 28, fill: '#43e97b', anchor: 'middle', o: 0 });
-  tw(decision, { o: 1 }, 10, 0.6);
+  tw(decision, { o: 1 }, 10 * factor, 0.6);
 }],
 
 ['greedy-fail', '贪心方法的失败', () => {
@@ -157,41 +158,42 @@ let BEATS = [
 
 ['dp-formula', '状态转移方程', () => {
   const p = panel(0);
+  const factor = 1.151;
   
   const title = T(p, '状态转移方程', { x: 800, y: 120, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.1 * factor, 0.6, out);
   
   // Formula box
   const box = mk('rect', { x: 250, y: 220, width: 1100, height: 180, rx: 10, fill: COL.board, o: 0 }, p);
-  tw(box, { o: 0.3 }, 2, 0.5);
+  tw(box, { o: 0.3 }, 2 * factor, 0.5);
   
   const formula = T(p, 'dp[i][w] = max(', { x: 400, y: 280, size: 36, fill: COL.chalk, o: 0 });
-  tw(formula, { o: 1 }, 2.5, 0.5);
+  tw(formula, { o: 1 }, 2.5 * factor, 0.5);
   
   const case1 = T(p, 'dp[i-1][w]', { x: 500, y: 340, size: 32, fill: DEPEND, o: 0 });
-  tw(case1, { o: 1 }, 4, 0.5);
+  tw(case1, { o: 1 }, 4 * factor, 0.5);
   const comment1 = T(p, '← 不选第 i 个', { x: 720, y: 340, size: 26, fill: COL.dim, o: 0 });
-  tw(comment1, { o: 1 }, 4.5, 0.4);
+  tw(comment1, { o: 1 }, 4.5 * factor, 0.4);
   
   const comma = T(p, ',', { x: 650, y: 340, size: 32, fill: COL.chalk, o: 0 });
-  tw(comma, { o: 1 }, 5.5, 0.3);
+  tw(comma, { o: 1 }, 5.5 * factor, 0.3);
   
   const case2 = T(p, 'dp[i-1][w-weight[i]] + value[i]', { x: 500, y: 380, size: 32, fill: FILLED, o: 0 });
-  tw(case2, { o: 1 }, 6, 0.6);
+  tw(case2, { o: 1 }, 6 * factor, 0.6);
   const comment2 = T(p, '← 选第 i 个', { x: 1050, y: 380, size: 26, fill: COL.dim, o: 0 });
-  tw(comment2, { o: 1 }, 7, 0.4);
+  tw(comment2, { o: 1 }, 7 * factor, 0.4);
   
   const closing = T(p, ')', { x: 400, y: 380, size: 36, fill: COL.chalk, o: 0 });
-  tw(closing, { o: 1 }, 7.5, 0.3);
+  tw(closing, { o: 1 }, 7.5 * factor, 0.3);
   
   const condition = T(p, '（前提：w >= weight[i]）', { x: 800, y: 450, size: 28, fill: CURRENT, anchor: 'middle', o: 0 });
-  tw(condition, { o: 1 }, 9, 0.5);
+  tw(condition, { o: 1 }, 9 * factor, 0.5);
   
   const key = T(p, '核心：最优子结构 + 重叠子问题', { x: 800, y: 580, size: 34, fill: '#43e97b', anchor: 'middle', o: 0 });
-  tw(key, { o: 1 }, 11.5, 0.6);
+  tw(key, { o: 1 }, 11.5 * factor, 0.6);
   
   const overlap = T(p, '用表格记录避免重复计算', { x: 800, y: 660, size: 30, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(overlap, { o: 1 }, 13.5, 0.5);
+  tw(overlap, { o: 1 }, 13.5 * factor, 0.5);
 }],
 
 ['dp-demo', 'DP表格填充演示', () => {
@@ -365,9 +367,10 @@ let BEATS = [
 
 ['implementation', '算法实现', () => {
   const p = panel(0);
+  const factor = 1.259;
   
   const title = T(p, '代码实现', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.1 * factor, 0.6, out);
   
   const code = `def knapsack_01(weights, values, W):
     n = len(weights)
@@ -391,30 +394,31 @@ let BEATS = [
   codeLines.forEach((line, i) => {
     const y = 180 + i * 28;
     const text = T(p, line, { x: 300, y, size: 20, fill: COL.chalk, font: 'monospace', o: 0 });
-    tw(text, { o: 1 }, 1 + i * 0.2, 0.3);
+    tw(text, { o: 1 }, (1 + i * 0.2) * factor, 0.3);
   });
   
   const complexity = T(p, '时间复杂度：O(n·W)', { x: 400, y: 640, size: 30, fill: CURRENT, o: 0 });
-  tw(complexity, { o: 1 }, 8, 0.5);
+  tw(complexity, { o: 1 }, 8 * factor, 0.5);
   
   const space = T(p, '空间复杂度：O(n·W)', { x: 400, y: 700, size: 30, fill: DEPEND, o: 0 });
-  tw(space, { o: 1 }, 9.5, 0.5);
+  tw(space, { o: 1 }, 9.5 * factor, 0.5);
 }],
 
 ['space-opt', '空间优化', () => {
   const p = panel(0);
+  const factor = 1.201;
   
   const title = T(p, '空间优化', { x: 800, y: 100, size: 52, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.1 * factor, 0.6, out);
   
   const observation = T(p, '观察：dp[i][w] 只依赖 dp[i-1][...]', { x: 400, y: 180, size: 30, fill: COL.chalk, o: 0 });
-  tw(observation, { o: 1 }, 1.5, 0.5);
+  tw(observation, { o: 1 }, 1.5 * factor, 0.5);
   
   const idea = T(p, '优化：使用滚动数组，空间降到 O(W)', { x: 400, y: 240, size: 30, fill: FILLED, o: 0 });
-  tw(idea, { o: 1 }, 3, 0.5);
+  tw(idea, { o: 1 }, 3 * factor, 0.5);
   
   const key = T(p, '关键：内层循环必须逆序！', { x: 400, y: 310, size: 32, fill: CURRENT, o: 0 });
-  tw(key, { o: 1 }, 5, 0.6);
+  tw(key, { o: 1 }, 5 * factor, 0.6);
   
   const code = `def knapsack_01_optimized(weights, values, W):
     dp = [0] * (W + 1)
@@ -432,30 +436,31 @@ let BEATS = [
   codeLines.forEach((line, i) => {
     const y = 380 + i * 28;
     const text = T(p, line, { x: 300, y, size: 20, fill: COL.chalk, font: 'monospace', o: 0 });
-    tw(text, { o: 1 }, 6 + i * 0.2, 0.3);
+    tw(text, { o: 1 }, (6 + i * 0.2) * factor, 0.3);
   });
   
   const why = T(p, '为什么逆序？避免同一轮重复使用', { x: 800, y: 670, size: 28, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(why, { o: 1 }, 11, 0.5);
+  tw(why, { o: 1 }, 11 * factor, 0.5);
 }],
 
 ['backtrack', '回溯路径', () => {
   const p = panel(0);
+  const factor = 1.253;
   
   const title = T(p, '找出选了哪些物品', { x: 800, y: 100, size: 48, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.1 * factor, 0.6, out);
   
   const method = T(p, '从 dp[n][W] 开始回溯：', { x: 400, y: 190, size: 32, fill: COL.chalk, o: 0 });
-  tw(method, { o: 1 }, 1.5, 0.5);
+  tw(method, { o: 1 }, 1.5 * factor, 0.5);
   
   const step1 = T(p, '如果 dp[i][w] ≠ dp[i-1][w]：', { x: 450, y: 260, size: 28, fill: CURRENT, o: 0 });
-  tw(step1, { o: 1 }, 3, 0.5);
+  tw(step1, { o: 1 }, 3 * factor, 0.5);
   
   const step1b = T(p, '  → 说明选了第 i 个物品', { x: 500, y: 310, size: 26, fill: FILLED, o: 0 });
-  tw(step1b, { o: 1 }, 4, 0.4);
+  tw(step1b, { o: 1 }, 4 * factor, 0.4);
   
   const step2 = T(p, '容量减去 weight[i]，继续往前', { x: 450, y: 370, size: 28, fill: DEPEND, o: 0 });
-  tw(step2, { o: 1 }, 5.5, 0.5);
+  tw(step2, { o: 1 }, 5.5 * factor, 0.5);
   
   const code = `def find_items(dp, weights, values, W):
     n = len(weights)
@@ -473,61 +478,62 @@ let BEATS = [
   codeLines.forEach((line, i) => {
     const y = 440 + i * 26;
     const text = T(p, line, { x: 300, y, size: 19, fill: COL.chalk, font: 'monospace', o: 0 });
-    tw(text, { o: 1 }, 7 + i * 0.2, 0.3);
+    tw(text, { o: 1 }, (7 + i * 0.2) * factor, 0.3);
   });
   
   const note = T(p, '这样就能输出完整的选择方案', { x: 800, y: 700, size: 30, fill: '#43e97b', anchor: 'middle', o: 0 });
-  tw(note, { o: 1 }, 12, 0.5);
+  tw(note, { o: 1 }, 12 * factor, 0.5);
 }],
 
 ['complete-knapsack', '完全背包对比', () => {
   const p = panel(0);
+  const factor = 1.139;
   
   const title = T(p, '完全背包 vs 0-1背包', { x: 800, y: 100, size: 48, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.1 * factor, 0.6, out);
   
   // Table headers
   const header1 = T(p, '特性', { x: 350, y: 200, size: 30, fill: COL.dim, anchor: 'middle', o: 0 });
-  tw(header1, { o: 1 }, 1, 0.4);
+  tw(header1, { o: 1 }, 1 * factor, 0.4);
   const header2 = T(p, '0-1背包', { x: 700, y: 200, size: 30, fill: CURRENT, anchor: 'middle', o: 0 });
-  tw(header2, { o: 1 }, 1, 0.4);
+  tw(header2, { o: 1 }, 1 * factor, 0.4);
   const header3 = T(p, '完全背包', { x: 1050, y: 200, size: 30, fill: FILLED, anchor: 'middle', o: 0 });
-  tw(header3, { o: 1 }, 1, 0.4);
+  tw(header3, { o: 1 }, 1 * factor, 0.4);
   
   // Row 1
   const r1c1 = T(p, '物品限制', { x: 350, y: 280, size: 26, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(r1c1, { o: 1 }, 2, 0.4);
+  tw(r1c1, { o: 1 }, 2 * factor, 0.4);
   const r1c2 = T(p, '每个最多选1次', { x: 700, y: 280, size: 24, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(r1c2, { o: 1 }, 2.5, 0.4);
+  tw(r1c2, { o: 1 }, 2.5 * factor, 0.4);
   const r1c3 = T(p, '每个可选无限次', { x: 1050, y: 280, size: 24, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(r1c3, { o: 1 }, 2.5, 0.4);
+  tw(r1c3, { o: 1 }, 2.5 * factor, 0.4);
   
   // Row 2
   const r2c1 = T(p, '状态转移', { x: 350, y: 350, size: 26, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(r2c1, { o: 1 }, 4, 0.4);
+  tw(r2c1, { o: 1 }, 4 * factor, 0.4);
   const r2c2 = T(p, 'dp[i-1][w-weight]', { x: 700, y: 350, size: 22, fill: CURRENT, anchor: 'middle', font: 'monospace', o: 0 });
-  tw(r2c2, { o: 1 }, 4.5, 0.4);
+  tw(r2c2, { o: 1 }, 4.5 * factor, 0.4);
   const r2c3 = T(p, 'dp[i][w-weight]', { x: 1050, y: 350, size: 22, fill: FILLED, anchor: 'middle', font: 'monospace', o: 0 });
-  tw(r2c3, { o: 1 }, 4.5, 0.4);
+  tw(r2c3, { o: 1 }, 4.5 * factor, 0.4);
   
   // Row 3
   const r3c1 = T(p, '空间优化', { x: 350, y: 420, size: 26, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(r3c1, { o: 1 }, 6.5, 0.4);
+  tw(r3c1, { o: 1 }, 6.5 * factor, 0.4);
   const r3c2 = T(p, '逆序遍历', { x: 700, y: 420, size: 24, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(r3c2, { o: 1 }, 7, 0.4);
+  tw(r3c2, { o: 1 }, 7 * factor, 0.4);
   const r3c3 = T(p, '正序遍历', { x: 1050, y: 420, size: 24, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(r3c3, { o: 1 }, 7, 0.4);
+  tw(r3c3, { o: 1 }, 7 * factor, 0.4);
   
   // Row 4
   const r4c1 = T(p, '应用场景', { x: 350, y: 490, size: 26, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(r4c1, { o: 1 }, 9, 0.4);
+  tw(r4c1, { o: 1 }, 9 * factor, 0.4);
   const r4c2 = T(p, '项目选择', { x: 700, y: 490, size: 24, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(r4c2, { o: 1 }, 9.5, 0.4);
+  tw(r4c2, { o: 1 }, 9.5 * factor, 0.4);
   const r4c3 = T(p, '零钱兑换、物品采购', { x: 1050, y: 490, size: 24, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(r4c3, { o: 1 }, 9.5, 0.4);
+  tw(r4c3, { o: 1 }, 9.5 * factor, 0.4);
   
   const key = T(p, '关键区别：i-1 vs i', { x: 800, y: 600, size: 34, fill: SELECTED, anchor: 'middle', o: 0 });
-  tw(key, { o: 1 }, 12, 0.6);
+  tw(key, { o: 1 }, 12 * factor, 0.6);
 }],
 
 ['variants', '变体问题', () => {
@@ -587,55 +593,57 @@ let BEATS = [
 
 ['pseudo-poly', '伪多项式时间', () => {
   const p = panel(0);
+  const factor = 1.164;
   
   const title = T(p, '为什么叫"伪多项式时间"？', { x: 800, y: 110, size: 44, weight: 600, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(title, { o: 1 }, 0.1, 0.6, out);
+  tw(title, { o: 1 }, 0.1 * factor, 0.6, out);
   
   const complexity = T(p, '时间复杂度：O(n·W)', { x: 400, y: 220, size: 34, fill: CURRENT, o: 0 });
-  tw(complexity, { o: 1 }, 2, 0.5);
+  tw(complexity, { o: 1 }, 2 * factor, 0.5);
   
   const look = T(p, '看起来是多项式', { x: 400, y: 290, size: 30, fill: COL.chalk, o: 0 });
-  tw(look, { o: 1 }, 3.5, 0.5);
+  tw(look, { o: 1 }, 3.5 * factor, 0.5);
   
   const but = T(p, '但是...', { x: 800, y: 370, size: 36, fill: CURRENT, anchor: 'middle', o: 0 });
-  tw(but, { o: 1 }, 5, 0.5);
+  tw(but, { o: 1 }, 5 * factor, 0.5);
   
   const key = T(p, 'W 是数值大小，不是输入规模', { x: 400, y: 450, size: 30, fill: FILLED, o: 0 });
-  tw(key, { o: 1 }, 6.5, 0.6);
+  tw(key, { o: 1 }, 6.5 * factor, 0.6);
   
   const example = T(p, '如果 W = 2^k（k位二进制）', { x: 400, y: 520, size: 28, fill: COL.chalk, o: 0 });
-  tw(example, { o: 1 }, 8.5, 0.5);
+  tw(example, { o: 1 }, 8.5 * factor, 0.5);
   
   const real = T(p, '复杂度是 O(n·2^k) = 指数级', { x: 400, y: 580, size: 28, fill: '#f5576c', o: 0 });
-  tw(real, { o: 1 }, 10, 0.6);
+  tw(real, { o: 1 }, 10 * factor, 0.6);
   
   const np = T(p, '这是 NP-完全问题的特征', { x: 800, y: 670, size: 32, fill: SELECTED, anchor: 'middle', o: 0 });
-  tw(np, { o: 1 }, 12.5, 0.6);
+  tw(np, { o: 1 }, 12.5 * factor, 0.6);
 }],
 
 ['summary', '课程总结', () => {
   const p = panel(0);
+  const factor = 1.462;
   
   const title = T(p, '恭喜完成！', { x: 800, y: 140, size: 64, weight: 700, fill: '#43e97b', anchor: 'middle', o: 0 });
-  tw(title, { o: 1, s: 1.1 }, 0.1, 0.8, out);
+  tw(title, { o: 1, s: 1.1 }, 0.1 * factor, 0.8, out);
   
   const sub = T(p, '你已经掌握了背包问题的动态规划解法', { x: 800, y: 250, size: 32, fill: COL.chalk, anchor: 'middle', o: 0 });
-  tw(sub, { o: 1 }, 1.5, 0.6);
+  tw(sub, { o: 1 }, 1.5 * factor, 0.6);
   
   const key1 = T(p, '✓ 定义状态', { x: 500, y: 360, size: 34, fill: FILLED, o: 0 });
-  tw(key1, { o: 1 }, 3, 0.5);
+  tw(key1, { o: 1 }, 3 * factor, 0.5);
   
   const key2 = T(p, '✓ 推导转移', { x: 500, y: 430, size: 34, fill: FILLED, o: 0 });
-  tw(key2, { o: 1 }, 4, 0.5);
+  tw(key2, { o: 1 }, 4 * factor, 0.5);
   
   const key3 = T(p, '✓ 填表计算', { x: 500, y: 500, size: 34, fill: FILLED, o: 0 });
-  tw(key3, { o: 1 }, 5, 0.5);
+  tw(key3, { o: 1 }, 5 * factor, 0.5);
   
   const key4 = T(p, '✓ 回溯路径', { x: 500, y: 570, size: 34, fill: FILLED, o: 0 });
-  tw(key4, { o: 1 }, 6, 0.5);
+  tw(key4, { o: 1 }, 6 * factor, 0.5);
   
   const final = T(p, '这是 DP 的通用套路', { x: 800, y: 670, size: 36, fill: CURRENT, anchor: 'middle', o: 0 });
-  tw(final, { o: 1 }, 8, 0.6);
+  tw(final, { o: 1 }, 8 * factor, 0.6);
 }]
 
 ];

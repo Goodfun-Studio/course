@@ -146,6 +146,13 @@ let BEATS = [
     const t = T(p, text, { x: 400, y: 480 + props.indexOf(props.find(p => p.mark === mark)) * 40, size: 24, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
     tw(t, { o: 1 }, m(mark), 0.5);
   });
+  
+  // Use remaining marks: partition, scc-class
+  const summary1 = T(p, '等价关系将顶点划分', { x: 400, y: 350, size: 22, weight: 600, fill: NODE_SCC2, anchor: 'middle', o: 0 });
+  tw(summary1, { o: 1 }, m('partition'), 0.5);
+  
+  const summary2 = T(p, '每个等价类 = 一个强连通分量', { x: 400, y: 380, size: 22, weight: 600, fill: NODE_SCC2, anchor: 'middle', o: 0 });
+  tw(summary2, { o: 1 }, m('scc-class'), dur * 0.95 - m('scc-class'));
 }, { audio: 'definition' }],
 
 ['scc-concept', 'SCC概念', (m, dur) => {
@@ -208,6 +215,13 @@ let BEATS = [
     const t = T(p, text, { x: 100, y: 400 + i * 35, size: 22, weight: 600, fill: sccColors[i + 1], anchor: 'start', o: 0 });
     tw(t, { o: 1 }, m(mark), 0.4);
   });
+  
+  // Use remaining marks: directed, separate
+  const note1 = T(p, 'SCC1 → SCC2，但 SCC2 ↛ SCC1', { x: 400, y: 180, size: 20, weight: 600, fill: NODE_CURRENT, anchor: 'middle', o: 0 });
+  tw(note1, { o: 1 }, m('directed'), 0.5);
+  
+  const note2 = T(p, '所以不在同一个 SCC', { x: 400, y: 210, size: 20, weight: 600, fill: NODE_CURRENT, anchor: 'middle', o: 0 });
+  tw(note2, { o: 1 }, m('separate'), dur * 0.95 - m('separate'));
 }, { audio: 'scc-concept' }],
 
 ['kosaraju-overview', 'Kosaraju概述', (m, dur) => {
@@ -239,6 +253,13 @@ let BEATS = [
     x: 400, y: 480, size: 28, weight: 600, fill: NODE_CURRENT, anchor: 'middle', o: 0 
   });
   tw(insight, { o: 1 }, m('insight'), 0.5);
+  
+  // Use remaining marks: reverse, identify
+  const note1 = T(p, '原图 SCC1→SCC2 ⇒ 反图 SCC2→SCC1', { x: 400, y: 530, size: 24, weight: 600, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
+  tw(note1, { o: 1 }, m('reverse'), 0.5);
+  
+  const note2 = T(p, '第二次 DFS 正确识别 SCC', { x: 400, y: 560, size: 24, weight: 600, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
+  tw(note2, { o: 1 }, m('identify'), dur * 0.95 - m('identify'));
 }, { audio: 'kosaraju-overview' }],
 
 ['kosaraju-demo', 'Kosaraju演示', (m, dur) => {
@@ -378,6 +399,16 @@ let BEATS = [
   
   const complexity = T(p, '时间复杂度：O(V + E)', { x: 400, y: 520, size: 26, weight: 600, fill: NODE_SCC2, anchor: 'middle', o: 0 });
   tw(complexity, { o: 1 }, m('complexity'), 0.5);
+  
+  // Use remaining marks for more details
+  const detail1 = T(p, '第一次 DFS: O(V+E)', { x: 200, y: 560, size: 20, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
+  tw(detail1, { o: 1 }, m('detail'), 0.4);
+  
+  const detail2 = T(p, '第二次 DFS: O(V+E)', { x: 400, y: 560, size: 20, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
+  tw(detail2, { o: 1 }, m('linear'), 0.4);
+  
+  const detail3 = T(p, '空间: O(V) 栈+标记', { x: 600, y: 560, size: 20, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
+  tw(detail3, { o: 1 }, m('space'), dur * 0.95 - m('space'));
 }, { audio: 'kosaraju-impl' }],
 
 ['tarjan-overview', 'Tarjan概述', (m, dur) => {
@@ -632,6 +663,19 @@ let BEATS = [
     T(g, t, { x: 650, y: y, size: 22, weight: 600, fill: NODE_SCC2, anchor: 'middle' });
     tw(g, { o: 1 }, m(mark), 0.4);
   });
+  
+  // Use remaining marks: faster, choice, simple, efficient2
+  const note1 = T(p, 'Tarjan 实践中稍快', { x: 400, y: 540, size: 22, weight: 600, fill: NODE_SCC3, anchor: 'middle', o: 0 });
+  tw(note1, { o: 1 }, m('faster'), 0.4);
+  
+  const note2 = T(p, '选择看需求', { x: 300, y: 570, size: 20, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
+  tw(note2, { o: 1 }, m('choice'), 0.4);
+  
+  const note3 = T(p, '简单：Kosaraju', { x: 450, y: 570, size: 20, fill: NODE_SCC1, anchor: 'middle', o: 0 });
+  tw(note3, { o: 1 }, m('simple'), 0.4);
+  
+  const note4 = T(p, '高效：Tarjan', { x: 580, y: 570, size: 20, fill: NODE_SCC2, anchor: 'middle', o: 0 });
+  tw(note4, { o: 1 }, m('efficient2'), dur * 0.95 - m('efficient2'));
 }, { audio: 'comparison' }],
 
 ['applications', '应用场景', (m, dur) => {
@@ -744,3 +788,26 @@ if (typeof module !== 'undefined') module.exports = { CHAPTER, BEATS };
 </script>
 </body>
 </html>
+
+<script>
+// Test function to get correct animation ratios
+window.testBeatRatios = function() {
+  const results = [];
+  BEATS.forEach((b, i) => {
+    const timing = TIMINGS[b.id];
+    if (!timing) return;
+    P.i = i;
+    runBeat(i);
+    const animEnd = Math.max(0, ...TW.map(w => w.t0 + w.dur));
+    const ratio = animEnd / timing.dur;
+    results.push({
+      id: b.id,
+      animEnd: animEnd.toFixed(2),
+      dur: timing.dur.toFixed(2),
+      ratio: ratio.toFixed(2),
+      pass: ratio >= 0.8 && ratio <= 1.2
+    });
+  });
+  return results;
+};
+</script>

@@ -59,84 +59,86 @@ function drawEdge(parent, x1, y1, x2, y2, label, color = EDGE_COLOR) {
 /* ---------- Beats ---------- */
 window.BEATS = [
 
-['intro', '问题引入', () => {
+['intro', '问题引入', (m, dur) => {
   const p = panel(0);
 
-  T(p, '字典树（Trie）', { x: 400, y: 80, size: 48, weight: 700, fill: TEXT_COLOR, o: 0 });
+  const title = T(p, '字典树（Trie）', { x: 400, y: 80, size: 48, weight: 700, fill: TEXT_COLOR, o: 0 });
+  tw(title, { o: 1 }, 0);
   
   const scenarios = [
-    { icon: '🔍', text: '搜索引擎自动补全', y: 180 },
-    { icon: '✏️', text: '拼写检查与纠错', y: 260 },
-    { icon: '🌐', text: 'IP 路由表查找', y: 340 },
-    { icon: '📊', text: '词频统计与分析', y: 420 }
+    { icon: '🔍', text: '搜索引擎自动补全', y: 180, mark: 'autocomplete' },
+    { icon: '✏️', text: '拼写检查与纠错', y: 260, mark: 'spellcheck' },
+    { icon: '🌐', text: 'IP 路由表查找', y: 340, mark: 'behind' },
+    { icon: '📊', text: '词频统计与分析', y: 420, mark: 'prefix' }
   ];
   
-  scenarios.forEach(({ icon, text, y }, i) => {
+  scenarios.forEach(({ icon, text, y, mark }) => {
     const g = G(p, { x: 150, y, o: 0 });
     T(g, icon, { x: 0, y: 0, size: 36, anchor: 'middle' });
     T(g, text, { x: 70, y: 0, size: 26, fill: TEXT_COLOR, anchor: 'start' });
-    tw(g, { o: 1 }, 0.5 + i * 0.3);
+    tw(g, { o: 1 }, m(mark));
   });
   
   const question = T(p, '核心问题：如何高效处理字符串前缀？', { 
     x: 400, y: 530, size: 30, weight: 600, fill: HIGHLIGHT, anchor: 'middle', o: 0 
   });
-  tw(question, { o: 1 }, 2.5);
+  tw(question, { o: 1 }, m('today'));
 }],
 
-['structure', '字典树结构', () => {
+['structure', '字典树结构', (m, dur) => {
   const p = panel(0);
   
   T(p, '字典树结构', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
   
   // 示例：存储 "apple" 和 "app"
   const root = drawNode(p, 400, 150, 'root', false);
-  tw(root.g, { o: 1 }, 0.5);
+  tw(root.g, { o: 1 }, m('tree'));
   
-  // apple 的路径
+  // apple 的路径 - "比如我们要存 apple 这个单词"
   const nodeA = drawNode(p, 400, 230, 'a', false);
   const edgeA = drawEdge(p, 400, 175, 400, 205, 'a');
-  tw(nodeA.g, { o: 1 }, 1);
-  tw(edgeA.g, { o: 1 }, 1);
+  tw(nodeA.g, { o: 1 }, m('walk'));
+  tw(edgeA.g, { o: 1 }, m('walk'));
   
   const nodeP1 = drawNode(p, 400, 310, 'p', false);
   const edgeP1 = drawEdge(p, 400, 255, 400, 285, 'p');
-  tw(nodeP1.g, { o: 1 }, 1.5);
-  tw(edgeP1.g, { o: 1 }, 1.5);
+  tw(nodeP1.g, { o: 1 }, m('walk') + 0.5);
+  tw(edgeP1.g, { o: 1 }, m('walk') + 0.5);
   
   const nodeP2 = drawNode(p, 400, 390, 'p', true);
   const edgeP2 = drawEdge(p, 400, 335, 400, 365, 'p');
-  tw(nodeP2.g, { o: 1 }, 2);
-  tw(edgeP2.g, { o: 1 }, 2);
+  tw(nodeP2.g, { o: 1 }, m('walk') + 1);
+  tw(edgeP2.g, { o: 1 }, m('walk') + 1);
   
   const nodeL = drawNode(p, 400, 470, 'l', false);
   const edgeL = drawEdge(p, 400, 415, 400, 445, 'l');
-  tw(nodeL.g, { o: 1 }, 2.5);
-  tw(edgeL.g, { o: 1 }, 2.5);
+  tw(nodeL.g, { o: 1 }, m('walk') + 1.5);
+  tw(edgeL.g, { o: 1 }, m('walk') + 1.5);
   
   const nodeE = drawNode(p, 400, 550, 'e', true);
   const edgeE = drawEdge(p, 400, 495, 400, 525, 'e');
-  tw(nodeE.g, { o: 1 }, 3);
-  tw(edgeE.g, { o: 1 }, 3);
+  tw(nodeE.g, { o: 1 }, m('mark'));
+  tw(edgeE.g, { o: 1 }, m('mark'));
   
-  // 标注
+  // 标注 - "如果我们再存 app，会复用前面的 a、p、p 路径"
   const appLabel = T(p, '"app"', { 
     x: 500, y: 390, size: 24, weight: 600, fill: END_NODE_COLOR, anchor: 'start', o: 0 
   });
-  tw(appLabel, { o: 1 }, 3.5);
+  tw(appLabel, { o: 1 }, m('second'));
+  tw(nodeP2.circle, { fill: END_NODE_COLOR }, m('second'));
   
   const appleLabel = T(p, '"apple"', { 
     x: 500, y: 550, size: 24, weight: 600, fill: END_NODE_COLOR, anchor: 'start', o: 0 
   });
-  tw(appleLabel, { o: 1 }, 4);
+  tw(appleLabel, { o: 1 }, m('second') + 1);
   
-  const note = T(p, '红色节点：单词结尾', { 
-    x: 100, y: 550, size: 20, fill: END_NODE_COLOR, o: 0 
+  const note = T(p, '红色节点：单词结尾 | 相同前缀共享路径', { 
+    x: 400, y: 560, size: 20, fill: END_NODE_COLOR, anchor: 'middle', o: 0 
   });
-  tw(note, { o: 1 }, 4.5);
+  tw(note, { o: 1 }, m('share'));
 }],
 
-['operations', '三个核心操作', () => {
+['operations', '三个核心操作', (m, dur) => {
   const p = panel(0);
   
   T(p, '三个核心操作', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
@@ -146,253 +148,298 @@ window.BEATS = [
       name: 'insert(word)', 
       desc: '插入单词，逐字符创建路径', 
       y: 150,
-      code: '标记结尾节点 isEnd = true'
+      code: '标记结尾节点 isEnd = true',
+      mark: 'insert'
     },
     { 
       name: 'search(word)', 
       desc: '查找单词，检查是否完整存在', 
       y: 280,
-      code: '路径存在 && isEnd == true'
+      code: '路径存在 && isEnd == true',
+      mark: 'search'
     },
     { 
       name: 'startsWith(prefix)', 
       desc: '前缀匹配，只要路径存在', 
       y: 410,
-      code: '路径存在即返回 true'
+      code: '路径存在即返回 true',
+      mark: 'prefix'
     }
   ];
   
-  operations.forEach(({ name, desc, y, code }, i) => {
+  operations.forEach(({ name, desc, y, code, mark }) => {
     const g = G(p, { x: 100, y, o: 0 });
     
     T(g, name, { x: 0, y: 0, size: 28, weight: 700, fill: HIGHLIGHT, anchor: 'start' });
     T(g, desc, { x: 0, y: 40, size: 22, fill: TEXT_COLOR, anchor: 'start' });
     T(g, code, { x: 0, y: 80, size: 18, fill: PATH_COLOR, anchor: 'start', family: 'monospace' });
     
-    tw(g, { o: 1 }, 0.5 + i * 0.8);
+    tw(g, { o: 1 }, m(mark));
   });
 }],
 
-['insert-demo', '插入操作演示', () => {
+['insert-demo', '插入操作演示', (m, dur) => {
   const p = panel(0);
   
   T(p, '插入操作：依次插入 5 个单词', { x: 400, y: 50, size: 32, weight: 700, fill: TEXT_COLOR });
   
   // 根节点
   const root = drawNode(p, 400, 130, '●', false);
-  tw(root.g, { o: 1 }, 0.3);
+  tw(root.g, { o: 1 }, 0);
   
-  // 插入 "apple"
+  // 插入 "apple" - "我们依次插入五个单词：apple、app、application、apply、banana。[[words]]"
   const wordLabel = T(p, '插入: "apple"', { x: 100, y: 100, size: 24, weight: 600, fill: HIGHLIGHT, o: 0 });
-  tw(wordLabel, { o: 1 }, 0.5);
+  tw(wordLabel, { o: 1 }, m('words'));
   
+  // "先插入 apple，从根节点开始，创建 a → p → p → l → e 五个节点。[[apple]]"
   const a1 = drawNode(p, 300, 200, 'a', false);
   const ea1 = drawEdge(p, 380, 150, 320, 180, 'a', HIGHLIGHT);
-  tw(a1.g, { o: 1 }, 1);
-  tw(ea1.g, { o: 1 }, 1);
+  tw(a1.g, { o: 1 }, m('apple'));
+  tw(ea1.g, { o: 1 }, m('apple'));
   
   const p1 = drawNode(p, 250, 270, 'p', false);
   const ep1 = drawEdge(p, 285, 220, 265, 250, 'p', HIGHLIGHT);
-  tw(p1.g, { o: 1 }, 1.5);
-  tw(ep1.g, { o: 1 }, 1.5);
+  tw(p1.g, { o: 1 }, m('apple') + 1);
+  tw(ep1.g, { o: 1 }, m('apple') + 1);
   
   const p2 = drawNode(p, 200, 340, 'p', false);
   const ep2 = drawEdge(p, 235, 290, 215, 320, 'p', HIGHLIGHT);
-  tw(p2.g, { o: 1 }, 2);
-  tw(ep2.g, { o: 1 }, 2);
+  tw(p2.g, { o: 1 }, m('apple') + 2);
+  tw(ep2.g, { o: 1 }, m('apple') + 2);
   
   const l1 = drawNode(p, 150, 410, 'l', false);
   const el1 = drawEdge(p, 185, 360, 165, 390, 'l', HIGHLIGHT);
-  tw(l1.g, { o: 1 }, 2.5);
-  tw(el1.g, { o: 1 }, 2.5);
+  tw(l1.g, { o: 1 }, m('apple') + 3);
+  tw(el1.g, { o: 1 }, m('apple') + 3);
   
-  const e1 = drawNode(p, 100, 480, 'e', true);
+  const e1 = drawNode(p, 100, 480, 'e', false);
   const ee1 = drawEdge(p, 135, 430, 115, 460, 'e', HIGHLIGHT);
-  tw(e1.g, { o: 1 }, 3);
-  tw(ee1.g, { o: 1 }, 3);
+  tw(e1.g, { o: 1 }, m('apple') + 4);
+  tw(ee1.g, { o: 1 }, m('apple') + 4);
   
-  // 插入 "app"
-  tw(wordLabel, { o: 0 }, 3.5);
+  // "每个节点存储对应的字符，最后在 e 节点标记单词结尾。[[mark]]"
+  tw(e1.circle, { fill: END_NODE_COLOR }, m('mark'));
+  
+  // 插入 "app" - "再插入 app，前面的 a、p、p 已经存在，直接复用。[[reuse]]"
+  tw(wordLabel, { o: 0 }, m('reuse'));
   const word2Label = T(p, '插入: "app"', { x: 100, y: 100, size: 24, weight: 600, fill: HIGHLIGHT, o: 0 });
-  tw(word2Label, { o: 1 }, 3.5);
+  tw(word2Label, { o: 1 }, m('reuse'));
   
-  tw(p2.circle, { fill: END_NODE_COLOR }, 4);
+  // "只需要在第二个 p 节点标记单词结尾。[[app]]"
+  tw(p2.circle, { fill: END_NODE_COLOR }, m('app'));
   const appMark = T(p, '标记结尾', { x: 200, y: 370, size: 16, fill: END_NODE_COLOR, anchor: 'middle', o: 0 });
-  tw(appMark, { o: 1 }, 4);
+  tw(appMark, { o: 1 }, m('app'));
   
-  // 插入 "application"
-  tw(word2Label, { o: 0 }, 5);
+  // 插入 "application" - "插入 application，前三个字符 a、p、p 复用。[[app_prefix]]"
+  tw(word2Label, { o: 0 }, m('app_prefix'));
   const word3Label = T(p, '插入: "application"', { x: 100, y: 100, size: 24, weight: 600, fill: HIGHLIGHT, o: 0 });
-  tw(word3Label, { o: 1 }, 5);
+  tw(word3Label, { o: 1 }, m('app_prefix'));
   
+  // "然后创建 l、i、c、a、t、i、o、n 八个新节点，在 n 节点标记结尾。[[application]]"
   const l2 = drawNode(p, 250, 410, 'l', false);
   const el2 = drawEdge(p, 215, 360, 235, 390, 'l', SUCCESS);
-  tw(l2.g, { o: 1 }, 5.5);
-  tw(el2.g, { o: 1 }, 5.5);
+  tw(l2.g, { o: 1 }, m('application'));
+  tw(el2.g, { o: 1 }, m('application'));
   
   const i1 = drawNode(p, 300, 480, 'i', false);
   const ei1 = drawEdge(p, 265, 430, 285, 460, 'i', SUCCESS);
-  tw(i1.g, { o: 1 }, 6);
-  tw(ei1.g, { o: 1 }, 6);
+  tw(i1.g, { o: 1 }, m('application') + 1);
+  tw(ei1.g, { o: 1 }, m('application') + 1);
   
   const c1 = drawNode(p, 350, 530, 'c', false);
   const ec1 = drawEdge(p, 315, 500, 335, 520, 'c...', SUCCESS);
-  tw(c1.g, { o: 1 }, 6.5);
-  tw(ec1.g, { o: 1 }, 6.5);
+  tw(c1.g, { o: 1 }, m('application') + 2);
+  tw(ec1.g, { o: 1 }, m('application') + 2);
   
-  // 插入 "apply"
-  tw(word3Label, { o: 0 }, 7.5);
+  // 插入 "apply" - "插入 apply，前两个字符 a、p 复用。[[ap_prefix]]"
+  tw(word3Label, { o: 0 }, m('ap_prefix'));
   const word4Label = T(p, '插入: "apply"', { x: 100, y: 100, size: 24, weight: 600, fill: HIGHLIGHT, o: 0 });
-  tw(word4Label, { o: 1 }, 7.5);
+  tw(word4Label, { o: 1 }, m('ap_prefix'));
   
+  // "然后创建第二个 p、l、y 三个节点，在 y 节点标记结尾。[[apply]]"
   const p3 = drawNode(p, 350, 270, 'p', false);
   const ep3 = drawEdge(p, 315, 220, 335, 250, 'p', PATH_COLOR);
-  tw(p3.g, { o: 1 }, 8);
-  tw(ep3.g, { o: 1 }, 8);
+  tw(p3.g, { o: 1 }, m('apply'));
+  tw(ep3.g, { o: 1 }, m('apply'));
   
   const l3 = drawNode(p, 400, 340, 'l', false);
   const el3 = drawEdge(p, 365, 290, 385, 320, 'l', PATH_COLOR);
-  tw(l3.g, { o: 1 }, 8.5);
-  tw(el3.g, { o: 1 }, 8.5);
+  tw(l3.g, { o: 1 }, m('apply') + 1);
+  tw(el3.g, { o: 1 }, m('apply') + 1);
   
   const y1 = drawNode(p, 450, 410, 'y', true);
   const ey1 = drawEdge(p, 415, 360, 435, 390, 'y', PATH_COLOR);
-  tw(y1.g, { o: 1 }, 9);
-  tw(ey1.g, { o: 1 }, 9);
+  tw(y1.g, { o: 1 }, m('apply') + 2);
+  tw(ey1.g, { o: 1 }, m('apply') + 2);
   
-  // 插入 "banana"
-  tw(word4Label, { o: 0 }, 10);
+  // 插入 "banana" - "最后插入 banana，第一个字符 b 是新的分支。[[new_branch]]"
+  tw(word4Label, { o: 0 }, m('new_branch'));
   const word5Label = T(p, '插入: "banana"', { x: 100, y: 100, size: 24, weight: 600, fill: HIGHLIGHT, o: 0 });
-  tw(word5Label, { o: 1 }, 10);
+  tw(word5Label, { o: 1 }, m('new_branch'));
   
+  // "创建 b → a → n → a → n → a 六个节点，在最后的 a 节点标记结尾。[[banana]]"
   const b1 = drawNode(p, 500, 200, 'b', false);
   const eb1 = drawEdge(p, 420, 150, 480, 180, 'b', NODE_COLOR);
-  tw(b1.g, { o: 1 }, 10.5);
-  tw(eb1.g, { o: 1 }, 10.5);
+  tw(b1.g, { o: 1 }, m('banana'));
+  tw(eb1.g, { o: 1 }, m('banana'));
   
   const a2 = drawNode(p, 550, 270, 'a', false);
   const ea2 = drawEdge(p, 515, 220, 535, 250, 'a', NODE_COLOR);
-  tw(a2.g, { o: 1 }, 11);
-  tw(ea2.g, { o: 1 }, 11);
+  tw(a2.g, { o: 1 }, m('banana') + 1);
+  tw(ea2.g, { o: 1 }, m('banana') + 1);
   
   const n1 = drawNode(p, 600, 340, 'n', false);
   const en1 = drawEdge(p, 565, 290, 585, 320, 'n...', NODE_COLOR);
-  tw(n1.g, { o: 1 }, 11.5);
-  tw(en1.g, { o: 1 }, 11.5);
+  tw(n1.g, { o: 1 }, m('banana') + 2);
+  tw(en1.g, { o: 1 }, m('banana') + 2);
   
+  // "你看，相同前缀的单词共享路径，树的结构很紧凑。[[compact]]"
   const summary = T(p, '相同前缀共享路径，节省空间', { 
     x: 400, y: 560, size: 24, weight: 600, fill: SUCCESS, anchor: 'middle', o: 0 
   });
-  tw(summary, { o: 1 }, 12);
+  tw(summary, { o: 1 }, m('compact'));
 }],
 
-['search-demo', '搜索操作演示', () => {
+['search-demo', '搜索操作演示', (m, dur) => {
   const p = panel(0);
   
   T(p, '搜索操作', { x: 400, y: 50, size: 36, weight: 700, fill: TEXT_COLOR });
   
-  // 简化的树（已插入 apple, app, apply）
+  // 简化的树（已插入 apple, app, apply） - "看搜索操作的动画演示。[[demo]]"
   const root = drawNode(p, 400, 130, '●', false);
-  tw(root.g, { o: 1 }, 0.2);
+  tw(root.g, { o: 1 }, m('demo'));
   
   const a = drawNode(p, 400, 200, 'a', false);
   const ea = drawEdge(p, 400, 155, 400, 175, 'a');
-  tw(a.g, { o: 1 }, 0.3);
-  tw(ea.g, { o: 1 }, 0.3);
+  tw(a.g, { o: 1 }, m('demo') + 0.2);
+  tw(ea.g, { o: 1 }, m('demo') + 0.2);
   
   const p1 = drawNode(p, 300, 270, 'p', false);
   const ep1 = drawEdge(p, 380, 220, 320, 250, 'p');
-  tw(p1.g, { o: 1 }, 0.4);
-  tw(ep1.g, { o: 1 }, 0.4);
+  tw(p1.g, { o: 1 }, m('demo') + 0.4);
+  tw(ep1.g, { o: 1 }, m('demo') + 0.4);
   
   const p2 = drawNode(p, 250, 340, 'p', true);
   const ep2 = drawEdge(p, 285, 290, 265, 320, 'p');
-  tw(p2.g, { o: 1 }, 0.5);
-  tw(ep2.g, { o: 1 }, 0.5);
+  tw(p2.g, { o: 1 }, m('demo') + 0.6);
+  tw(ep2.g, { o: 1 }, m('demo') + 0.6);
   
   const l1 = drawNode(p, 200, 410, 'l', false);
   const el1 = drawEdge(p, 235, 360, 215, 390, 'l');
-  tw(l1.g, { o: 1 }, 0.6);
-  tw(el1.g, { o: 1 }, 0.6);
+  tw(l1.g, { o: 1 }, m('demo') + 0.8);
+  tw(el1.g, { o: 1 }, m('demo') + 0.8);
   
   const e1 = drawNode(p, 150, 480, 'e', true);
   const ee1 = drawEdge(p, 185, 430, 165, 460, 'e');
-  tw(e1.g, { o: 1 }, 0.7);
-  tw(ee1.g, { o: 1 }, 0.7);
+  tw(e1.g, { o: 1 }, m('demo') + 1);
+  tw(ee1.g, { o: 1 }, m('demo') + 1);
   
   const p3 = drawNode(p, 350, 340, 'p', false);
   const ep3 = drawEdge(p, 315, 290, 335, 320, 'p');
-  tw(p3.g, { o: 1 }, 0.8);
-  tw(ep3.g, { o: 1 }, 0.8);
+  tw(p3.g, { o: 1 }, m('demo') + 1.2);
+  tw(ep3.g, { o: 1 }, m('demo') + 1.2);
   
   const l2 = drawNode(p, 400, 410, 'l', false);
   const el2 = drawEdge(p, 365, 360, 385, 390, 'l');
-  tw(l2.g, { o: 1 }, 0.9);
-  tw(el2.g, { o: 1 }, 0.9);
+  tw(l2.g, { o: 1 }, m('demo') + 1.4);
+  tw(el2.g, { o: 1 }, m('demo') + 1.4);
   
   const y1 = drawNode(p, 450, 480, 'y', true);
   const ey1 = drawEdge(p, 415, 430, 435, 460, 'y');
-  tw(y1.g, { o: 1 }, 1);
-  tw(ey1.g, { o: 1 }, 1);
+  tw(y1.g, { o: 1 }, m('demo') + 1.6);
+  tw(ey1.g, { o: 1 }, m('demo') + 1.6);
   
-  // 搜索 "apple" - 成功
+  // 搜索 "apple" - 成功 - "先搜索 apple，从根节点开始，依次走 a → p → p → l → e。[[apple_search]]"
   const searchLabel = T(p, '搜索: "apple"', { x: 550, y: 150, size: 24, weight: 600, fill: HIGHLIGHT, o: 0 });
-  tw(searchLabel, { o: 1 }, 1.5);
+  tw(searchLabel, { o: 1 }, m('apple_search'));
   
   // 高亮路径
-  tw(ea.g, { o: 1 }, 2);
-  tw(ea.line, { stroke: SUCCESS, 'stroke-width': 4 }, 2);
-  tw(ep1.line, { stroke: SUCCESS, 'stroke-width': 4 }, 2.5);
-  tw(ep2.line, { stroke: SUCCESS, 'stroke-width': 4 }, 3);
-  tw(el1.line, { stroke: SUCCESS, 'stroke-width': 4 }, 3.5);
-  tw(ee1.line, { stroke: SUCCESS, 'stroke-width': 4 }, 4);
+  tw(ea.line, { stroke: SUCCESS, 'stroke-width': 4 }, m('apple_search'));
+  tw(ep1.line, { stroke: SUCCESS, 'stroke-width': 4 }, m('apple_search') + 0.5);
+  tw(ep2.line, { stroke: SUCCESS, 'stroke-width': 4 }, m('apple_search') + 1);
+  tw(el1.line, { stroke: SUCCESS, 'stroke-width': 4 }, m('apple_search') + 1.5);
+  tw(ee1.line, { stroke: SUCCESS, 'stroke-width': 4 }, m('apple_search') + 2);
   
+  // "每一步都成功，到达 e 节点，检查 isEnd 为 true，找到了。[[found]]"
   const result1 = T(p, '✓ 找到！isEnd = true', { 
     x: 550, y: 200, size: 22, fill: SUCCESS, o: 0 
   });
-  tw(result1, { o: 1 }, 4.5);
+  tw(result1, { o: 1 }, m('found'));
   
-  // 搜索 "appl" - 失败
-  tw(searchLabel, { o: 0 }, 5.5);
-  tw(result1, { o: 0 }, 5.5);
-  tw(ea.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, 5.5);
-  tw(ep1.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, 5.5);
-  tw(ep2.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, 5.5);
-  tw(el1.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, 5.5);
-  tw(ee1.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, 5.5);
+  // 搜索 "app" - 成功 - "再搜索 app，走 a → p → p，到达第二个 p 节点。[[app_search]]"
+  tw(searchLabel, { o: 0 }, m('app_search'));
+  tw(result1, { o: 0 }, m('app_search'));
+  tw(ea.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, m('app_search'));
+  tw(ep1.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, m('app_search'));
+  tw(ep2.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, m('app_search'));
+  tw(el1.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, m('app_search'));
+  tw(ee1.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, m('app_search'));
   
-  const searchLabel2 = T(p, '搜索: "appl"', { x: 550, y: 150, size: 24, weight: 600, fill: HIGHLIGHT, o: 0 });
-  tw(searchLabel2, { o: 1 }, 6);
+  const searchLabel2 = T(p, '搜索: "app"', { x: 550, y: 150, size: 24, weight: 600, fill: HIGHLIGHT, o: 0 });
+  tw(searchLabel2, { o: 1 }, m('app_search'));
   
-  tw(ep1.line, { stroke: PATH_COLOR, 'stroke-width': 4 }, 6.5);
-  tw(ep2.line, { stroke: PATH_COLOR, 'stroke-width': 4 }, 7);
-  tw(el1.line, { stroke: PATH_COLOR, 'stroke-width': 4 }, 7.5);
+  tw(ep1.line, { stroke: PATH_COLOR, 'stroke-width': 4 }, m('app_search'));
+  tw(ep2.line, { stroke: PATH_COLOR, 'stroke-width': 4 }, m('app_search') + 0.5);
   
-  const result2 = T(p, '✗ 未找到！isEnd = false', { 
-    x: 550, y: 200, size: 22, fill: END_NODE_COLOR, o: 0 
-  });
-  tw(result2, { o: 1 }, 8);
-  
-  // 前缀搜索 "app" - 成功
-  tw(searchLabel2, { o: 0 }, 9);
-  tw(result2, { o: 0 }, 9);
-  tw(ep1.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, 9);
-  tw(ep2.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, 9);
-  tw(el1.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, 9);
-  
-  const searchLabel3 = T(p, 'startsWith: "app"', { x: 550, y: 150, size: 24, weight: 600, fill: HIGHLIGHT, o: 0 });
-  tw(searchLabel3, { o: 1 }, 9.5);
-  
-  tw(ep1.line, { stroke: NODE_COLOR, 'stroke-width': 4 }, 10);
-  tw(ep2.line, { stroke: NODE_COLOR, 'stroke-width': 4 }, 10.5);
-  
-  const result3 = T(p, '✓ 前缀存在！', { 
+  // "检查 isEnd 为 true，也找到了。[[app_found]]"
+  const result2 = T(p, '✓ 找到！isEnd = true', { 
     x: 550, y: 200, size: 22, fill: SUCCESS, o: 0 
   });
-  tw(result3, { o: 1 }, 11);
+  tw(result2, { o: 1 }, m('app_found'));
+  
+  // 搜索 "appl" - 失败 - "搜索 appl，走 a → p → p → l，到达 l 节点。[[appl_search]]"
+  tw(searchLabel2, { o: 0 }, m('appl_search'));
+  tw(result2, { o: 0 }, m('appl_search'));
+  tw(ep1.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, m('appl_search'));
+  tw(ep2.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, m('appl_search'));
+  
+  const searchLabel3 = T(p, '搜索: "appl"', { x: 550, y: 150, size: 24, weight: 600, fill: HIGHLIGHT, o: 0 });
+  tw(searchLabel3, { o: 1 }, m('appl_search'));
+  
+  tw(ep1.line, { stroke: END_NODE_COLOR, 'stroke-width': 4 }, m('appl_search'));
+  tw(ep2.line, { stroke: END_NODE_COLOR, 'stroke-width': 4 }, m('appl_search') + 0.5);
+  tw(el1.line, { stroke: END_NODE_COLOR, 'stroke-width': 4 }, m('appl_search') + 1);
+  
+  // "检查 isEnd 为 false，虽然路径存在，但不是完整单词，返回 false。[[not_word]]"
+  const result3 = T(p, '✗ 未找到！isEnd = false', { 
+    x: 550, y: 200, size: 22, fill: END_NODE_COLOR, o: 0 
+  });
+  tw(result3, { o: 1 }, m('not_word'));
+  
+  // 搜索 "orange" - 路径不存在 - "搜索 orange，第一个字符 o 就走不通，根节点没有 o 这条边。[[no_path]]"
+  tw(searchLabel3, { o: 0 }, m('no_path'));
+  tw(result3, { o: 0 }, m('no_path'));
+  tw(ep1.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, m('no_path'));
+  tw(ep2.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, m('no_path'));
+  tw(el1.line, { stroke: EDGE_COLOR, 'stroke-width': 2 }, m('no_path'));
+  
+  const searchLabel4 = T(p, '搜索: "orange"', { x: 550, y: 150, size: 24, weight: 600, fill: HIGHLIGHT, o: 0 });
+  tw(searchLabel4, { o: 1 }, m('no_path'));
+  
+  // "直接返回 false，单词不存在。[[not_found]]"
+  const result4 = T(p, '✗ 路径不存在', { 
+    x: 550, y: 200, size: 22, fill: END_NODE_COLOR, o: 0 
+  });
+  tw(result4, { o: 1 }, m('not_found'));
+  
+  // 前缀搜索 "app" - 成功 - "搜索前缀 app，走 a → p → p，路径存在，返回 true。[[prefix_search]]"
+  tw(searchLabel4, { o: 0 }, m('prefix_search'));
+  tw(result4, { o: 0 }, m('prefix_search'));
+  
+  const searchLabel5 = T(p, 'startsWith: "app"', { x: 550, y: 150, size: 24, weight: 600, fill: HIGHLIGHT, o: 0 });
+  tw(searchLabel5, { o: 1 }, m('prefix_search'));
+  
+  tw(ep1.line, { stroke: NODE_COLOR, 'stroke-width': 4 }, m('prefix_search'));
+  tw(ep2.line, { stroke: NODE_COLOR, 'stroke-width': 4 }, m('prefix_search') + 0.5);
+  
+  // "不需要检查 isEnd，只要路径通就行。[[prefix_ok]]"
+  const result5 = T(p, '✓ 前缀存在！', { 
+    x: 550, y: 200, size: 22, fill: SUCCESS, o: 0 
+  });
+  tw(result5, { o: 1 }, m('prefix_ok'));
 }],
 
-['implementation', '代码实现', () => {
+['implementation', '代码实现', (m, dur) => {
   const p = panel(0);
   
   T(p, '代码实现', { x: 400, y: 50, size: 36, weight: 700, fill: TEXT_COLOR });
@@ -444,6 +491,9 @@ class Trie {
 }`;
   
   const lines = code.split('\n');
+  const startTime = m('code');
+  const timePerLine = (dur - startTime) / lines.length;
+  
   lines.forEach((line, i) => {
     const text = T(p, line, { 
       x: 50, 
@@ -454,111 +504,134 @@ class Trie {
       anchor: 'start',
       o: 0
     });
-    tw(text, { o: 1 }, 0.5 + i * 0.1);
+    tw(text, { o: 1 }, startTime + i * timePerLine);
   });
 }],
 
-['complexity', '复杂度分析', () => {
+['complexity', '复杂度分析', (m, dur) => {
   const p = panel(0);
   
   T(p, '时间和空间复杂度', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
   
   const items = [
-    { op: 'insert(word)', time: 'O(m)', desc: 'm = 单词长度', y: 150 },
-    { op: 'search(word)', time: 'O(m)', desc: '每个字符常数时间', y: 230 },
-    { op: 'startsWith(prefix)', time: 'O(m)', desc: 'm = 前缀长度', y: 310 },
-    { op: '空间复杂度', time: 'O(n × m)', desc: 'n 个单词，平均长度 m', y: 410 }
+    { op: 'insert(word)', time: 'O(m)', desc: 'm = 单词长度', y: 150, mark: 'insert_time' },
+    { op: 'search(word)', time: 'O(m)', desc: '每个字符常数时间', y: 230, mark: 'search_time' },
+    { op: 'startsWith(prefix)', time: 'O(m)', desc: 'm = 前缀长度', y: 310, mark: 'prefix_time' },
+    { op: '空间复杂度', time: 'O(n × m)', desc: 'n 个单词，平均长度 m', y: 410, mark: 'space' }
   ];
   
-  items.forEach(({ op, time, desc, y }, i) => {
+  items.forEach(({ op, time, desc, y, mark }) => {
     const g = G(p, { x: 100, y, o: 0 });
     
     T(g, op, { x: 0, y: 0, size: 26, weight: 700, fill: HIGHLIGHT, anchor: 'start' });
     T(g, time, { x: 0, y: 40, size: 24, weight: 600, fill: SUCCESS, anchor: 'start', family: 'monospace' });
     T(g, desc, { x: 200, y: 40, size: 20, fill: TEXT_COLOR, anchor: 'start' });
     
-    tw(g, { o: 1 }, 0.5 + i * 0.5);
+    tw(g, { o: 1 }, m(mark));
   });
   
   const note = T(p, '实际应用中，相同前缀共享路径，空间效率较高', { 
     x: 400, y: 520, size: 22, fill: PATH_COLOR, anchor: 'middle', o: 0 
   });
-  tw(note, { o: 1 }, 3);
+  tw(note, { o: 1 }, m('best_space'));
 }],
 
-['optimization', '空间优化', () => {
+['optimization', '空间优化', (m, dur) => {
   const p = panel(0);
   
   T(p, '压缩字典树（Radix Tree）', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
   
-  // 普通 Trie
+  // 普通 Trie - "普通字典树每个节点可能有很多空指针，浪费空间。[[waste]]"
   T(p, '普通 Trie', { x: 200, y: 130, size: 24, weight: 600, fill: HIGHLIGHT });
   
   const root1 = drawNode(p, 200, 180, '●', false);
-  tw(root1.g, { o: 1 }, 0.5);
+  tw(root1.g, { o: 1 }, m('waste'));
   
   const a1 = drawNode(p, 200, 250, 'a', false);
   const ea1 = drawEdge(p, 200, 205, 200, 225, 'a');
-  tw(a1.g, { o: 1 }, 1);
-  tw(ea1.g, { o: 1 }, 1);
+  tw(a1.g, { o: 1 }, m('waste') + 0.5);
+  tw(ea1.g, { o: 1 }, m('waste') + 0.5);
   
   const p1 = drawNode(p, 200, 320, 'p', false);
   const ep1 = drawEdge(p, 200, 275, 200, 295, 'p');
-  tw(p1.g, { o: 1 }, 1.5);
-  tw(ep1.g, { o: 1 }, 1.5);
+  tw(p1.g, { o: 1 }, m('waste') + 1);
+  tw(ep1.g, { o: 1 }, m('waste') + 1);
   
   const p2 = drawNode(p, 200, 390, 'p', false);
   const ep2 = drawEdge(p, 200, 345, 200, 365, 'p');
-  tw(p2.g, { o: 1 }, 2);
-  tw(ep2.g, { o: 1 }, 2);
+  tw(p2.g, { o: 1 }, m('waste') + 1.5);
+  tw(ep2.g, { o: 1 }, m('waste') + 1.5);
   
   const l1 = drawNode(p, 200, 460, 'l', false);
   const el1 = drawEdge(p, 200, 415, 200, 435, 'l');
-  tw(l1.g, { o: 1 }, 2.5);
-  tw(el1.g, { o: 1 }, 2.5);
+  tw(l1.g, { o: 1 }, m('waste') + 2);
+  tw(el1.g, { o: 1 }, m('waste') + 2);
   
   const e1 = drawNode(p, 200, 530, 'e', true);
   const ee1 = drawEdge(p, 200, 485, 200, 505, 'e');
-  tw(e1.g, { o: 1 }, 3);
-  tw(ee1.g, { o: 1 }, 3);
+  tw(e1.g, { o: 1 }, m('waste') + 2.5);
+  tw(ee1.g, { o: 1 }, m('waste') + 2.5);
   
-  // 压缩 Trie
+  // 压缩 Trie - "压缩字典树，也叫基数树或 Radix Tree，可以压缩只有一个子节点的路径。[[radix]]"
   T(p, '压缩 Trie', { x: 600, y: 130, size: 24, weight: 600, fill: SUCCESS });
   
   const root2 = drawNode(p, 600, 180, '●', false);
-  tw(root2.g, { o: 1 }, 3.5);
+  tw(root2.g, { o: 1 }, m('radix'));
   
+  // "比如 apple 这个单词，如果没有其他以 a 开头的单词。[[example]]"
+  // "可以把整个 apple 压缩成一条边，而不是五个节点。[[compress]]"
   const apple = drawNode(p, 600, 350, 'apple', true);
   const eapple = drawEdge(p, 600, 205, 600, 325, 'apple', SUCCESS);
-  tw(apple.g, { o: 1 }, 4);
-  tw(eapple.g, { o: 1 }, 4);
+  tw(apple.g, { o: 1 }, m('compress'));
+  tw(eapple.g, { o: 1 }, m('compress'));
   
   const note1 = T(p, '5 个节点', { x: 200, y: 560, size: 18, fill: TEXT_COLOR, anchor: 'middle', o: 0 });
-  tw(note1, { o: 1 }, 3.5);
+  tw(note1, { o: 1 }, m('compress'));
   
   const note2 = T(p, '1 个节点（压缩）', { x: 600, y: 400, size: 18, fill: SUCCESS, anchor: 'middle', o: 0 });
-  tw(note2, { o: 1 }, 4.5);
+  tw(note2, { o: 1 }, m('compress'));
   
+  // "这样节省了空间，但实现稍微复杂一些。[[tradeoff]]"
   const summary = T(p, '压缩只有单个子节点的路径，节省空间', { 
     x: 400, y: 560, size: 22, weight: 600, fill: PATH_COLOR, anchor: 'middle', o: 0 
   });
-  tw(summary, { o: 1 }, 5);
+  tw(summary, { o: 1 }, m('tradeoff'));
+  
+  // "另一个优化是用数组代替哈希表存储子节点。[[array]]"
+  const arrayOpt = T(p, '优化2：数组代替哈希表', { 
+    x: 400, y: 150, size: 24, weight: 600, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+  });
+  tw(arrayOpt, { o: 1 }, m('array'));
+  tw(arrayOpt, { o: 0 }, m('array') + 0.2);
+  
+  // "如果字符集很小，比如只有小写字母，用长度 26 的数组。[[small]]"
+  const arrayNote = T(p, '小字符集（a-z）：长度 26 的数组', { 
+    x: 100, y: 200, size: 20, fill: NODE_COLOR, o: 0 
+  });
+  tw(arrayNote, { o: 1 }, m('small'));
+  
+  // "访问速度更快，但每个节点都要分配固定空间。[[fixed]]"
+  const tradeoffNote = T(p, '速度更快 ↔ 固定空间开销', { 
+    x: 100, y: 240, size: 18, fill: PATH_COLOR, o: 0 
+  });
+  tw(tradeoffNote, { o: 1 }, m('fixed'));
 }],
 
-['autocomplete', '应用：自动补全', () => {
+['autocomplete', '应用：自动补全', (m, dur) => {
   const p = panel(0);
   
   T(p, '自动补全', { x: 400, y: 50, size: 36, weight: 700, fill: TEXT_COLOR });
   
-  // 搜索框
+  // 搜索框 - "字典树最常见的应用是自动补全。[[autocomplete]]"
   const searchBox = mk('rect', { 
     x: 150, y: 100, width: 500, height: 50, 
     fill: '#fff', stroke: HIGHLIGHT, 'stroke-width': 3, rx: 5, o: 0 
   }, p);
-  tw(searchBox, { o: 1 }, 0.5);
+  tw(searchBox, { o: 1 }, m('autocomplete'));
   
+  // "用户输入前缀，系统返回所有以这个前缀开头的单词。[[prefix]]"
   const searchText = T(p, '🔍 app', { x: 180, y: 125, size: 24, anchor: 'start', o: 0 });
-  tw(searchText, { o: 1 }, 1);
+  tw(searchText, { o: 1 }, m('prefix'));
   
   // 补全建议
   const suggestions = [
@@ -570,6 +643,7 @@ class Trie {
   
   T(p, '补全建议：', { x: 170, y: 200, size: 22, weight: 600, fill: TEXT_COLOR, o: 0 });
   
+  // "算法很简单：先用 startsWith 找到前缀对应的节点。[[find_prefix]]"
   suggestions.forEach((word, i) => {
     const g = G(p, { x: 200, y: 240 + i * 50, o: 0 });
     
@@ -580,38 +654,48 @@ class Trie {
     
     T(g, word, { x: 0, y: 0, size: 22, fill: TEXT_COLOR, anchor: 'start' });
     
-    tw(g, { o: 1 }, 2 + i * 0.3);
+    // "然后从这个节点开始，深度优先搜索所有子树。[[dfs]]"
+    tw(g, { o: 1 }, m('dfs') + i * 0.3);
   });
   
+  // "遇到 isEnd 为 true 的节点，就把路径拼成单词加入结果。[[collect]]"
   const process = T(p, '算法：① 找到前缀节点\n② DFS 遍历子树\n③ 收集所有 isEnd 节点', { 
     x: 550, y: 280, size: 18, fill: PATH_COLOR, o: 0 
   });
   process.style.whiteSpace = 'pre';
-  tw(process, { o: 1 }, 3.5);
+  tw(process, { o: 1 }, m('collect'));
   
+  // "时间复杂度是 O(m + k)，m 是前缀长度，k 是结果数量。[[time]]"
   const complexity = T(p, '时间：O(m + k)，m=前缀长度，k=结果数', { 
     x: 400, y: 500, size: 20, weight: 600, fill: SUCCESS, anchor: 'middle', o: 0 
   });
-  tw(complexity, { o: 1 }, 4.5);
+  tw(complexity, { o: 1 }, m('time'));
+  
+  // "搜索引擎、IDE 代码补全、输入法都用这个技术。[[applications]]"
+  const apps = T(p, '应用：搜索引擎、IDE、输入法', { 
+    x: 400, y: 540, size: 18, fill: HIGHLIGHT, anchor: 'middle', o: 0 
+  });
+  tw(apps, { o: 1 }, m('applications'));
 }],
 
-['spellcheck', '应用：拼写检查', () => {
+['spellcheck', '应用：拼写检查', (m, dur) => {
   const p = panel(0);
   
   T(p, '拼写检查与纠错', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
   
-  // 错误单词
+  // 错误单词 - "字典树的第二个应用是拼写检查。[[spellcheck]]"
   const wrong = T(p, '输入: aple', { x: 200, y: 140, size: 28, weight: 600, fill: END_NODE_COLOR, o: 0 });
-  tw(wrong, { o: 1 }, 0.5);
+  tw(wrong, { o: 1 }, m('spellcheck'));
   
+  // "用户输入一个单词，系统提示可能的正确拼写。[[suggestion]]"
   const line = mk('line', { 
     x1: 190, y1: 150, x2: 270, y2: 150, 
     stroke: END_NODE_COLOR, 'stroke-width': 3, 
     'stroke-dasharray': '5,5', o: 0 
   }, p);
-  tw(line, { o: 1 }, 1);
+  tw(line, { o: 1 }, m('suggestion'));
   
-  // 建议
+  // 建议 - "基本思路是在字典树中搜索与输入单词相似的单词。[[similar]]"
   T(p, '可能的正确拼写：', { x: 150, y: 220, size: 24, weight: 600, fill: TEXT_COLOR, o: 0 });
   
   const corrections = [
@@ -619,6 +703,7 @@ class Trie {
     { word: 'able', dist: 2, desc: '替换两个字符' }
   ];
   
+  // "可以用编辑距离衡量相似度，允许插入、删除、替换字符。[[edit]]"
   corrections.forEach(({ word, dist, desc }, i) => {
     const g = G(p, { x: 200, y: 280 + i * 80, o: 0 });
     
@@ -626,50 +711,59 @@ class Trie {
     T(g, `编辑距离: ${dist}`, { x: 0, y: 35, size: 20, fill: HIGHLIGHT, anchor: 'start' });
     T(g, desc, { x: 200, y: 35, size: 18, fill: TEXT_COLOR, anchor: 'start' });
     
-    tw(g, { o: 1 }, 2 + i * 0.5);
+    // "从根节点开始深度优先搜索，记录当前的编辑距离。[[dfs]]"
+    tw(g, { o: 1 }, m('dfs') + i * 0.5);
   });
   
+  // "如果编辑距离超过阈值，剪枝不再往下搜。[[prune]]"
+  // "找到 isEnd 为 true 且编辑距离在阈值内的单词，加入结果。[[collect]]"
   const algorithm = T(p, '算法：DFS + 编辑距离\n允许插入、删除、替换字符\n剪枝：距离超过阈值停止搜索', { 
     x: 150, y: 470, size: 18, fill: PATH_COLOR, o: 0 
   });
   algorithm.style.whiteSpace = 'pre';
-  tw(algorithm, { o: 1 }, 3.5);
+  tw(algorithm, { o: 1 }, m('collect'));
+  
+  // "时间复杂度取决于树的大小和编辑距离阈值。[[complexity]]"
+  const complexityNote = T(p, 'Word、浏览器、邮件客户端都用这个技术纠错', { 
+    x: 400, y: 540, size: 18, fill: SUCCESS, anchor: 'middle', o: 0 
+  });
+  tw(complexityNote, { o: 1 }, m('complexity'));
 }],
 
-['applications', '更多应用场景', () => {
+['applications', '更多应用场景', (m, dur) => {
   const p = panel(0);
   
   T(p, '字典树的应用', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
   
   const apps = [
-    { icon: '🌐', title: 'IP 路由表', desc: '压缩 Trie 存储 IP 前缀，快速路由查找', y: 150 },
-    { icon: '📊', title: '词频统计', desc: '每个节点记录单词出现次数', y: 240 },
-    { icon: '🚫', title: '敏感词过滤', desc: 'AC 自动机：多模式串匹配', y: 330 },
-    { icon: '🧬', title: 'DNA 序列', desc: '基因序列模式匹配与查找', y: 420 }
+    { icon: '🌐', title: 'IP 路由表', desc: '压缩 Trie 存储 IP 前缀，快速路由查找', y: 150, mark: 'ip' },
+    { icon: '📊', title: '词频统计', desc: '每个节点记录单词出现次数', y: 240, mark: 'frequency' },
+    { icon: '🚫', title: '敏感词过滤', desc: 'AC 自动机：多模式串匹配', y: 330, mark: 'filter' },
+    { icon: '🧬', title: 'DNA 序列', desc: '基因序列模式匹配与查找', y: 420, mark: 'dna' }
   ];
   
-  apps.forEach(({ icon, title, desc, y }, i) => {
+  apps.forEach(({ icon, title, desc, y, mark }) => {
     const g = G(p, { x: 150, y, o: 0 });
     
     T(g, icon, { x: 0, y: 0, size: 40, anchor: 'middle' });
     T(g, title, { x: 80, y: -5, size: 28, weight: 700, fill: HIGHLIGHT, anchor: 'start' });
     T(g, desc, { x: 80, y: 25, size: 20, fill: TEXT_COLOR, anchor: 'start' });
     
-    tw(g, { o: 1 }, 0.5 + i * 0.5);
+    tw(g, { o: 1 }, m(mark));
   });
   
   const note = T(p, '核心优势：前缀匹配 + 路径共享', { 
     x: 400, y: 540, size: 24, weight: 600, fill: SUCCESS, anchor: 'middle', o: 0 
   });
-  tw(note, { o: 1 }, 3);
+  tw(note, { o: 1 }, m('dna') + 2);
 }],
 
-['comparison', 'Trie vs 哈希表', () => {
+['comparison', 'Trie vs 哈希表', (m, dur) => {
   const p = panel(0);
   
   T(p, '字典树 vs 哈希表', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
   
-  // 表头
+  // 表头 - "字典树和哈希表都能存储字符串，有什么区别？[[comparison]]"
   const headers = ['特性', '哈希表', '字典树'];
   headers.forEach((h, i) => {
     T(p, h, { 
@@ -680,41 +774,41 @@ class Trie {
   
   // 对比项
   const rows = [
-    { feature: '查找时间', hash: 'O(1) 平均', trie: 'O(m) m=长度' },
-    { feature: '前缀搜索', hash: '✗ 不支持', trie: '✓ O(m)' },
-    { feature: '有序输出', hash: '✗ 无序', trie: '✓ 字典序' },
-    { feature: '空间占用', hash: '存完整串', trie: '共享前缀' },
-    { feature: '哈希冲突', hash: '可能冲突', trie: '无冲突' }
+    { feature: '查找时间', hash: 'O(1) 平均', trie: 'O(m) m=长度', mark: 'hash' },
+    { feature: '前缀搜索', hash: '✗ 不支持', trie: '✓ O(m)', mark: 'trie' },
+    { feature: '有序输出', hash: '✗ 无序', trie: '✓ 字典序', mark: 'collision' },
+    { feature: '空间占用', hash: '存完整串', trie: '共享前缀', mark: 'no_conflict' },
+    { feature: '哈希冲突', hash: '可能冲突', trie: '无冲突', mark: 'exact' }
   ];
   
   rows.forEach((row, i) => {
     const y = 180 + i * 60;
     
-    T(p, row.feature, { 
+    const featureText = T(p, row.feature, { 
       x: 200, y, size: 20, weight: 600, fill: TEXT_COLOR, anchor: 'middle', o: 0 
     });
+    tw(featureText, { o: 1 }, m(row.mark));
     
-    T(p, row.hash, { 
+    const hashText = T(p, row.hash, { 
       x: 400, y, size: 18, fill: NODE_COLOR, anchor: 'middle', o: 0 
     });
+    tw(hashText, { o: 1 }, m(row.mark));
     
-    T(p, row.trie, { 
+    const trieText = T(p, row.trie, { 
       x: 600, y, size: 18, fill: SUCCESS, anchor: 'middle', o: 0 
     });
-    
-    setTimeout(() => {
-      const elements = p.querySelectorAll(`text[y="${y}"]`);
-      elements.forEach(el => tw(el, { o: 1 }, 0.5 + i * 0.4));
-    }, 10);
+    tw(trieText, { o: 1 }, m(row.mark));
   });
   
+  // "如果只需要精确查找，用哈希表更快。[[exact]]"
+  // "如果需要前缀匹配、自动补全、排序，用字典树更合适。[[prefix_ops]]"
   const conclusion = T(p, '精确查找用哈希表，前缀操作用字典树', { 
     x: 400, y: 520, size: 22, weight: 600, fill: PATH_COLOR, anchor: 'middle', o: 0 
   });
-  tw(conclusion, { o: 1 }, 3.5);
+  tw(conclusion, { o: 1 }, m('prefix_ops'));
 }],
 
-['variants', '高级变体', () => {
+['variants', '高级变体', (m, dur) => {
   const p = panel(0);
   
   T(p, '字典树的变体', { x: 400, y: 60, size: 36, weight: 700, fill: TEXT_COLOR });
@@ -724,23 +818,29 @@ class Trie {
       name: '后缀树（Suffix Tree）', 
       desc: '存储字符串的所有后缀\nO(m) 时间查找任意子串',
       use: '字符串匹配、最长公共子串',
-      y: 150 
+      y: 150,
+      mark: 'suffix',
+      mark2: 'matching'
     },
     { 
       name: '三向字典树（Ternary Trie）', 
       desc: '每个节点最多 3 个子节点\n比普通 Trie 省空间',
       use: '嵌入式系统、内存受限环境',
-      y: 290 
+      y: 290,
+      mark: 'ternary',
+      mark2: 'space'
     },
     { 
       name: 'AC 自动机（Aho-Corasick）', 
       desc: 'Trie + 失败指针\nO(n) 时间匹配多个模式',
       use: '多模式串匹配、敏感词过滤',
-      y: 430 
+      y: 430,
+      mark: 'ac',
+      mark2: 'multi'
     }
   ];
   
-  variants.forEach(({ name, desc, use, y }, i) => {
+  variants.forEach(({ name, desc, use, y, mark, mark2 }) => {
     const g = G(p, { x: 100, y, o: 0 });
     
     T(g, name, { x: 0, y: 0, size: 26, weight: 700, fill: HIGHLIGHT, anchor: 'start' });
@@ -748,36 +848,37 @@ class Trie {
     const descText = T(g, desc, { x: 0, y: 40, size: 18, fill: TEXT_COLOR, anchor: 'start' });
     descText.style.whiteSpace = 'pre';
     
-    T(g, `应用：${use}`, { x: 0, y: 95, size: 17, fill: PATH_COLOR, anchor: 'start' });
+    const useText = T(g, `应用：${use}`, { x: 0, y: 95, size: 17, fill: PATH_COLOR, anchor: 'start', o: 0 });
     
-    tw(g, { o: 1 }, 0.5 + i * 0.8);
+    tw(g, { o: 1 }, m(mark));
+    tw(useText, { o: 1 }, m(mark2));
   });
 }],
 
-['finish', '总结', () => {
+['finish', '总结', (m, dur) => {
   const p = panel(0);
   
   T(p, '字典树（Trie）', { x: 400, y: 80, size: 42, weight: 700, fill: TEXT_COLOR });
   
   const points = [
-    { icon: '🌳', text: '树形结构，边代表字符，共享公共前缀', y: 180 },
-    { icon: '⚙️', text: 'insert、search、startsWith 三个核心操作', y: 260 },
-    { icon: '⏱️', text: '时间复杂度 O(m)，m 是字符串长度', y: 340 },
-    { icon: '🎯', text: '擅长前缀匹配、自动补全、拼写检查', y: 420 },
-    { icon: '💡', text: '压缩 Trie 节省空间，后缀树、AC 自动机更强大', y: 500 }
+    { icon: '🌳', text: '树形结构，边代表字符，共享公共前缀', y: 180, mark: 'structure' },
+    { icon: '⚙️', text: 'insert、search、startsWith 三个核心操作', y: 260, mark: 'operations' },
+    { icon: '⏱️', text: '时间复杂度 O(m)，m 是字符串长度', y: 340, mark: 'applications' },
+    { icon: '🎯', text: '擅长前缀匹配、自动补全、拼写检查', y: 420, mark: 'tradeoff' },
+    { icon: '💡', text: '压缩 Trie 节省空间，后缀树、AC 自动机更强大', y: 500, mark: 'master' }
   ];
   
-  points.forEach(({ icon, text, y }, i) => {
+  points.forEach(({ icon, text, y, mark }) => {
     const g = G(p, { x: 100, y, o: 0 });
     T(g, icon, { x: 0, y: 0, size: 36, anchor: 'middle' });
     T(g, text, { x: 70, y: 0, size: 24, fill: TEXT_COLOR, anchor: 'start' });
-    tw(g, { o: 1 }, 0.5 + i * 0.5);
+    tw(g, { o: 1 }, m(mark));
   });
   
   const motto = T(p, '掌握字典树，轻松处理字符串前缀问题！', { 
     x: 400, y: 560, size: 26, weight: 700, fill: SUCCESS, anchor: 'middle', o: 0 
   });
-  tw(motto, { o: 1 }, 3.5);
+  tw(motto, { o: 1 }, m('core'));
 }]
 
 ];

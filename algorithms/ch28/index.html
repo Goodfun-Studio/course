@@ -989,6 +989,7 @@ window.BEATS = [
 
 ]; // end BEATS
 
+window.BEATS = window.BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
 boot();
 </script>
 </body>

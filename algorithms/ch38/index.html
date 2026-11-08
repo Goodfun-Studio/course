@@ -277,7 +277,7 @@ window.BEATS = [
 }],
 
 ['insert_demo', '插入过程动画', () => {
-  const p = panel(800);
+  const p = panel(0);
   
   T(p, '插入元素："apple"', { x: 400, y: 50, size: 36, weight: 700, fill: DARK, anchor: 'middle' });
   
@@ -387,7 +387,7 @@ window.BEATS = [
 }],
 
 ['query_demo', '查询过程动画', () => {
-  const p = panel(800);
+  const p = panel(0);
   
   T(p, '查询元素是否存在', { x: 400, y: 50, size: 36, weight: 700, fill: DARK, anchor: 'middle' });
   
@@ -900,6 +900,7 @@ bf.contains("cherry");  // 可能误判为true`;
 
 ];
 
+window.BEATS = window.BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
 boot();
 </script>
 </body>

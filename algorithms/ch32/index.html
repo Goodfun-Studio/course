@@ -507,6 +507,8 @@ let BEATS = [
 ];
 
 /* ---------- boot ---------- */
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
 boot();
 </script>
 </body>

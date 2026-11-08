@@ -332,7 +332,7 @@ window.BEATS = [
 }],
 
 ['build_hull', '凸包构建动画', () => {
-  const p = panel(800);
+  const p = panel(0);
   
   T(p, '步骤2：栈维护凸包', { x: 400, y: 50, size: 36, weight: 700, fill: TEXT_COLOR });
   
@@ -752,6 +752,7 @@ window.BEATS = [
 
 ];
 
+window.BEATS = window.BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
 boot();
 </script>
 </body>

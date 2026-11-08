@@ -765,6 +765,8 @@ window.REJECTED = REJECTED;
 window.CANDIDATE = CANDIDATE;
 window.NEUTRAL = NEUTRAL;
 window.TIMELINE_BG = TIMELINE_BG;
+BEATS = BEATS.map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+window.BEATS = BEATS;
 boot();
 </script>
 </body>

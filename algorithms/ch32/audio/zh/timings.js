@@ -1,38 +1,62 @@
-marks = [
-  {
-    "audio": "intro"
+window.TIMINGS = {
+  "intro": {
+    "dur": 26.31,
+    "marks": {},
+    "cues": []
   },
-  {
-    "audio": "naive-approach"
+  "naive-approach": {
+    "dur": 21.47,
+    "marks": {},
+    "cues": []
   },
-  {
-    "audio": "sieve-concept"
+  "sieve-concept": {
+    "dur": 20.72,
+    "marks": {},
+    "cues": []
   },
-  {
-    "audio": "sieve-animation"
+  "sieve-animation": {
+    "dur": 62.33,
+    "marks": {},
+    "cues": []
   },
-  {
-    "audio": "algorithm-impl"
+  "algorithm-impl": {
+    "dur": 32.5,
+    "marks": {},
+    "cues": []
   },
-  {
-    "audio": "optimization-p2"
+  "optimization-p2": {
+    "dur": 26.88,
+    "marks": {},
+    "cues": []
   },
-  {
-    "audio": "optimization-sqrtn"
+  "optimization-sqrtn": {
+    "dur": 21.55,
+    "marks": {},
+    "cues": []
   },
-  {
-    "audio": "code-impl"
+  "code-impl": {
+    "dur": 33.41,
+    "marks": {},
+    "cues": []
   },
-  {
-    "audio": "applications"
+  "applications": {
+    "dur": 24.61,
+    "marks": {},
+    "cues": []
   },
-  {
-    "audio": "variants"
+  "variants": {
+    "dur": 24.71,
+    "marks": {},
+    "cues": []
   },
-  {
-    "audio": "complexity"
+  "complexity": {
+    "dur": 29.18,
+    "marks": {},
+    "cues": []
   },
-  {
-    "audio": "summary"
+  "summary": {
+    "dur": 29.1,
+    "marks": {},
+    "cues": []
   }
-];
+};

@@ -1,196 +1,208 @@
 window.TIMINGS = {
   "intro": {
-    "audio": "intro",
+    "dur": 32.95,
     "marks": {
-      "nails": 2,
-      "fence": 4,
-      "collision": 6,
-      "pattern": 8,
-      "convex_hull": 10,
-      "graham": 12
-    }
+      "nails": 6.59,
+      "fence": 9.98,
+      "collision": 15.78,
+      "pattern": 20.37,
+      "convex_hull": 22.77,
+      "graham": 32.95
+    },
+    "cues": []
   },
   "definition": {
-    "audio": "definition",
+    "dur": 30.24,
     "marks": {
-      "what": 1,
-      "minimal": 2,
-      "convex": 4,
-      "rubber": 6,
-      "shrink": 8,
-      "vertices": 10,
-      "count": 12,
-      "math": 14
-    }
+      "what": 1.27,
+      "minimal": 6.56,
+      "convex": 11.84,
+      "rubber": 15.44,
+      "shrink": 19.24,
+      "vertices": 22.63,
+      "count": 26.43,
+      "math": 30.24
+    },
+    "cues": []
   },
   "algorithm": {
-    "audio": "algorithm",
+    "dur": 43.85,
     "marks": {
-      "three": 1,
-      "lowest": 3,
-      "polar": 5,
-      "angle": 7,
-      "stack": 9,
-      "process": 11,
-      "check": 13,
-      "pop": 15,
-      "push": 17,
-      "result": 19
-    }
+      "three": 4.24,
+      "lowest": 10.38,
+      "polar": 15.04,
+      "angle": 19.7,
+      "stack": 22.67,
+      "process": 25.42,
+      "check": 30.72,
+      "pop": 34.95,
+      "push": 40.46,
+      "result": 43.85
+    },
+    "cues": []
   },
   "cross_product": {
-    "audio": "cross_product",
+    "dur": 49.49,
     "marks": {
-      "turn": 1,
-      "cross": 2,
-      "vectors": 4,
-      "construct": 6,
-      "formula": 8,
-      "sign": 10,
-      "ccw": 12,
-      "cw": 14,
-      "collinear": 16,
-      "area": 18
-    }
+      "turn": 3.01,
+      "cross": 5.21,
+      "vectors": 9.62,
+      "construct": 16.43,
+      "formula": 29.05,
+      "sign": 31.46,
+      "ccw": 38.27,
+      "cw": 42.08,
+      "collinear": 44.68,
+      "area": 49.49
+    },
+    "cues": []
   },
   "polar_sort": {
-    "audio": "polar_sort",
+    "dur": 40.82,
     "marks": {
-      "demo": 1,
-      "points": 2,
-      "find_lowest": 4,
-      "leftmost": 5,
-      "mark": 6,
-      "compute": 8,
-      "atan2": 10,
-      "sort": 12,
-      "distance": 14,
-      "label": 16,
-      "order": 18,
-      "arranged": 20
-    }
+      "demo": 2.15,
+      "points": 5.08,
+      "find_lowest": 8.98,
+      "leftmost": 12.11,
+      "mark": 15.62,
+      "compute": 18.95,
+      "atan2": 25.0,
+      "sort": 27.54,
+      "distance": 30.66,
+      "label": 34.18,
+      "order": 37.11,
+      "arranged": 40.82
+    },
+    "cues": []
   },
   "build_hull": {
-    "audio": "build_hull",
+    "dur": 67.58,
     "marks": {
-      "demo": 1,
-      "init": 2,
-      "first": 3,
-      "two": 4,
-      "third": 5,
-      "check": 6,
-      "push": 7,
-      "fourth": 8,
-      "right": 9,
-      "pop": 10,
-      "continue": 11,
-      "fifth": 12,
-      "push2": 13,
-      "more": 14,
-      "repeat": 15,
-      "final": 16,
-      "connect": 17,
-      "polygon": 18,
-      "inside": 19
-    }
+      "demo": 2.35,
+      "init": 6.18,
+      "first": 9.81,
+      "two": 11.73,
+      "third": 14.28,
+      "check": 18.97,
+      "push": 23.24,
+      "fourth": 25.37,
+      "right": 30.06,
+      "pop": 34.75,
+      "continue": 40.51,
+      "fifth": 42.64,
+      "push2": 46.9,
+      "more": 48.82,
+      "repeat": 52.44,
+      "final": 56.28,
+      "connect": 60.54,
+      "polygon": 64.38,
+      "inside": 67.58
+    },
+    "cues": []
   },
   "implementation": {
-    "audio": "implementation",
+    "dur": 56.62,
     "marks": {
-      "code": 1,
-      "cross_fn": 2,
-      "input": 3,
-      "main": 4,
-      "io": 5,
-      "find": 6,
-      "loop": 7,
-      "sort": 8,
-      "key": 9,
-      "tie": 10,
-      "stack": 11,
-      "iterate": 12,
-      "pop": 13,
-      "push": 14,
-      "return": 15,
-      "clean": 16
-    }
+      "code": 1.29,
+      "cross_fn": 4.09,
+      "input": 10.76,
+      "main": 12.7,
+      "io": 16.15,
+      "find": 19.38,
+      "loop": 25.19,
+      "sort": 27.99,
+      "key": 32.08,
+      "tie": 34.66,
+      "stack": 38.75,
+      "iterate": 41.33,
+      "pop": 47.36,
+      "push": 50.16,
+      "return": 53.39,
+      "clean": 56.62
+    },
+    "cues": []
   },
   "cross_calculation": {
-    "audio": "cross_calculation",
+    "dur": 45.22,
     "marks": {
-      "geometry": 1,
-      "vectors": 2,
-      "formula": 3,
-      "area": 5,
-      "positive": 7,
-      "negative": 9,
-      "left": 11,
-      "keep": 13,
-      "discard": 15,
-      "efficient": 17
-    }
+      "geometry": 2.75,
+      "vectors": 10.03,
+      "formula": 16.12,
+      "area": 21.63,
+      "positive": 26.15,
+      "negative": 28.9,
+      "left": 33.03,
+      "keep": 37.95,
+      "discard": 42.27,
+      "efficient": 45.22
+    },
+    "cues": []
   },
   "complexity": {
-    "audio": "complexity",
+    "dur": 42.62,
     "marks": {
-      "analysis": 1,
-      "find": 2,
-      "sort": 4,
-      "build": 6,
-      "once": 8,
-      "linear": 10,
-      "total": 12,
-      "space": 14,
-      "efficient": 16,
-      "scale": 18,
-      "acceptable": 20
-    }
+      "analysis": 2.01,
+      "find": 6.84,
+      "sort": 11.86,
+      "build": 15.08,
+      "once": 18.5,
+      "linear": 21.71,
+      "total": 26.13,
+      "space": 30.96,
+      "efficient": 34.98,
+      "scale": 38.4,
+      "acceptable": 42.62
+    },
+    "cues": []
   },
   "applications": {
-    "audio": "applications",
+    "dur": 41.57,
     "marks": {
-      "applications": 1,
-      "foundation": 2,
-      "rotating": 4,
-      "collision": 6,
-      "accelerate": 8,
-      "feature": 10,
-      "gis": 12,
-      "robot": 14,
-      "outlier": 16,
-      "boundary": 18
-    }
+      "applications": 2.56,
+      "foundation": 6.82,
+      "rotating": 12.15,
+      "collision": 15.35,
+      "accelerate": 19.61,
+      "feature": 24.09,
+      "gis": 29.63,
+      "robot": 34.32,
+      "outlier": 37.09,
+      "boundary": 41.57
+    },
+    "cues": []
   },
   "variants": {
-    "audio": "variants",
+    "dur": 49.2,
     "marks": {
-      "variants": 1,
-      "jarvis": 2,
-      "wrap": 4,
-      "time": 6,
-      "small": 8,
-      "quickhull": 10,
-      "divide": 12,
-      "average": 14,
-      "chan": 16,
-      "optimal": 18,
-      "3d": 20,
-      "choose": 22
-    }
+      "variants": 3.96,
+      "jarvis": 7.93,
+      "wrap": 12.07,
+      "time": 16.04,
+      "small": 19.82,
+      "quickhull": 24.33,
+      "divide": 27.93,
+      "average": 32.44,
+      "chan": 38.03,
+      "optimal": 42.53,
+      "3d": 46.32,
+      "choose": 49.2
+    },
+    "cues": []
   },
   "summary": {
-    "audio": "summary",
+    "dur": 39.53,
     "marks": {
-      "summary": 1,
-      "definition": 2,
-      "three": 4,
-      "steps": 6,
-      "cross": 8,
-      "complexity": 10,
-      "applications": 12,
-      "foundation": 14,
-      "core": 16,
-      "rule": 18
-    }
+      "summary": 1.93,
+      "definition": 5.37,
+      "three": 9.67,
+      "steps": 13.11,
+      "cross": 16.76,
+      "complexity": 21.7,
+      "applications": 26.64,
+      "foundation": 30.72,
+      "core": 35.88,
+      "rule": 39.53
+    },
+    "cues": []
   }
 };

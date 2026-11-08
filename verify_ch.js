@@ -33,6 +33,8 @@ const root = '/Users/ivywu/course/algorithms';
         document.querySelectorAll('text, rect, circle, line').forEach(el => {
           let op = 1, e = el;
           while (e) { if (e.style?.display==='none'){op=0;break;} const o=e.getAttribute&&e.getAttribute('opacity'); if(o!=null) op*=parseFloat(o); e=e.parentElement; }
+          // 空文本元素渲染不出任何东西 —— 不算可见内容（防止用隐藏占位元素刷覆盖）
+          if (el.tagName.toLowerCase() === 'text' && !(el.textContent || '').trim()) return;
           if (op > 0.4) {
             const tr = el.getAttribute('transform') || '';
             const sm = tr.match(/scale\(([\d.]+)\)/);

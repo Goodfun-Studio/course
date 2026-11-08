@@ -13,7 +13,7 @@ const root = '/Users/ivywu/course/algorithms';
   await page.click('#coverGo').catch(()=>{});
   await page.waitForTimeout(500);
 
-  const beats = await page.evaluate(() => (window.BEATS||[]).map((b,i)=>({i,id:b.id,dur:TIMINGS[b.id]?.dur||0})));
+  const beats = await page.evaluate(() => (window.BEATS||[]).map((b,i)=>({i,id:b.id,dur:TIMINGS[b.id]?.dur||0,ask:!!b.ask})));
   if (!beats.length) { console.log(`${ch}: ❌ window.BEATS 为空`); await browser.close(); return; }
 
   console.log(`${ch} (标准B)  ${beats.length} beats`);
@@ -46,6 +46,10 @@ const root = '/Users/ivywu/course/algorithms';
     }
     const cov = b.dur ? lastChange / b.dur : 0;
     const okR = r>=0.8 && r<=1.2, okC = cov>=0.7;
+    if (b.ask) {
+      console.log(`  ${b.id.padEnd(25)} |  —    |  —    | 随堂题(不适用, 引擎渲染)`);
+      continue;
+    }
     if (!okR) badR++;
     if (!okC) badC++;
     console.log(`  ${b.id.padEnd(25)} | ${r.toFixed(2)} ${okR?'✓':'✗'} | ${cov.toFixed(2)} ${okC?'✓':'✗'} | ${okR&&okC?'合格':'不合格'}`);

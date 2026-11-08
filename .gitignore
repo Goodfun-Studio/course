@@ -2,3 +2,8 @@ node_modules/
 test-results/
 *.bak*
 *.backup
+# worker scratch artifacts
+*.bak*
+*.backup*
+algorithms/ch*/fix_*.py
+algorithms/ch*/test_standard_b.*

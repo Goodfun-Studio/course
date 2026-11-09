@@ -171,6 +171,22 @@ const BEATS = [
   
   const insight = T(p, '每行只能放一个皇后', { x: 800, y: 670, size: 34, fill: SAFE, weight: 600, anchor: 'middle', o: 0 });
   tw(insight, { o: 1 }, m('insight'), 0.5);
+  
+  // 扩展：搜索空间对比，铺到 dur*0.87
+  // dur=15.432，目标 ~13.4s
+  const spaceLabel = T(p, '搜索空间从 N^N 降到 N!', { x: 800, y: 580, size: 26, fill: '#f39c12', anchor: 'middle', o: 0 });
+  tw(spaceLabel, { o: 1 }, m('insight') + 1.5, 0.5);
+  
+  // 4x4 对比数据
+  const compare1 = T(p, '4×4：256 → 24', { x: 600, y: 500, size: 24, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(compare1, { o: 1 }, m('insight') + 2.5, 0.4);
+  
+  const compare2 = T(p, '8×8：1600万 → 40320', { x: 1000, y: 500, size: 24, fill: COL.chalk, anchor: 'middle', o: 0 });
+  tw(compare2, { o: 1 }, m('insight') + 3.5, 0.4);
+  
+  // 高亮结论
+  const conclusion = T(p, '回溯从这里出发', { x: 800, y: 740, size: 28, fill: BACKTRACK, weight: 600, anchor: 'middle', o: 0 });
+  tw(conclusion, { o: 1 }, m('insight') + 4.5, 0.5);
 }],
 
 ['backtrack-idea', '回溯思想', (m, dur) => {
@@ -392,6 +408,14 @@ const BEATS = [
   
   const fast = T(p, '几毫秒找到全部解', { x: 800, y: 790, size: 28, fill: SAFE, anchor: 'middle', o: 0 });
   tw(fast, { o: 1 }, m('fast'), 0.4);
+  
+  // 最后一个皇后在 tree+7*0.3=10.1s，需要拉到 dur*0.9≈12.1s
+  // tree=7.8，dur=13.488
+  const treeLabel = T(p, '搜索树剧剧剪枝', { x: 800, y: 740, size: 26, fill: '#9b59b6', anchor: 'middle', o: 0 });
+  tw(treeLabel, { o: 1 }, m('tree') + 2.8, 0.5);
+  
+  const nodeCount = T(p, '实际节点数：~ 2000', { x: 800, y: 680, size: 26, fill: '#3498db', anchor: 'middle', o: 0 });
+  tw(nodeCount, { o: 1 }, m('tree') + 4.1, 0.5);
 }],
 
 ['complexity', '复杂度分析', (m, dur) => {
